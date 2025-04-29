@@ -18,7 +18,7 @@ module regfile (
 
     always_ff @(posedge clk or posedge reset) begin
         if (rst_sync) begin
-            for (int i=0; i<32; i++) begin
+            for (int i=1; i<32; i++) begin
                 regfile[i] <= 64'b0;
             end
         end else if (wr_en_i && rd_addr_i != 5'b0) begin

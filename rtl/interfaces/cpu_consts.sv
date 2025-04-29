@@ -2,7 +2,7 @@ package cpu_consts;
 
     //Instruction types
     typedef enum logic[6:0] {
-        R_TYPE      = 7'h33;
+        R_TYPE      = 7'h33,
         I_TYPE_0    = 7'h03,
         I_TYPE_1    = 7'h13,
         I_TYPE_2    = 7'h67,

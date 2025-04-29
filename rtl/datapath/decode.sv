@@ -1,5 +1,5 @@
 module decode (
-    input logic [64:0]  instr_i,
+    input logic [31:0]  instr_i,
     output logic [4:0]  rs1_o,
     output logic [4:0]  rs2_o,
     output logic [4:0]  rd_o,

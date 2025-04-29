@@ -1,1 +1,1 @@
-# CH-25 - my FPGA based RISC-V CPU
+# CH-25 - RISC-V CPU for FPGA

@@ -11,7 +11,7 @@ module regfile (
     //destination registers - address, write enable, data
     input logic [4:0]   rd_addr_i,
     input logic         wr_en_i,
-    input logic         rd_data_i
+    input logic [63:0]  rd_data_i
 );
 
     logic [63:0] regfile [31:1];

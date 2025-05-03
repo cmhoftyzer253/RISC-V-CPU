@@ -1,6 +1,6 @@
 package cpu_consts;
 
-    //Instruction types
+    // instruction types
     typedef enum logic[6:0] {
         R_TYPE      = 7'h33,
         I_TYPE_0    = 7'h03,
@@ -36,29 +36,23 @@ package cpu_consts;
         XOR     = 4'h4
     } r_type_t;
 
-    //  I type instructions excluding JALR, SLLI, SRLI, SRAI
+    // I type instructions
     // {opcode[4], funct3}
     typedef enum logic[3:0] {
-        LB      = 4'h0,
-        LBU     = 4'h4,
-        LH      = 4'h1,
-        LHU     = 4'h5,
-        LW      = 4'h2,
-        ADDI    = 4'h8,
-        ANDI    = 4'hF,
-        ORI     = 4'hE,
-        SLTI    = 4'hA,
-        SLTIU   = 4'hB,
-        XORI    = 4'hC
+        LB = 4'h0;
+        LBU = 4'h4,
+        LH = 4'h1,
+        LHU = 4'h5,
+        LW = 4'h2,
+        ADDI = 4'h8,
+        ANDI = 4'hF,
+        ORI = 4'hE,
+        SLLI = 4'h9,
+        SRXI = 4'hD,    //covers SRLI & SRAI
+        SLTI = 4'hA,
+        SLTIU = 4'hB,
+        XORI = 4'hC;
     } i_type_t;
-
-    //I type instructions - SLLI, SRLI, SRAI
-    // {funct7[5], funct3}
-    typedef enum logic[3:0] {
-        SLLI = 4'h1;
-        SRLI = 4'h5;
-        SRAI = 4'hD;
-    } i_type_shift_t;
 
     //  S type instructions
     typedef enum logic[2:0] {
@@ -88,7 +82,7 @@ package cpu_consts;
         JAL = 6'h3
     } j_type_t;
 
-    // Control signals
+    // control signals
     typedef struct packed {
         logic       pc_sel;
         logic       op1_sel;
@@ -102,6 +96,7 @@ package cpu_consts;
         logic       rf_wr_en;
     } control_t;
 
+    // register file writeback data source
     typedef enum logic[1:0] {
         ALU     = 2'b00,
         MEM     = 2'b01,

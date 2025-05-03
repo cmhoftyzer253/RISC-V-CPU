@@ -79,18 +79,18 @@ module decode (
                              j_type_imm;
 
     //output assignments
-    assign rs1_o = rs1;
-    assign rs2_o = rs2;
-    assign rd_o = rd;
-    assign op_o = op;
-    assign funct7_o = funct7;
-    assign funct3_o = funct3;
-    assign r_type_instr_o = r_type;
-    assign i_type_instr_o = i_type;
-    assign s_type_instr_o = s_type;
-    assign b_type_instr_o = b_type;
-    assign u_type_instr_o = u_type;
-    assign j_type_instr_o = j_type;
-    assign instr_imm_o = imm;
+    assign rs1_o            = rs1;
+    assign rs2_o            = rs2;
+    assign rd_o             = rd;
+    assign op_o             = op;
+    assign funct7_o         = funct7;
+    assign funct3_o         = funct3;
+    assign r_type_instr_o   = r_type;
+    assign i_type_instr_o   = i_type;
+    assign s_type_instr_o   = s_type;
+    assign b_type_instr_o   = b_type;
+    assign u_type_instr_o   = u_type;
+    assign j_type_instr_o   = j_type;
+    assign instr_imm_o      = imm;
 
 endmodule

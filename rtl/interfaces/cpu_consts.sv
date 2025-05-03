@@ -88,4 +88,25 @@ package cpu_consts;
         JAL = 6'h3
     } j_type_t;
 
+    // Control signals
+    typedef struct packed {
+        logic       pc_sel;
+        logic       op1_sel;
+        logic       op2_sel;
+        logic [3:0] alu_func_sel;
+        logic [1:0] rf_wr_data_sel;
+        logic       data_req;
+        logic [1:0] data_byte
+        logic       data_wr;
+        logic       zero_extnd;
+        logic       rf_wr_en;
+    } control_t;
+
+    typedef enum logic[1:0] {
+        ALU     = 2'b00,
+        MEM     = 2'b01,
+        IMM     = 2'b10,
+        PC      = 2'b11
+    } rf_wr_data_src_t;
+
 endpackage

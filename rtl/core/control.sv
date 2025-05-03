@@ -18,7 +18,7 @@ module control (
     output logic        op1_sel_o,
     output logic        op2_sel_o,
     output logic [3:0]  alu_func_o,
-    output logic [1:0]  rf_wr_data_src_o,    //formerly rf_wr_data_o
+    output logic [1:0]  rf_wr_data_src_o,    
     output logic        data_req_o,
     output logic [1:0]  data_byte_o,
     output logic        data_wr_o,

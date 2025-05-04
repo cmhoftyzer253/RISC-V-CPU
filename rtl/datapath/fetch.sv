@@ -3,7 +3,7 @@ module fetch (
     input logic         reset_sync,
 
     //input from program counter
-    input logic [63:0]  pc_i, //pc_i, fetch_pc_i
+    input logic [63:0]  pc_i, 
 
     //request next instruction
     output logic        instr_mem_req_o,

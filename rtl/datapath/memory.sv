@@ -15,7 +15,7 @@ module memory (
     output logic [63:0] data_mem_addr_o,
     output logic [1:0]  data_mem_byte_en_o,
     output logic        data_mem_wr_o,
-    output logic [31:0] data_mem_wr_data_o,
+    output logic [63:0] data_mem_wr_data_o,     
     
     //input from data memory
     input logic [63:0]  mem_rd_data_i,

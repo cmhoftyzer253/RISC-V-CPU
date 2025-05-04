@@ -12,7 +12,7 @@ module decode (
     output logic        b_type_instr_o,
     output logic        u_type_instr_o,
     output logic        j_type_instr_o,
-    output logic [31:0] instr_imm_o
+    output logic [63:0] instr_imm_o
 );
 
     logic [4:0]     rs1;
@@ -21,12 +21,12 @@ module decode (
     logic [4:0]     op;
     logic [6:0]     funct7;
     logic [2:0]     funct3;
-    logic [31:0]    i_type_imm;
-    logic [31:0]    s_type_imm;
-    logic [31:0]    b_type_imm;
-    logic [31:0]    u_type_imm;
-    logic [31:0]    j_type_imm;
-    logic [31:0]    imm;
+    logic [63:0]    i_type_imm;
+    logic [63:0]    s_type_imm;
+    logic [63:0]    b_type_imm;
+    logic [63:0]    u_type_imm;
+    logic [63:0]    j_type_imm;
+    logic [63:0]    imm;
     logic           r_type;
     logic           i_type;
     logic           s_type;
@@ -43,11 +43,11 @@ module decode (
     assign funct7   = instr_i[31:25];
 
     //extract immediate values for each type of instruction - TODO - needs to be 64 bits
-    assign i_type_imm = {{20{instr_i[31]}}, instr_i[31:20]};
-    assign s_type_imm = {{21{instr_i[31]}}, instr_i[30:25], instr_i[11:7]};
-    assign b_type_imm = {{20{instr_i[31]}}, instr_i[7], instr_i[30:25], instr_i[11:8], 1'b0};
-    assign u_type_imm = {instr_i[31:12], 12'h0};
-    assign j_type_imm = {{12{instr_i[31]}}, instr_i[19:12], instr_i[20], instr_i[30:21], 1'b0};
+    assign i_type_imm = {{52{instr_i[31]}}, instr_i[31:20]};
+    assign s_type_imm = {{52{instr_i[31]}}, instr_i[31:25], instr_i[11:7]};
+    assign b_type_imm = {{52{instr_i[31]}}, instr_i[7], instr_i[30:25], instr_i[11:8], 1'b0};
+    assign u_type_imm = {32'h0, instr_i[31:12], 12'h0};
+    assign j_type_imm = {{44{instr_i[31]}}, instr_i[19:12], instr_i[20], instr_i[30:21], 1'b0};
 
     //update instruction type flags based on opcode
     always_comb begin
@@ -71,7 +71,7 @@ module decode (
         endcase
     end
 
-    assign imm =    r_type ? 32'b0 : 
+    assign imm =    r_type ? 64'b0 : 
                     i_type ? i_type_imm :
                     s_type ? s_type_imm : 
                     b_type ? b_type_imm : 

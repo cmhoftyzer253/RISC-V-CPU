@@ -42,7 +42,7 @@ module decode (
     assign funct3   = instr_i[14:12];
     assign funct7   = instr_i[31:25];
 
-    //extract immediate values for each type of instruction
+    //extract immediate values for each type of instruction - TODO - needs to be 64 bits
     assign i_type_imm = {{20{instr_i[31]}}, instr_i[31:20]};
     assign s_type_imm = {{21{instr_i[31]}}, instr_i[30:25], instr_i[11:7]};
     assign b_type_imm = {{20{instr_i[31]}}, instr_i[7], instr_i[30:25], instr_i[11:8], 1'b0};

@@ -1,6 +1,6 @@
 module execute (
-    input logic [63:0],
-    input logic [63:0],
+    input logic [63:0] opr_a_i,
+    input logic [63:0] opr_b_i,
 
     input logic [3:0] op_sel_i,
 

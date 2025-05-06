@@ -11,7 +11,7 @@ module regfile (
     //destination registers - address, write enable, data
     input logic [4:0]   rd_addr_i,
     input logic         wr_en_i,
-    input logic [63:0]  rd_data_i
+    input logic [63:0]  wr_data_i
 );
 
     logic [63:0] regfile [31:1];
@@ -22,7 +22,7 @@ module regfile (
                 regfile[i] <= 64'b0;
             end
         end else if (wr_en_i && rd_addr_i != 5'b0) begin
-            regfile[rd_addr_i] <= rd_data_i;
+            regfile[rd_addr_i] <= wr_data_i;
         end
     end
 

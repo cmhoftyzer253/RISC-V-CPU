@@ -19,14 +19,14 @@ module execute (
         case (op_sel_i)
             OP_ADD : alu_res = opr_a_i + opr_b_i;
             OP_SUB : alu_res = opr_a_i - opr_b_i;
-            OP_SLL : alu_res = opr_a_i << opr_b_i[4:0];                 //Change indexes for 64 bit
-            OP_SRL : alu_res = opr_a_i >> opr_b_i[4:0];                 //Change indexes for 64 bit
-            OP_SRA : alu_res = $signed(opr_a_i) >>> opr_b_i[4:0]        //Change indexes for 64 bit
+            OP_SLL : alu_res = opr_a_i << opr_b_i[5:0];                 
+            OP_SRL : alu_res = opr_a_i >> opr_b_i[5:0];                 
+            OP_SRA : alu_res = $signed(opr_a_i) >>> opr_b_i[4:0]        
             OP_OR : alu_res = opr_a_i | opr_b_i;
             OP_AND : alu_res = opr_a_i & opr_b_i;
             OP_XOR : alu_res = opr_a_i ^ opr_b_i;
-            OP_SLTU : alu_res = {63'h0, opr_a_i < opr_b_i};             //Double Check    
-            OP_SLT : alu_res = {63'h0, twos_compl_a < twos_compl_b};    //Double Check
+            OP_SLTU : alu_res = {63'h0, opr_a_i < opr_b_i};               
+            OP_SLT : alu_res = {63'h0, $signed(opr_a_i) < $signed(opr_b_i)};    
             default : alu_res = 64'h0;
         endcase
     end

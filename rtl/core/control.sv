@@ -17,7 +17,7 @@ module control (
     output logic        pc_sel_o,
     output logic        op1_sel_o,
     output logic        op2_sel_o,
-    output logic [3:0]  alu_func_o,
+    output logic [3:0]  alu_func_sel_o,
     output logic [1:0]  rf_wr_data_src_o,    
     output logic        data_req_o,
     output logic [1:0]  data_byte_o,
@@ -69,14 +69,14 @@ module control (
         i_type_controls.rf_wr_en    = 1'b1;
         i_type_controls.op2_sel     = 1'b1;
         case (i_type_code)
-            ADDI    : i_type_controls.alu_funct_sel = OP_ADD;
-            ANDI    : i_type_controls.alu_funct_sel = OP_AND;
-            ORI     : i_type_controls.alu_funct_sel = OP_OR;
-            SLLI    : i_type_controls.alu_funct_sel = OP_SLL;
-            SRXI    : i_type_controls.alu_funct_sel = instr_funct7_bit5_i ? OP_SRA : OP_SRL;
-            SLTI    : i_type_controls.alu_funct_sel = OP_SLT;
-            SLTIU   : i_type_controls.alu_funct_sel = OP_SLTU;
-            XORI    : i_type_controls.alu_funct_sel = OP_XOR;
+            ADDI    : i_type_controls.alu_func_sel = OP_ADD;
+            ANDI    : i_type_controls.alu_func_sel = OP_AND;
+            ORI     : i_type_controls.alu_func_sel = OP_OR;
+            SLLI    : i_type_controls.alu_func_sel = OP_SLL;
+            SRXI    : i_type_controls.alu_func_sel = instr_funct7_bit5_i ? OP_SRA : OP_SRL;
+            SLTI    : i_type_controls.alu_func_sel = OP_SLT;
+            SLTIU   : i_type_controls.alu_func_sel = OP_SLTU;
+            XORI    : i_type_controls.alu_func_sel = OP_XOR;
             LB      : {i_type_controls.data_req,
                         i_type_controls.data_byte,
                         i_type_controls.rf_wr_data_sel} = {1'b1, BYTE, MEM};
@@ -106,10 +106,11 @@ module control (
 
     // S type instruction
     always_comb begin
-        s_type_controls             = '0;
-        s_type_controls.data_req    = 1'b1;
-        s_type_controls.data_wr     = 1'b1;
-        s_type_controls.op2_sel     = 1'b1;
+        s_type_controls                 = '0;
+        s_type_controls.data_req        = 1'b1;
+        s_type_controls.data_wr         = 1'b1;
+        s_type_controls.op2_sel         = 1'b1;
+        s_type_controls.alu_func_sel    = OP_ADD;       TODO - check
         case (instr_funct3_i)
             SB      : s_type_controls.data_byte = BYTE;
             SH      : s_type_controls.data_byte = HALF_WORD;
@@ -119,7 +120,7 @@ module control (
     end
 
     // B type instruction
-    always_comb begin                               //TODO - double check
+    always_comb begin                          
         b_type_controls                 = '0;
         b_type_controls.alu_func_sel    = OP_ADD;       
         b_type_controls.op1_sel         = 1'b1;         
@@ -131,7 +132,9 @@ module control (
         u_type_controls             = '0;
         u_type_controls.rf_wr_en    = 1'b1;
         case (instr_opcode_i)
-            AUIPC   : {u_type_controls.op2sel, u_type_controls.op1sel} = {1'b1, 1'b1}
+            AUIPC   : {u_type_controls.op2sel, 
+                        u_type_controls.op1sel, 
+                        u_type_controls.alu_func_sel} = {1'b1, 1'b1, OP_ADD};
             LUI     : u_type_controls.rf_wr_data_src = IMM;
             default : u_type_controls = '0;
         endcase
@@ -145,6 +148,7 @@ module control (
         j_type_controls.op1_sel         = 1'b1;
         j_type_controls.op2_sel         = 1'b1;
         j_type_controls.pc_sel          = 1'b1;
+        j_type_controls.alu_func_sel    = OP_ADD;
     end
 
     assign controls =   is_r_type_i         ? r_type_controls : 
@@ -156,15 +160,15 @@ module control (
                                             '0;
 
     // output assigments
-    assign pc_sel_o     = controls.pc_sel;
-    assign op1_sel_o    = controls.op1_sel;
-    assign op2_sel_o    = controls.op2_sel;
-    assign alu_func_o   = controls.alu_func_sel;
-    assign rf_wr_en_o   = controls.rf_wr_en;
-    assign data_req_o   = controls.data_req;
-    assign data_byte_o  = controls.data_byte;
-    assign data_wr_o    = controls.data_wr;
-    assign zero_extnd_o = controls.zero_extnd;
-    assign rf_wr_data_o = controls.rf_wr_data_src;
+    assign pc_sel_o             = controls.pc_sel;
+    assign op1_sel_o            = controls.op1_sel;
+    assign op2_sel_o            = controls.op2_sel;
+    assign alu_func_sel_o       = controls.alu_func_sel;
+    assign rf_wr_en_o           = controls.rf_wr_en;
+    assign data_req_o           = controls.data_req;
+    assign data_byte_o          = controls.data_byte;
+    assign data_wr_o            = controls.data_wr;
+    assign zero_extnd_o         = controls.zero_extnd;
+    assign rf_wr_data_src_o     = controls.rf_wr_data_src;
 
 endmodule

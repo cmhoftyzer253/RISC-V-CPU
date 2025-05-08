@@ -2,7 +2,7 @@ module execute (
     input logic [63:0] opr_a_i,
     input logic [63:0] opr_b_i,
 
-    input logic [3:0] op_sel_i,
+    input logic [3:0] alu_func_i,
 
     output logic [63:0] alu_res_o
 );
@@ -17,7 +17,7 @@ module execute (
     assign twos_compl_b = opr_b_i[63] ? ~opr_b_i + 64'h1 : opr_b_i;
 
     always_comb begin
-        case (op_sel_i)
+        case (alu_func_i)
             OP_ADD : alu_res = opr_a_i + opr_b_i;
             OP_SUB : alu_res = opr_a_i - opr_b_i;
             OP_SLL : alu_res = opr_a_i << opr_b_i[5:0];                 

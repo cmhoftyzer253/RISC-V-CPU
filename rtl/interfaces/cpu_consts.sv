@@ -88,7 +88,7 @@ package cpu_consts;
         logic       op1_sel;
         logic       op2_sel;
         logic [3:0] alu_func_sel;
-        logic [1:0] rf_wr_data_sel;
+        logic [1:0] rf_wr_data_src;
         logic       data_req;
         logic [1:0] data_byte
         logic       data_wr;

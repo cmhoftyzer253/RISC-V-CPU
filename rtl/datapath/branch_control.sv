@@ -9,6 +9,8 @@ module branch_control (
     output logic branch_taken_o
 );
 
+    import cpu_consts::*;
+
     logic [31:0] twos_compl_a;
     logic [31:0] twos_compl_b;
 

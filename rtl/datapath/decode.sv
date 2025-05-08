@@ -15,6 +15,8 @@ module decode (
     output logic [63:0] instr_imm_o
 );
 
+    import cpu_consts::*;
+
     logic [4:0]     rs1;
     logic [4:0]     rs2;
     logic [4:0]     rd;

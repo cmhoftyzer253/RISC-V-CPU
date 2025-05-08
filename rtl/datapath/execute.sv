@@ -6,6 +6,7 @@ module execute (
 
     output logic [63:0] alu_res_o
 );
+    import cpu_consts::*;
 
     logic [63:0] twos_compl_a;
     logic [63:0] twos_compl_b;

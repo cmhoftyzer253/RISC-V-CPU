@@ -1,5 +1,5 @@
 module core #(
-    parameter RESET_PC = 64'h0000_0000;     //TODO - placeholder value
+    parameter RESET_PC = 64'h0000_0000;     //TODO - placeholder value for now
     )(
     input logic clk,
     input logic reset,
@@ -21,60 +21,41 @@ module core #(
 
     import cpu_consts::*;
 
-    //internal signals
-
-    //pc
-    logic [63:0] nxt_seq_pc;
-    logic [63:0] pc_q;
-    logic [63:0] nxt_pc;
-
-    //instruction
-    logic [31:0] imem_dec_instr;
-
-    //decode signals
-    logic [4:0]  dec_rf_rs1;
-    logic [4:0]  dec_rf_rs2;
-    logic [4:0]  dec_rf_rd;
-    logic [6:0]  dec_ctl_opcode;
-    logic [2:0]  dec_ctl_funct3;
-    logic [6:0]  dec_ctl_funct7;
-    logic        r_type_instr;
-    logic        i_type_instr;
-    logic        s_type_instr;
-    logic        b_type_instr;
-    logic        u_type_instr;
-    logic        j_type_instr;
-    logic [63:0] dec_instr_imm;
-
-    //rf mux output
-    logic [63:0] rf_wr_data;
-
-    //rf output
-    logic [63:0] rf_rs1_data;
-    logic [63:0] rf_rs2_data;
-
-    //control unit output
-    logic       ctl_pc_sel;
-    logic       ctl_op1_sel;
-    logic       ctl_op2_sel;
-    logic [3:0] ctl_alu_func_sel;
-    logic [1:0] ctl_rf_wr_data_src;
-    logic       ctl_data_req;
-    logic [1:0] ctl_data_byte;
-    logic       ctl_data_wr;
-    logic       ctl_zero_extnd;
-    logic       ctl_rf_wr_en;
-
-    //branch control output
-    logic branch_taken;
-
-    //ALU 
-    logic [63:0] alu_opr_a;
-    logic [63:0] alu_opr_b;
-    logic [63:0] alu_res;
-
-    //data memory output
-    logic [63:0] data_mem_rd_data_o;
+    logic [63:0]    nxt_seq_pc;            //pc
+    logic [63:0]    pc_q;
+    logic [63:0]    nxt_pc;
+    logic [31:0]    imem_dec_instr;        //current instruction
+    logic [4:0]     dec_rf_rs1;            //decoded signals
+    logic [4:0]     dec_rf_rs2;
+    logic [4:0]     dec_rf_rd;
+    logic [6:0]     dec_ctl_opcode;
+    logic [2:0]     dec_ctl_funct3;
+    logic [6:0]     dec_ctl_funct7;
+    logic           r_type_instr;
+    logic           i_type_instr;
+    logic           s_type_instr;
+    logic           b_type_instr;
+    logic           u_type_instr;
+    logic           j_type_instr;
+    logic [63:0]    dec_instr_imm;
+    logic [63:0]    rf_wr_data;                //rf input - from mux
+    logic [63:0]    rf_rs1_data;               //rf outputs
+    logic [63:0]    rf_rs2_data;
+    logic           ctl_pc_sel;                 //control unit outputs
+    logic           ctl_op1_sel;
+    logic           ctl_op2_sel;
+    logic [3:0]     ctl_alu_func_sel;
+    logic [1:0]     ctl_rf_wr_data_src;
+    logic           ctl_data_req;
+    logic [1:0]     ctl_data_byte;
+    logic           ctl_data_wr;
+    logic           ctl_zero_extnd;
+    logic           ctl_rf_wr_en;
+    logic           branch_taken;              //branch control output
+    logic [63:0]    alu_opr_a;
+    logic [63:0]    alu_opr_b;
+    logic [63:0]    alu_res;                   //ALU signals
+    logic [63:0]    data_mem_rd_data_o;        //data memory output
 
     //captures first cycle out of reset
     always_ff @(posedge clk or posedge reset) begin
@@ -131,7 +112,6 @@ module core #(
 
     //register file
     //select rf input data
-
     regfile u_regfile (
         .clk            (clk),
         .reset          (reset),

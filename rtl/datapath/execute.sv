@@ -16,7 +16,7 @@ module execute (
     assign twos_compl_a = opr_a_i[63] ? ~opr_a_i + 64'h1 : opr_a_i;
     assign twos_compl_b = opr_b_i[63] ? ~opr_b_i + 64'h1 : opr_b_i;
 
-    always_comb begin
+    always_comb begin                                                                   
         case (alu_func_i)
             OP_ADD : alu_res = opr_a_i + opr_b_i;
             OP_SUB : alu_res = opr_a_i - opr_b_i;

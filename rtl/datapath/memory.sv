@@ -1,6 +1,6 @@
 module memory (
     input clk,
-    input reset_sync,
+    input reset,
 
     //read/write request from datapath
     input logic         data_req_i,

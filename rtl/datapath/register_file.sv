@@ -1,6 +1,6 @@
 module regfile (
     input logic clk,
-    input logic reset_sync,
+    input logic reset,
 
     //source registers - addresses and data
     input logic [4:0]   rs1_addr_i,
@@ -16,8 +16,8 @@ module regfile (
 
     logic [63:0] regfile [31:1];
 
-    always_ff @(posedge clk or posedge reset_sync) begin
-        if (rst_sync) begin
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
             for (int i=1; i<32; i++) begin
                 regfile[i] <= 64'b0;
             end

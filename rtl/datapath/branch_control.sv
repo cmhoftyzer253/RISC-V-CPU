@@ -11,20 +11,14 @@ module branch_control (
 
     import cpu_consts::*;
 
-    logic [31:0] twos_compl_a;
-    logic [31:0] twos_compl_b;
-
     logic branch_taken;
 
-    assign twos_compl_a = opr_a_i[63] ? ~opr_a_i + 63'h1 : opr_a_i;
-    assign twos_compl_b = opr_b_i[63] ? ~opr_b_i + 63'h1 : opr_b_i;
-
-    always_comb begin
+    always_comb begin                                                                   
         case (instr_funct3_i)
             BEQ     : branch_taken = (opr_a_i == opr_b_i);
             BNE     : branch_taken = (opr_a_i != opr_b_i);
-            BLT     : branch_taken = (twos_compl_a < twos_compl_b);
-            BGE     : branch_taken = (twos_compl_a >= twos_compl_b);
+            BLT     : branch_taken = ($signed(opr_a_i) < $signed(opr_b_i));
+            BGE     : branch_taken = ($signed(opr_a_i) >= $signed(opr_b_i));
             BLTU    : branch_taken = (opr_a_i < opr_b_i);
             BGEU    : branch_taken = (opr_a_i >= opr_b_i);
             default : branch_taken = 1'b0;

@@ -122,9 +122,9 @@ module control (
     // B type instruction
     always_comb begin                          
         b_type_controls                 = '0;
-        b_type_controls.alu_func_sel    = OP_ADD;       
-        b_type_controls.op1_sel         = 1'b1;         
-        b_type_controls.op2_sel         = 1'b1;
+        b_type_controls.alu_func_sel    = OP_ADD;        
+        b_type_controls.op1_sel         = 1'b1;        
+        b_type_controls.op2_sel         = 1'b1;     
     end
 
     // U type instruction

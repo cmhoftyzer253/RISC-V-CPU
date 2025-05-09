@@ -73,6 +73,9 @@ module core #(
     logic [63:0] alu_opr_b;
     logic [63:0] alu_res;
 
+    //data memory output
+    logic [63:0] data_mem_rd_data_o;
+
     //captures first cycle out of reset
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -128,11 +131,6 @@ module core #(
 
     //register file
     //select rf input data
-    assign rf_wr_data = (ctl_rf_wr_data_src == ALU) ? alu_res :
-                        (ctl_rf_wr_data_src == MEM) ? data_mem_rd_data :
-                        (ctl_rf_wr_data_src == IMM) ? dec_instr_imm :
-                        (ctl_rf_wr_data_src == PC)  ? nxt_seq_pc :
-                                                  64'h0;
 
     regfile u_regfile (
         .clk            (clk),
@@ -205,7 +203,17 @@ module core #(
         .data_mem_wr_o      (data_mem_wr_o),
         .data_mem_wr_data_o (data_mem_wr_data_o),
         .mem_rd_data_i      (data_mem_rd_data_i),
-        .data_mem_rd_data_o (data_mem_rd_data_o),
+        .data_mem_rd_data_o (data_mem_rd_data),
+    );
+
+    //writeback
+    writeback u_writeback (
+        .alu_res_i          (alu_res),
+        .data_mem_rd_i      (data_mem_rd_data),
+        .instr_imm_i        (dec_instr_imm),
+        .pc_val_i           (nxt_seq_pc),
+        .rf_wr_data_src_i   (ctl_rf_wr_data_src),
+        .rf_wr_data_o       (rf_wr_data),
     );
 
 

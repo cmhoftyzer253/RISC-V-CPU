@@ -1,3 +1,5 @@
+import cpu_consts::*;
+
 module memory (
     input clk,
     input reset,
@@ -28,11 +30,8 @@ module memory (
     output logic [4:0]  exc_code_o
 );
 
-    import cpu_consts::*;
-
     //Restrict data memory to 512Kb for now
     //Later - write AXI interface module so I can expand to DDR3 memory
-    //TODO - add datamask for invalid addresses
     localparam int MEM_SIZE = 512*1024;
 
     logic [63:0]    data_mem_addr_row;
@@ -64,24 +63,6 @@ module memory (
 
     assign data_mem_req = data_req_i & ~oob;
     assign data_mem_wr  = data_wr_i & ~oob;
-
-    //TODO - move this to WB
-    /*
-    logic [63:0] rd_data_sign_extnd;
-    logic [63:0] rd_data_zero_extnd;
-
-    assign rd_data_sign_extnd = (data_byte_en_i == BYTE)        ? {{56{mem_rd_data_i[7]}}, mem_rd_data_i[7:0]} : 
-                                (data_byte_en_i == HALF_WORD)   ? {{48{mem_rd_data_i[15]}}, mem_rd_data_i[15:0]} : 
-                                (data_byte_en_i == WORD)        ? {{32{mem_rd_data_i[31]}}, mem_rd_data_i[31:0]} : 
-                                                                    mem_rd_data_i;
-
-    assign rd_data_zero_extnd = (data_byte_en_i == BYTE)        ? {{56{1'b0}}, mem_rd_data_i[7:0]} : 
-                                (data_byte_en_i == HALF_WORD)   ? {{48{1'b0}}, mem_rd_data_i[15:0]} : 
-                                (data_byte_en_i == WORD)        ? {{32{1'b0}}, mem_rd_data_i[31:0]}: 
-                                                                    mem_rd_data_i;
-
-    assign data_mem_rd_data = data_zero_extnd_i ? rd_data_zero_extnd : rd_data_sign_extnd;
-    */
 
     //assign outputs
     assign data_mem_req_o       = data_mem_req;

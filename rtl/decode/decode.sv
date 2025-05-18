@@ -1,3 +1,5 @@
+import cpu_consts::*;
+
 module decode (
     input logic [31:0]  instr_i,
     output logic [4:0]  rs1_o,
@@ -14,8 +16,6 @@ module decode (
     output logic        j_type_instr_o,
     output logic [63:0] instr_imm_o
 );
-
-    import cpu_consts::*;
 
     logic [4:0]     rs1;
     logic [4:0]     rs2;

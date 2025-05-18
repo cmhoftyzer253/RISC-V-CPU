@@ -1,3 +1,5 @@
+import cpu_consts::*;
+
 module writeback (
     input logic [63:0] alu_res_i,
     input logic [63:0] data_mem_rd_i,
@@ -13,7 +15,6 @@ module writeback (
 
     output logic [63:0] rf_wr_data_o
 );
-    import cpu_consts::*;
 
     logic [63:0] data_mem_rd;
     logic [63:0] data_mem_rd_shift;

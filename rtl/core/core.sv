@@ -1,3 +1,5 @@
+import cpu_consts::*;
+
 module core #(
     parameter RESET_PC = 64'h0000_0000;     //TODO - placeholder value for now
     )(
@@ -18,8 +20,6 @@ module core #(
     input logic [63:0]  data_mem_rd_data_i
 
 );
-
-    import cpu_consts::*;
 
     logic [63:0]    nxt_seq_pc;            //pc
     logic [63:0]    pc_q;

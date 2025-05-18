@@ -1,3 +1,5 @@
+import cpu_consts::*;
+
 module control (
 
     //instruction types
@@ -26,8 +28,6 @@ module control (
     output logic        rf_wr_en_o
 
 );
-
-    import cpu_consts::*;
 
     logic [3:0] instr_code;
 

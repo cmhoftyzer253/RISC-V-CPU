@@ -56,6 +56,9 @@ module core #(
     logic [63:0]    alu_opr_b;
     logic [63:0]    alu_res;                   //ALU signals
     logic [63:0]    data_mem_rd_data_o;        //data memory output
+    logic [2:0]     data_mem_row_idx;          //row index from load read
+    logic           exc_valid;                 //exception flag
+    logic [4:0]     exc_code;                  //code associated with exception flag
 
     //captures first cycle out of reset
     always_ff @(posedge clk or posedge reset) begin
@@ -166,24 +169,24 @@ module core #(
         .opr_a_i    (alu_opr_a),
         .opr_b_i    (alu_opr_b),
         .op_sel_i   (ctl_alu_func_sel),
-        .alu_res_o  (alu_res),
+        .alu_res_o  (alu_res)
     );
 
     //MEM
     memory u_memory (
         .data_req_i         (ctl_data_req),
         .data_addr_i        (alu_res),
-        .data_byte_en_i     (ctl_data_byte),
         .data_wr_i          (ctl_data_wr),
         .data_wr_data_i     (ctl_data_wr),
-        .data_zero_extnd_i  (ctl_zero_extnd),
         .data_mem_req_o     (data_mem_req_o),
         .data_mem_addr_o    (data_mem_addr_o),
-        .data_mem_byte_en_o (data_mem_byte_en_o),
         .data_mem_wr_o      (data_mem_wr_o),
         .data_mem_wr_data_o (data_mem_wr_data_o),
         .mem_rd_data_i      (data_mem_rd_data_i),
         .data_mem_rd_data_o (data_mem_rd_data),
+        .data_mem_row_idx_o (data_mem_row_idx),
+        .exc_valid_o        (exc_valid),
+        .exc_code_o         (exc_code)
     );
 
     //writeback
@@ -193,8 +196,10 @@ module core #(
         .instr_imm_i        (dec_instr_imm),
         .pc_val_i           (nxt_seq_pc),
         .rf_wr_data_src_i   (ctl_rf_wr_data_src),
-        .rf_wr_data_o       (rf_wr_data),
+        .data_byte_en_i     (data_mem_byte_en_o),
+        .data_zero_exntd_i  (ctl_zero_extnd),
+        .data_mem_row_idx_i (data_mem_row_idx),
+        .rf_wr_data_o       (rf_wr_data)
     );
-
 
 endmodule

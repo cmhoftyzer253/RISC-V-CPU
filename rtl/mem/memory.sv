@@ -1,16 +1,12 @@
 import cpu_consts::*;
 
 module memory (
-    input clk,
-    input reset,
 
     //load/store request from datapath
     input logic         data_req_i,
     input logic [63:0]  data_addr_i,
-    input logic [1:0]   data_byte_en_i,         //TODO - move to WB input
     input logic         data_wr_i,          
     input logic [63:0]  data_wr_data_i,
-    input logic         data_zero_extnd_i,      //TODO - move to WB input
 
     //send load/store request to data memory
     output logic        data_mem_req_o,

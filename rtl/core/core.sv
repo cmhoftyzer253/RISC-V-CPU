@@ -1,7 +1,7 @@
 import cpu_consts::*;
 
 module core #(
-    parameter RESET_PC = 64'h0000_0000;     //TODO - placeholder value for now
+    parameter logic [63:0] RESET_PC = 64'h0000_0000      //TODO - placeholder value for now
     )(
     input logic clk,
     input logic reset,
@@ -9,7 +9,7 @@ module core #(
     //instruction memory interface
     output logic        instr_mem_req_o,
     output logic [63:0] instr_mem_addr_o,
-    input logic [63:0]  fetch_instr_i,
+    input logic [31:0]  fetch_instr_i,
 
     //data memory interface
     output logic        data_mem_req_o,
@@ -21,11 +21,12 @@ module core #(
 
 );
 
-    logic [63:0]    nxt_seq_pc;            //pc
+    logic           reset_seen_q;               //reset seen
+    logic [63:0]    nxt_seq_pc;                 //pc
     logic [63:0]    pc_q;
     logic [63:0]    nxt_pc;
-    logic [31:0]    imem_dec_instr;        //current instruction
-    logic [4:0]     dec_rf_rs1;            //decoded signals
+    logic [31:0]    imem_dec_instr;             //current instruction
+    logic [4:0]     dec_rf_rs1;                 //decoded signals
     logic [4:0]     dec_rf_rs2;
     logic [4:0]     dec_rf_rd;
     logic [6:0]     dec_ctl_opcode;
@@ -38,8 +39,8 @@ module core #(
     logic           u_type_instr;
     logic           j_type_instr;
     logic [63:0]    dec_instr_imm;
-    logic [63:0]    rf_wr_data;                //rf input - from mux
-    logic [63:0]    rf_rs1_data;               //rf outputs
+    logic [63:0]    rf_wr_data;                 //rf input - from mux
+    logic [63:0]    rf_rs1_data;                //rf outputs
     logic [63:0]    rf_rs2_data;
     logic           ctl_pc_sel;                 //control unit outputs
     logic           ctl_op1_sel;
@@ -51,14 +52,14 @@ module core #(
     logic           ctl_data_wr;
     logic           ctl_zero_extnd;
     logic           ctl_rf_wr_en;
-    logic           branch_taken;              //branch control output
+    logic           branch_taken;               //branch control output
     logic [63:0]    alu_opr_a;
     logic [63:0]    alu_opr_b;
-    logic [63:0]    alu_res;                   //ALU signals
-    logic [63:0]    data_mem_rd_data_o;        //data memory output
-    logic [2:0]     data_mem_row_idx;          //row index from load read
-    logic           exc_valid;                 //exception flag
-    logic [4:0]     exc_code;                  //code associated with exception flag
+    logic [63:0]    alu_res;                    //ALU signals
+    logic [63:0]    data_mem_rd_data;         //data memory output
+    logic [2:0]     data_mem_row_idx;           //row index from load read
+    logic           exc_valid;                  //exception flag
+    logic [4:0]     exc_code;                   //code associated with exception flag
 
     //captures first cycle out of reset
     always_ff @(posedge clk or posedge reset) begin
@@ -77,18 +78,19 @@ module core #(
     //pc register
     //reset_seen_q ensures pc updated starting on second cycle out of reset
     //so instruction at RESET_PC can be on first cycle out of reset
-    always_ff(@posedge clk or posedge reset) begin
+    always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             pc_q <= RESET_PC;
-        end else (reset_seen_q) begin
+        end else if (reset_seen_q) begin
             pc_q <= nxt_pc;
         end
     end
 
     //fetch
     fetch u_fetch (
-        .clk                (clk), 
+        .clk                (clk),
         .reset              (reset),
+        .pc_i               (pc_q),
         .instr_mem_req_o    (instr_mem_req_o),
         .instr_mem_addr_o   (instr_mem_addr_o),
         .fetch_instr_i      (fetch_instr_i),
@@ -97,9 +99,9 @@ module core #(
 
     //decode
     decode u_decode (
-        .isntr_i        (imem_dec_instr),
+        .instr_i        (imem_dec_instr),
         .rs1_o          (dec_rf_rs1),
-        .rs2_o          (dec_rf_rs1),
+        .rs2_o          (dec_rf_rs2),
         .rd_o           (dec_rf_rd),
         .op_o           (dec_ctl_opcode),
         .funct3_o       (dec_ctl_funct3),
@@ -110,7 +112,7 @@ module core #(
         .b_type_instr_o (b_type_instr),
         .u_type_instr_o (u_type_instr),
         .j_type_instr_o (j_type_instr),
-        .instr_imm      (dec_instr_imm)
+        .instr_imm_o    (dec_instr_imm)
     );
 
     //register file
@@ -176,10 +178,12 @@ module core #(
     memory u_memory (
         .data_req_i         (ctl_data_req),
         .data_addr_i        (alu_res),
+        .data_byte_en_i     (ctl_data_byte),
         .data_wr_i          (ctl_data_wr),
-        .data_wr_data_i     (ctl_data_wr),
+        .data_wr_data_i     (rf_rs2_data),
         .data_mem_req_o     (data_mem_req_o),
         .data_mem_addr_o    (data_mem_addr_o),
+        .data_byte_en_o     (data_mem_byte_en_o),
         .data_mem_wr_o      (data_mem_wr_o),
         .data_mem_wr_data_o (data_mem_wr_data_o),
         .mem_rd_data_i      (data_mem_rd_data_i),
@@ -196,8 +200,8 @@ module core #(
         .instr_imm_i        (dec_instr_imm),
         .pc_val_i           (nxt_seq_pc),
         .rf_wr_data_src_i   (ctl_rf_wr_data_src),
-        .data_byte_en_i     (data_mem_byte_en_o),
-        .data_zero_exntd_i  (ctl_zero_extnd),
+        .data_byte_en_i     (ctl_data_byte),
+        .data_zero_extnd_i  (ctl_zero_extnd),
         .data_mem_row_idx_i (data_mem_row_idx),
         .rf_wr_data_o       (rf_wr_data)
     );

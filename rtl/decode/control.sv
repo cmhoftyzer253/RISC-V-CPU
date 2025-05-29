@@ -89,11 +89,11 @@ module control (
             LBU     : {i_type_controls.data_req, 
                         i_type_controls.data_byte,
                         i_type_controls.rf_wr_data_sel,
-                        i_type_controls.data_extnd} = {1'b1, BYTE, MEM, 1'b1};
+                        i_type_controls.zero_extnd} = {1'b1, BYTE, MEM, 1'b1};
             LHU     : {i_type_controls.data_req, 
                         i_type_controls.data_byte,
                         i_type_controls.rf_wr_data_sel,
-                        i_type_controls.data_extnd} = {1'b1, HALF_WORD, MEM, 1'b1};
+                        i_type_controls.zero_extnd} = {1'b1, HALF_WORD, MEM, 1'b1};
             default : i_type_controls = '0;
         endcase
         //JALR instruction

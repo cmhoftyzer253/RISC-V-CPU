@@ -1,11 +1,13 @@
 module fetch (
 
     //input from program counter
+    input logic         clk,
+    input logic         reset,
     input logic [63:0]  pc_i, 
 
     //request next instruction
     output logic        instr_mem_req_o,
-    output logic [31:0] instr_mem_addr_o
+    output logic [63:0] instr_mem_addr_o,
 
     //receive next instruction
     input logic [31:0]  fetch_instr_i,   

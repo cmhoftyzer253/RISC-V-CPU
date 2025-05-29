@@ -39,7 +39,7 @@ package cpu_consts;
     // I type instructions
     // {opcode[4], funct3}
     typedef enum logic[3:0] {
-        LB = 4'h0;
+        LB = 4'h0,
         LBU = 4'h4,
         LH = 4'h1,
         LHU = 4'h5,
@@ -51,7 +51,7 @@ package cpu_consts;
         SRXI = 4'hD,    //covers SRLI & SRAI
         SLTI = 4'hA,
         SLTIU = 4'hB,
-        XORI = 4'hC;
+        XORI = 4'hC
     } i_type_t;
 
     //  S type instructions
@@ -88,9 +88,9 @@ package cpu_consts;
         logic       op1_sel;
         logic       op2_sel;
         logic [3:0] alu_func_sel;
-        logic [1:0] rf_wr_data_src;
+        logic [1:0] rf_wr_data_sel;
         logic       data_req;
-        logic [1:0] data_byte
+        logic [1:0] data_byte;
         logic       data_wr;
         logic       zero_extnd;
         logic       rf_wr_en;

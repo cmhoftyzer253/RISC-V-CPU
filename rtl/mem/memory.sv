@@ -5,12 +5,14 @@ module memory (
     //load/store request from datapath
     input logic         data_req_i,
     input logic [63:0]  data_addr_i,
+    input logic [1:0]   data_byte_en_i,
     input logic         data_wr_i,          
     input logic [63:0]  data_wr_data_i,
 
     //send load/store request to data memory
     output logic        data_mem_req_o,
     output logic [63:0] data_mem_addr_o,
+    output logic [1:0]  data_byte_en_o,
     output logic        data_mem_wr_o,
     output logic [63:0] data_mem_wr_data_o,     
     
@@ -65,6 +67,7 @@ module memory (
     assign data_mem_addr_o      = data_mem_addr_row;
     assign data_mem_row_idx_o   = data_mem_row_idx;
     assign data_mem_wr_o        = data_mem_wr;
+    assign data_mem_byte_en_o   = data_byte_en_i;
     assign data_mem_wr_data_o   = data_wr_data_i;
     assign data_mem_rd_data_o   = mem_rd_data_i;
     assign exc_valid_o          = exc_valid;

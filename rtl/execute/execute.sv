@@ -23,7 +23,7 @@ module execute (
             OP_SUB : alu_res = opr_a_i - opr_b_i;
             OP_SLL : alu_res = opr_a_i << opr_b_i[5:0];                 
             OP_SRL : alu_res = opr_a_i >> opr_b_i[5:0];                 
-            OP_SRA : alu_res = $signed(opr_a_i) >>> opr_b_i[4:0]        
+            OP_SRA : alu_res = $signed(opr_a_i) >>> opr_b_i[4:0];        
             OP_OR : alu_res = opr_a_i | opr_b_i;
             OP_AND : alu_res = opr_a_i & opr_b_i;
             OP_XOR : alu_res = opr_a_i ^ opr_b_i;

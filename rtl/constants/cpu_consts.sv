@@ -13,6 +13,19 @@ package cpu_consts;
         J_TYPE      = 7'h6F
     } riscv_op_t;
 
+    typedef enum logic [3:0] {
+        OP_ADD,
+        OP_SUB,
+        OP_SLL,
+        OP_SRL,
+        OP_SRA,
+        OP_OR,
+        OP_AND,
+        OP_XOR,
+        OP_SLTU,
+        OP_SLT
+    } alu_op_t;
+
     //memory access width
     typedef enum logic[1:0] {
         BYTE        = 2'b00,
@@ -30,7 +43,7 @@ package cpu_consts;
         SLL     = 4'h1,
         SLT     = 4'h2,
         SLTU    = 4'h3,
-        STA     = 4'hD,
+        SRA     = 4'hD,
         SRL     = 4'h5,
         SUB     = 4'h8,
         XOR     = 4'h4
@@ -62,7 +75,7 @@ package cpu_consts;
     } s_type_t;
 
     // B type instructions
-    typedef enum logic[6:0] {
+    typedef enum logic[2:0] {
         BEQ     = 3'h0,
         BNE     = 3'h1,
         BLT     = 3'h4,

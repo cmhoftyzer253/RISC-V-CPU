@@ -30,7 +30,6 @@ module control (
 );
 
     logic [3:0] instr_code;
-
     logic [3:0] r_type_code;
     logic [3:0] i_type_code;
 

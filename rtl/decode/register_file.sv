@@ -1,4 +1,4 @@
-module regfile (
+module register_file (
     input logic clk,
     input logic reset,
 

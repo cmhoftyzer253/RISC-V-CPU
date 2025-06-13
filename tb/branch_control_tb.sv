@@ -30,15 +30,28 @@ module tb_branch_control;
     test_vect_t test_vect[0:17] = '{        
         '{};    //BEQ
         '{};    //BEQ
+        '{};    //BEQ
 
         '{};    //BNE
         '{};    //BNE
+        '{};    //BNE
 
         '{};    //BLT 
         '{};    //BLT 
         '{};    //BLT 
         '{};    //BLT 
+        '{};    //BLT 
+        '{};    //BLT 
+        '{};    //BLT 
+        '{};    //BLT 
+        '{};    //BLT 
+        '{};    //BLT 
 
+        '{};    //BGE
+        '{};    //BGE
+        '{};    //BGE
+        '{};    //BGE
+        '{};    //BGE
         '{};    //BGE
         '{};    //BGE
         '{};    //BGE
@@ -47,7 +60,14 @@ module tb_branch_control;
 
         '{};    //BLTU
         '{};    //BLTU
+        '{};    //BLTU
+        '{};    //BLTU
+        '{};    //BLTU
+        '{};    //BLTU
 
+        '{};    //BGEU
+        '{};    //BGEU
+        '{};    //BGEU
         '{};    //BGEU
         '{};    //BGEU
         '{};    //BGEU

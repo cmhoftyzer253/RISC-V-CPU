@@ -66,47 +66,823 @@ module tb_control;
         logic [1:0] data_byte_expected;
         logic       data_wr_expected;
         logic       zero_extnd_expected;
-        logic       rf_wr_en_expected;
     } test_vect_t;
 
     //testcases - TODO
     test_vect_t test_vect[0:35] = '{
-        '{};    //ADD
-        '{};    //AND
-        '{};    //OR
-        '{};    //SLL
-        '{};    //SLT
-        '{};    //SLTU
-        '{};    //SRA
-        '{};    //SRL
-        '{};    //SUB
-        '{};    //XOR
-        '{};    //ADDI
-        '{};    //ANDI
-        '{};    //ORI
-        '{};    //SLLI
-        '{};    //SRXI
-        '{};    //SLTI
-        '{};    //SLTIU
-        '{};    //XORI
-        '{};    //LB
-        '{};    //LH
-        '{};    //LW
-        '{};    //LBU
-        '{};    //LHU
-        '{};    //JALR
-        '{};    //SB
-        '{};    //SH
-        '{};    //SW
-        '{};    //BEQ
-        '{};    //BNE
-        '{};    //BLT
-        '{};    //BGE
-        '{};    //BLTU
-        '{};    //BGEU
-        '{};    //AUIPC
-        '{};    //LUI
-        '{};    //JAL
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b000,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //ADD
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b111,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_AND,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //AND
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b110,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_OR,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //OR
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b001,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_SLL,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SLL
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b010,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_SLT,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SLT
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b011,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_SLTU,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SLTU
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b101,
+            instr_funct7_bit5 : 1'b1,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_SRA,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SRA
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b101,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_SRL,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SRL
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b000,
+            instr_funct7_bit5 : 1'b1,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_SUB,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SUB
+
+        '{
+            is_r_type : 1'b1,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b100,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : R_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_XOR,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //XOR
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b000,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //ADDI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b111,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_AND,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //ANDI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b110,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_OR,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //ORI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b001,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_SLL,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SLLI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b101,
+            instr_funct7_bit5 : 1'b1,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_SRAI,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SRAI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b101,
+            instr_funct7_bit5 : 1'b0,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_SRLI,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SRLI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b010,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_SLT,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SLTI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b011,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_SLTU,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //SLTIU
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b100,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_XOR,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //XORI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b000,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_0,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : MEM,
+            data_req_expected : 1'b1,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //LB
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b001,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_0,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : MEM,
+            data_req_expected : 1'b1,
+            data_byte_expected : 2'b01,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //LH
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b010,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_0,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : MEM,
+            data_req_expected : 1'b1,
+            data_byte_expected : 2'b10,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //LW
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b100,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_0,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : MEM,
+            data_req_expected : 1'b1,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b1,
+            rf_wr_en_expected : 1'b0
+        };    //LBU
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b101,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_0,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : MEM,
+            data_req_expected : 1'b1,
+            data_byte_expected : 2'b01,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b1,
+            rf_wr_en_expected : 1'b0
+        };    //LHU
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b1,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b000,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : I_TYPE_2,
+            pc_sel_expected : 1'b1,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : PC,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //JALR
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b1,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b000,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : S_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b1,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b1,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //SB
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b1,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b001,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : S_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b1,
+            data_byte_expected : 2'b01,
+            data_wr_expected : 1'b1,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //SH
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b1,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b010,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : S_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b1,
+            data_byte_expected : 2'b10,
+            data_wr_expected : 1'b1,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //SW
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b1,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b000,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : B_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b1,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //BEQ
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b1,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b001,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : B_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b1,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //BNE
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b1,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b100,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : B_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b1,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //BLT
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b1,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b101,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : B_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b1,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //BGE
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b1,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b110,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : B_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b1,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //BLTU
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b1,
+            is_u_type : 1'b0,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'b111,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : B_TYPE,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b1,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b0
+        };    //BGEU
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b1,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'bxxx,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : U_TYPE_1,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b1,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : ALU,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //AUIPC
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b1,
+            is_j_type : 1'b0,
+            instr_funct3 : 3'bxxx,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : U_TYPE_0,
+            pc_sel_expected : 1'b0,
+            op1_sel_expected : 1'b0,
+            op2_sel_expected : 1'b0,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : IMM,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //LUI
+
+        '{
+            is_r_type : 1'b0,
+            is_i_type : 1'b0,
+            is_s_type : 1'b0,
+            is_b_type : 1'b0,
+            is_u_type : 1'b0,
+            is_j_type : 1'b1,
+            instr_funct3 : 3'bxxx,
+            instr_funct7_bit5 : 1'bx,
+            instr_opcode : J_TYPE,
+            pc_sel_expected : 1'b1,
+            op1_sel_expected : 1'b1,
+            op2_sel_expected : 1'b1,
+            alu_func_sel_expected : OP_ADD,
+            rf_wr_data_src_expected : PC,
+            data_req_expected : 1'b0,
+            data_byte_expected : 2'b00,
+            data_wr_expected : 1'b0,
+            zero_extnd_expected : 1'b0,
+            rf_wr_en_expected : 1'b1
+        };    //JAL
     };
 
     typedef struct packed {

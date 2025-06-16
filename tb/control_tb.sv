@@ -69,7 +69,7 @@ module tb_control;
     } test_vect_t;
 
     //testcases - TODO
-    test_vect_t test_vect[0:35] = '{
+    test_vect_t test_vect[0:36] = '{
         '{
             is_r_type : 1'b1,
             is_i_type : 1'b0,

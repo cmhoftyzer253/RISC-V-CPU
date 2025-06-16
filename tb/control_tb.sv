@@ -68,7 +68,6 @@ module tb_control;
         logic       zero_extnd_expected;
     } test_vect_t;
 
-    //testcases - TODO
     test_vect_t test_vect[0:36] = '{
         '{
             is_r_type : 1'b1,

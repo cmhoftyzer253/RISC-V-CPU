@@ -53,7 +53,6 @@ module tb_decode;
         logic [63:0]    instr_imm_expected;
     } test_vect_t;
 
-    //testcases - TODO
     test_vect_t test_vect[0:36] = '{
         '{
             instr : 32'b0000_0001_1010_1000_0000_1110_0011_0011,

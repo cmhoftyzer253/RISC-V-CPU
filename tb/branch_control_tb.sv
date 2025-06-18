@@ -26,51 +26,390 @@ module tb_branch_control;
         logic           branch_taken_expected;
     } test_vect_t;
 
-    //testcases - TODO - include is_b_type = 0 cases
-    test_vect_t test_vect[0:17] = '{        
-        '{};    //BEQ
-        '{};    //BEQ
-        '{};    //BEQ
+    test_vect_t test_vect[0:46] = '{ 
 
-        '{};    //BNE
-        '{};    //BNE
-        '{};    //BNE
+        //---------------------- BEQ ----------------------       
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_0000_1234,
+            instr_funct_3 : 3'b000,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a == b
 
-        '{};    //BLT 
-        '{};    //BLT 
-        '{};    //BLT 
-        '{};    //BLT 
-        '{};    //BLT 
-        '{};    //BLT 
-        '{};    //BLT 
-        '{};    //BLT 
-        '{};    //BLT 
-        '{};    //BLT 
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_0000_5678,
+            instr_funct_3 : 3'b000,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a != b
+        
+        '{
+            opr_a : 64'h0000_0000_0000_0000,
+            opr_b : 64'h0000_0000_0000_0000,
+            instr_funct_3 : 3'b000,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b
+        };    // a == 0 == 0 == b
 
-        '{};    //BGE
-        '{};    //BGE
-        '{};    //BGE
-        '{};    //BGE
-        '{};    //BGE
-        '{};    //BGE
-        '{};    //BGE
-        '{};    //BGE
-        '{};    //BGE
-        '{};    //BGE
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_0000_1234,
+            instr_funct_3 : 3'b000,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0
+        };    //a == b, not b instruction
 
-        '{};    //BLTU
-        '{};    //BLTU
-        '{};    //BLTU
-        '{};    //BLTU
-        '{};    //BLTU
-        '{};    //BLTU
+        //---------------------- BNE ----------------------
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_0000_1234,
+            instr_funct_3 : 3'b001,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a == b
 
-        '{};    //BGEU
-        '{};    //BGEU
-        '{};    //BGEU
-        '{};    //BGEU
-        '{};    //BGEU
-        '{};    //BGEU
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_0000_5678,
+            instr_funct_3 : 3'b001,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1            
+        };    // a != b
+
+        '{
+            opr_a : 64'h0000_0000_0000_0000,
+            opr_b : 64'h0000_0000_0000_0000,
+            instr_funct_3 : 3'b001,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0            
+        };    // a == 0 == 0 == b
+
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_1234_0000,
+            instr_funct_3 : 3'b001,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0            
+        };    // a != b, not b instruction  
+
+        //---------------------- BLT ----------------------
+        '{
+            opr_a : 64'h0000_0000_0000_00A0,
+            opr_b : 64'h0000_0000_0000_0050,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0 
+        };    // a > b, both positive
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FFA0,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF10,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a > b, both negative
+
+        '{
+            opr_a : 64'h0000_0000_0000_0020,
+            opr_b : 64'h0000_0000_0000_00F0,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a < b, both positive
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FFA0,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF10,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a < b, both negative 
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FE00,
+            opr_b : 64'h0000_0000_0000_0100,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // |a| > |b|, a negative, b positive
+
+        '{
+            opr_a : 64'h0000_0000_0000_0100,
+            opr_b : 64'hFFFF_FFFF_FFFF_FFF50,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // |a| > |b|, a positive, b negative
+
+        '{
+            opr_a : 64'h0000_0000_0000_0010,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF80,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // |a| < |b|, a positive, b negative 
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FFE0,
+            opr_b : 64'h0000_0000_0000_0120,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // |a| < |b|, a negative, b positive 
+
+        '{
+            opr_a : 64'h0000_CBA9_8765_4321,
+            opr_b : 64'h0000_CBA9_8765_4321,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a == b 
+
+        '{
+            opr_a : 64'h0000_0000_0000_0000,
+            opr_b : 64'h0000_0000_0000_0000,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a == 0 == 0 == b 
+
+        '{
+            opr_a : 64'h0000_0000_0000_0020,
+            opr_b : 64'h0000_0000_0000_00F0,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0
+        };    // a < b, both positive, not b instruction
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FE00,
+            opr_b : 64'h0000_0000_0000_0100,
+            instr_funct_3 : 3'b100,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0
+        };    // |a| > |b|, a negative, b positive, not b instruction
+
+        //---------------------- BGE ----------------------
+        '{
+            opr_a : 64'h0000_0000_0000_00A0,
+            opr_b : 64'h0000_0000_0000_0050,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a > b, both positive
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FF00,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF80,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a > b, both negative
+
+        '{
+            opr_a : 64'h0000_0000_0000_0020,
+            opr_b : 64'h0000_0000_0000_00F0,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a < b, both positive
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FFA0,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF10,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a < b, both negative
+
+        '{
+            opr_a : 64'h0000_0000_0000_0020,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF80,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // |a| < |b|, a positive, b negative
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FFF0,
+            opr_b : 64'h0000_0000_0000_0080,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // |a| < |b|, a negative, b positive
+
+        '{
+            opr_a : 64'h0000_0000_0000_0200,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF80,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // |a| > |b|, a positive, b negative
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FE00,
+            opr_b : 64'h0000_0000_0000_0100,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // |a| > |b|, a negative, b positive
+
+        '{
+            opr_a : 64'h0000_CBA9_8765_4321,
+            opr_b : 64'h0000_CBA9_8765_4321,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a == b
+
+        '{
+            opr_a : 64'h0000_0000_0000_0000,
+            opr_b : 64'h0000_0000_0000_0000,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a == 0 == 0 == b
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FF00,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF80,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0
+        };    // a > b, both negative, not b instruction
+
+        '{
+            opr_a : 64'h0000_0000_0000_0200,
+            opr_b : 64'hFFFF_FFFF_FFFF_FF80,
+            instr_funct_3 : 3'b101,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0
+        };    // |a| > |b|, a positive, b negative, not b instruction
+
+        //---------------------- BLTU ----------------------
+        '{
+            opr_a : 64'hF000_0000_0000_0000,
+            opr_b : 64'h1000_0000_0000_0000,
+            instr_funct_3 : 3'b110,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a > b
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FFFF,
+            opr_b : 64'h0000_0000_0000_0001,
+            instr_funct_3 : 3'b110,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a > b
+
+        '{
+            opr_a : 64'h1000_0000_0000_0000,
+            opr_b : 64'hF000_0000_0000_0000,
+            instr_funct_3 : 3'b110,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a < b
+
+        '{
+            opr_a : 64'h0000_0000_0000_0001,
+            opr_b : 64'hFFFF_FFFF_FFFF_FFFF,
+            instr_funct_3 : 3'b110,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a < b
+
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_0000_1234,
+            instr_funct_3 : 3'b110,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a == b
+
+        '{
+            opr_a : 64'h0000_0000_0000_0000,
+            opr_b : 64'h0000_0000_0000_0000,
+            instr_funct_3 : 3'b110,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a == 0 == 0 == b
+
+        {
+            opr_a : 64'h1000_0000_0000_0000,
+            opr_b : 64'hF000_0000_0000_0000,
+            instr_funct_3 : 3'b110,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0
+        };    // a < b, not b instruction
+
+
+        //---------------------- BGEU ----------------------
+        '{
+            opr_a : 64'hF000_0000_0000_0000,
+            opr_b : 64'h1000_0000_0000_0000,
+            instr_funct_3 : 3'b111,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a > b
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FFFF,
+            opr_b : 64'h0000_0000_0000_0001,
+            instr_funct_3 : 3'b111,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a > b
+
+        '{
+            opr_a : 64'h1000_0000_0000_0000,
+            opr_b : 64'hF000_0000_0000_0000,
+            instr_funct_3 : 3'b111,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a < b
+
+        '{
+            opr_a : 64'h0000_0000_0000_1,
+            opr_b : 64'hFFFF_FFFF_FFFF_FFFF,
+            instr_funct_3 : 3'b111,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b0
+        };    // a < b
+
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_0000_1234,
+            instr_funct_3 : 3'b111,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a == b
+
+        '{
+            opr_a : 64'h0000_0000_0000_0000,
+            opr_b : 64'h0000_0000_0000_0000,
+            instr_funct_3 : 3'b111,
+            is_b_type : 1'b1,
+            branch_taken_expected : 1'b1
+        };    // a == 0 == 0 == b
+
+        '{
+            opr_a : 64'hFFFF_FFFF_FFFF_FFFF,
+            opr_b : 64'h0000_0000_0000_0001,
+            instr_funct_3 : 3'b111,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0
+        };    // a > b, not b instruction
+
+        '{
+            opr_a : 64'h0000_0000_0000_1234,
+            opr_b : 64'h0000_0000_0000_1234,
+            instr_funct_3 : 3'b111,
+            is_b_type : 1'b0,
+            branch_taken_expected : 1'b0
+        };    // a == b, not b instruction
     };
 
     typedef struct packed {

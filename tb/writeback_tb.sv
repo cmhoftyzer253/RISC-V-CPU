@@ -37,7 +37,6 @@ module tb_writeback;
         logic [63:0] rf_wr_data_expected;
     } test_vect_t;
 
-    //testcases - TODO
     test_vect_t test_vect [0:21] = '{  
         //---------------------- Test rf_wr_data_src_i ----------------------
         '{

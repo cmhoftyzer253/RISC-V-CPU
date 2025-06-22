@@ -38,9 +38,275 @@ module tb_writeback;
     } test_vect_t;
 
     //testcases - TODO
-    test_vect_t test_vect [:] = '{  
-        '{},
-        '{}
+    test_vect_t test_vect [0:21] = '{  
+        //---------------------- Test rf_wr_data_src_i ----------------------
+        '{
+            alu_res : 64'hFFFF_0000_0000_0000,
+            data_mem_rd : 64'h0000_FFFF_0000_0000,
+            instr_imm : 64'h0000_0000_FFFF_0000,
+            pc_val : 64'h0000_0000_0000_FFFF,
+            rf_wr_data_src : 2'b00,
+            data_byte_en : DOUBLE_WORD,
+            data_zero_extnd : 1'bX,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'hFFFF_0000_0000_0000
+        },    // data from ALU
+
+        '{
+            alu_res : 64'hFFFF_0000_0000_0000,
+            data_mem_rd : 64'h0000_FFFF_0000_0000,
+            instr_imm : 64'h0000_0000_FFFF_0000,
+            pc_val : 64'h0000_0000_0000_FFFF,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : DOUBLE_WORD,
+            data_zero_extnd : 1'bX,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_FFFF_0000_0000
+        },    // data from memory
+
+        '{
+            alu_res : 64'hFFFF_0000_0000_0000,
+            data_mem_rd : 64'h0000_FFFF_0000_0000,
+            instr_imm : 64'h0000_0000_FFFF_0000,
+            pc_val : 64'h0000_0000_0000_FFFF,
+            rf_wr_data_src : 2'b10,
+            data_byte_en : DOUBLE_WORD,
+            data_zero_extnd : 1'bX,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_0000_FFFF_0000
+        },    // data from immediate
+
+        '{
+            alu_res : 64'hFFFF_0000_0000_0000,
+            data_mem_rd : 64'h0000_FFFF_0000_0000,
+            instr_imm : 64'h0000_0000_FFFF_0000,
+            pc_val : 64'h0000_0000_0000_FFFF,
+            rf_wr_data_src : 2'b11,
+            data_byte_en : DOUBLE_WORD,
+            data_zero_extnd : 1'bX,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_0000_0000_FFFF
+        },    // data from PC
+
+        //---------------------- Test sign/zero extension ----------------------
+        '{
+            alu_res : 64'h0000_0000_0000_009C,
+            data_mem_rd : 64'hX,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b00,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'hFFFF_FFFF_FFFF_FF9C
+        },    // sign extension, negative byte
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h0000_0000_0000_000F,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_0000_0000_000F
+        },    // sign extension, positive byte
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'hX,
+            instr_imm : 64'h0000_0000_0000_00F0,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b10,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_0000_0000_00F0
+        },    // zero extension, leading zero
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'hX,
+            instr_imm : 64'hX,
+            pc_val : 64'h0000_0000_0000_004E,
+            rf_wr_data_src : 2'b11,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_0000_0000_004E
+        },    // zero extension, leading one
+
+        //---------------------- Test Byte shifting ----------------------
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'hFBD2_67A6_10FF_4483, 
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b0,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_0000_0000_0083
+        },    // byte [7:0]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h33F0_D6DE_5453_AB57,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b001,
+            rf_wr_data_expected : 64'hFFFF_FFFF_FFFF_FFAB
+        },    // byte [15:8]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h9082_3E67_EB4D_08CD,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b0,
+            data_mem_row_idx : 3'b010,
+            rf_wr_data_expected : 64'h0000_0000_0000_004D
+        },    // byte [23:16]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h7699_5CE5_DE59_45AC,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b011,
+            rf_wr_data_expected : 64'hFFFF_FFFF_FFFF_FFDE
+        },    // byte [31:24]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'hB7FA_1809_0b4E_3E61,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b0,
+            data_mem_row_idx : 3'b100,
+            rf_wr_data_expected : 64'h0000_0000_0000_0009
+        },    // byte [39:32]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'hD065_3348_5235_983D,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b101,
+            rf_wr_data_expected : 64'h0000_0000_0000_0033
+        },    // byte [47:40]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'hC15C_7107_8232_B749,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b0,
+            data_mem_row_idx : 3'b110,
+            rf_wr_data_expected : 64'h0000_0000_0000_005C
+        },    // byte [55:48]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h28FE_320D_FB19_CC8A,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : BYTE,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b111,
+            rf_wr_data_expected : 64'h0000_0000_0000_0028
+        },    // byte [63:56]
+
+        //---------------------- Test Half Word shifting ----------------------
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h5925_56B0_1DAC_E439,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : HALF_WORD,
+            data_zero_extnd : 1'b0,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_0000_0000_E439
+        },    // half word [15:0]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h5877_C6D4_3AE2_88DF,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : HALF_WORD,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b010,
+            rf_wr_data_expected : 64'h0000_0000_0000_3AE2
+        },    // half word [31:16]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'hA8E9_102D_8E9B_5727,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : HALF_WORD,
+            data_zero_extnd : 1'b0,
+            data_mem_row_idx : 3'b100,
+            rf_wr_data_expected : 64'h0000_0000_0000_102D
+        },    // half word [47:32]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h896C_8048_EF9A_98F9,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : HALF_WORD,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b110,
+            rf_wr_data_expected : 64'hFFFF_FFFF_FFFF_896C
+        },    // half word [63:48]
+
+        //---------------------- Test Word shifting ----------------------
+        '{
+           alu_res : 64'hX,
+            data_mem_rd : 64'h059E_3F87_4026_4744,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : WORD,
+            data_zero_extnd : 1'b0,
+            data_mem_row_idx : 3'b000,
+            rf_wr_data_expected : 64'h0000_0000_4026_4744
+        },    // word [31:0]
+
+        '{
+            alu_res : 64'hX,
+            data_mem_rd : 64'h37F3_A8CE_10DF_57BA,
+            instr_imm : 64'hX,
+            pc_val : 64'hX,
+            rf_wr_data_src : 2'b01,
+            data_byte_en : WORD,
+            data_zero_extnd : 1'b1,
+            data_mem_row_idx : 3'b100,
+            rf_wr_data_expected : 64'h0000_0000_37F3_A8CE
+        },    // word [63:32]
     };
 
     typedef struct packed {

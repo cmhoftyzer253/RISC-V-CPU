@@ -5,6 +5,7 @@ module execute (
     input logic [63:0] opr_b_i,
 
     input logic [3:0] alu_func_i,
+    input logic       word_op_i,
 
     output logic [63:0] alu_res_o
 );
@@ -27,6 +28,6 @@ module execute (
         endcase
     end
 
-    assign alu_res_o = alu_res;
+    assign alu_res_o = word_op_i ? {{32{alu_res[31]}}, alu_res[31:0]} : alu_res;
 
 endmodule

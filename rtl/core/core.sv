@@ -150,7 +150,8 @@ module core #(
         .data_byte_o            (ctl_data_byte),
         .data_wr_o              (ctl_data_wr),
         .zero_extnd_o           (ctl_zero_extnd),
-        .rf_wr_en_o             (ctl_rf_wr_en)
+        .rf_wr_en_o             (ctl_rf_wr_en),
+        .word_op_o              (ctl_word_op)
     );
 
     //branch control
@@ -170,6 +171,7 @@ module core #(
     execute u_execute (
         .opr_a_i    (alu_opr_a),
         .opr_b_i    (alu_opr_b),
+        .word_op_i  (ctl_word_op),                     
         .op_sel_i   (ctl_alu_func_sel),
         .alu_res_o  (alu_res)
     );

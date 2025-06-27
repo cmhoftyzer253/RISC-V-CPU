@@ -2,10 +2,12 @@ package cpu_consts;
 
     // instruction types
     typedef enum logic[6:0] {
-        R_TYPE      = 7'h33,
+        R_TYPE_0    = 7'h33,
+        R_TYPE_1    = 7'h3B,
         I_TYPE_0    = 7'h03,
         I_TYPE_1    = 7'h13,
         I_TYPE_2    = 7'h67,
+        I_TYPE_3    = 7'h1B,
         S_TYPE      = 7'h23,
         B_TYPE      = 7'h63,
         U_TYPE_0    = 7'h37,
@@ -52,26 +54,29 @@ package cpu_consts;
     // I type instructions
     // {opcode[4], funct3}
     typedef enum logic[3:0] {
-        LB = 4'h0,
-        LBU = 4'h4,
-        LH = 4'h1,
-        LHU = 4'h5,
-        LW = 4'h2,
-        ADDI = 4'h8,
-        ANDI = 4'hF,
-        ORI = 4'hE,
-        SLLI = 4'h9,
-        SRXI = 4'hD,    //covers SRLI & SRAI
-        SLTI = 4'hA,
-        SLTIU = 4'hB,
-        XORI = 4'hC
+        LB      = 4'h0,
+        LBU     = 4'h4,
+        LH      = 4'h1,
+        LHU     = 4'h5,
+        LW      = 4'h2,
+        LWU     = 4'h6,
+        LD      = 4'h3,
+        ADDI    = 4'h8,
+        ANDI    = 4'hF,
+        ORI     = 4'hE,
+        SLLI    = 4'h9,
+        SRXI    = 4'hD,    //covers SRLI & SRAI
+        SLTI    = 4'hA,
+        SLTIU   = 4'hB,
+        XORI    = 4'hC
     } i_type_t;
 
     //  S type instructions
     typedef enum logic[2:0] {
         SB = 3'h0,
         SH = 3'h1,
-        SW = 3'h2
+        SW = 3'h2,
+        SD = 3'h3
     } s_type_t;
 
     // B type instructions
@@ -107,6 +112,7 @@ package cpu_consts;
         logic       data_wr;
         logic       zero_extnd;
         logic       rf_wr_en;
+        logic       word_op;
     } control_t;
 
     // register file writeback data source

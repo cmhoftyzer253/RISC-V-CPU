@@ -25,11 +25,11 @@ module control (
     output logic [1:0]  data_byte_o,
     output logic        data_wr_o,
     output logic        zero_extnd_o,
-    output logic        rf_wr_en_o
+    output logic        rf_wr_en_o,
+    output logic        word_op_o
 
 );
 
-    logic [3:0] instr_code;
     logic [3:0] r_type_code;
     logic [3:0] i_type_code;
 
@@ -46,6 +46,7 @@ module control (
     always_comb begin
         r_type_controls             = '0;
         r_type_controls.rf_wr_en    = 1'b1;
+        r_type_controls.word_op      = (instr_opcode_i == R_TYPE_1) ? 1'b1 : 1'b0;
         case (r_type_code)
             ADD     : r_type_controls.alu_func_sel = OP_ADD;
             AND     : r_type_controls.alu_func_sel = OP_AND;
@@ -67,6 +68,7 @@ module control (
         i_type_controls             = '0;
         i_type_controls.rf_wr_en    = 1'b1;
         i_type_controls.op2_sel     = 1'b1;
+        i_type_controls.word_op     = (instr_opcode_i == I_TYPE_3) ? 1'b1 : 1'b0;
         case (i_type_code)
             ADDI    : i_type_controls.alu_func_sel = OP_ADD;
             ANDI    : i_type_controls.alu_func_sel = OP_AND;
@@ -85,6 +87,9 @@ module control (
             LW      : {i_type_controls.data_req,
                         i_type_controls.data_byte,
                         i_type_controls.rf_wr_data_sel} = {1'b1, WORD, MEM};
+            LD      : {i_type_controls.data_req, 
+                        i_type_controls.data_byte,
+                        i_type_controls.rf_wr_data_sel} = {1'b1, DOUBLE_WORD, MEM};
             LBU     : {i_type_controls.data_req, 
                         i_type_controls.data_byte,
                         i_type_controls.rf_wr_data_sel,
@@ -93,6 +98,10 @@ module control (
                         i_type_controls.data_byte,
                         i_type_controls.rf_wr_data_sel,
                         i_type_controls.zero_extnd} = {1'b1, HALF_WORD, MEM, 1'b1};
+            LWU     : {i_type_controls.data_req,
+                        i_type_controls.data_byte,
+                        i_type_controls.rf_wr_data_sel,
+                        i_type_controls.zero_extnd} = {1'b1, WORD, MEM, 1'b1};
             default : i_type_controls = '0;
         endcase
         //JALR instruction
@@ -109,11 +118,12 @@ module control (
         s_type_controls.data_req        = 1'b1;
         s_type_controls.data_wr         = 1'b1;
         s_type_controls.op2_sel         = 1'b1;
-        s_type_controls.alu_func_sel    = OP_ADD;       TODO - check
+        s_type_controls.alu_func_sel    = OP_ADD;       
         case (instr_funct3_i)
             SB      : s_type_controls.data_byte = BYTE;
             SH      : s_type_controls.data_byte = HALF_WORD;
             SW      : s_type_controls.data_byte = WORD;
+            SD      : s_type_controls.data_byte = DOUBLE_WORD;
             default : s_type_controls = '0;
         endcase
     end
@@ -169,5 +179,6 @@ module control (
     assign data_wr_o            = controls.data_wr;
     assign zero_extnd_o         = controls.zero_extnd;
     assign rf_wr_data_src_o     = controls.rf_wr_data_src;
+    assign word_op_o            = controls.word_op;
 
 endmodule

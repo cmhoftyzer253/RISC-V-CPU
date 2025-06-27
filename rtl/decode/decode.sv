@@ -61,10 +61,12 @@ module decode (
         j_type = 1'b0;
 
         case (op)
-            R_TYPE      : r_type = 1'b1;
+            R_TYPE_0,
+            R_TYPE_1    : r_type = 1'b1;
             I_TYPE_0,
             I_TYPE_1, 
-            I_TYPE_2    : i_type = 1'b1;
+            I_TYPE_2,
+            I_TYPE_3    : i_type = 1'b1;
             S_TYPE      : s_type = 1'b1;
             B_TYPE      : b_type = 1'b1;
             U_TYPE_0,

@@ -15,6 +15,7 @@ package cpu_consts;
         J_TYPE      = 7'h6F
     } riscv_op_t;
 
+    // base operations
     typedef enum logic [3:0] {
         OP_ADD,
         OP_SUB,
@@ -27,6 +28,18 @@ package cpu_consts;
         OP_SLTU,
         OP_SLT
     } alu_op_t;
+
+    // M extension operations
+    typedef enum logic [2:0] {
+        OP_MUL,
+        OP_MULH,
+        OP_MULHSU,
+        OP_MULHU,
+        OP_DIV,
+        OP_DIVU,
+        OP_REM,
+        OP_REMU
+    } md_op_t;
 
     //memory access width
     typedef enum logic[1:0] {

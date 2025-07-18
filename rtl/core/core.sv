@@ -168,7 +168,7 @@ module core #(
     assign alu_opr_a = ctl_op1_sel ? pc_q : rf_rs1_data;
     assign alu_opr_b = ctl_op2_sel ? dec_instr_imm : rf_rs2_data;
 
-    execute u_execute (
+    execute u_alu (
         .opr_a_i    (alu_opr_a),
         .opr_b_i    (alu_opr_b),
         .word_op_i  (ctl_word_op),                     

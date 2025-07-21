@@ -52,36 +52,20 @@ module multiply (
             mult_instr_s1   <= 1'b0;
             rd_addr_s1      <= 5'b0;
             rd_wr_en_s1     <= 1'b0;
-        end else if (!stall_i) begin
-            if (kill_i) begin
-                a_high_s1       <= 32'h0;
-                a_low_s1        <= 32'h0;
-                b_high_s1       <= 32'h0;
-                b_low_s1        <= 32'h0;
+        end else begin
+            a_signed_s1     <= (mult_func_i == MULH || mult_func_i == MULHSU);
+            b_signed_s1     <= (mult_func_i == MULH);
+            negate_res_s1   <= (a[63] && a_signed_s1) ^ (b[63] && b_signed_s1);
 
-                a_signed_s1     <= 1'b0;
-                b_signed_s1     <= 1'b0;
-                negate_res_s1   <= 1'b0;
+            a_high_s1   <= get_magnitude(opr_a[63:32], a_signed_s1, opr_a_i[63]);
+            a_low_s1    <= get_magnitude(opr_a[31:0], a_signed_s1, opr_a_i[63]);
+            b_high_s1   <= get_magnitude(opr_b[63:32], b_signed_s1, opr_b_i[63]);
+            b_low_s1    <= get_magnitude(opr_b[31:0], b_signed_s1, opr_b_i[63]);
 
-                mult_func_s1    <= 3'b0;
-                mult_instr_s1   <= 1'b0;
-                rd_addr_s1      <= 5'b0;
-                rd_wr_en_s1     <= 1'b0;
-            end else begin
-                a_signed_s1     <= (mult_func_i == MULH || mult_func_i == MULHSU);
-                b_signed_s1     <= (mult_func_i == MULH);
-                negate_res_s1   <= (a[63] && a_signed_s1) ^ (b[63] && b_signed_s1);
-
-                a_high_s1   <= get_magnitude(opr_a[63:32], a_signed_s1, opr_a_i[63]);
-                a_low_s1    <= get_magnitude(opr_a[31:0], a_signed_s1, opr_a_i[63]);
-                b_high_s1   <= get_magnitude(opr_b[63:32], b_signed_s1, opr_b_i[63]);
-                b_low_s1    <= get_magnitude(opr_b[31:0], b_signed_s1, opr_b_i[63]);
-
-                mult_func_s1 <= mult_func_i;
-                mult_instr_s1 <= mult_instr_i;
-                rd_addr_s1 <= rd_addr_i;
-                rd_wr_en_s1 <= rd_wr_en_i;
-            end
+            mult_func_s1 <= mult_func_i;
+            mult_instr_s1 <= mult_instr_i;
+            rd_addr_s1 <= rd_addr_i;
+            rd_wr_en_s1 <= rd_wr_en_i;
         end
     end
 
@@ -111,21 +95,18 @@ module multiply (
             mult_instr_s2   <= 1'b0;
             rd_addr_s2      <= 5'b0;
             rd_wr_en_s2     <= 1'b0;
-        end else if (!stall_i) begin
-            if (kill_i) begin
-            end else begin
-                p0_s2 <= a_low_s1 * b_low_s1;
-                p1_s2 <= a_low_s1 * b_high_s1;
-                p2_s2 <= a_high_s1 * b_low_s1;
-                p3_s2 <= a_high_s1 * b_high_s1;
+        end else begin
+            p0_s2 <= a_low_s1 * b_low_s1;
+            p1_s2 <= a_low_s1 * b_high_s1;
+            p2_s2 <= a_high_s1 * b_low_s1;
+            p3_s2 <= a_high_s1 * b_high_s1;
 
-                negate_res_s2   <= negate_res_s1;
+            negate_res_s2   <= negate_res_s1;
 
-                mult_func_s2    <= mult_func_s1;
+            mult_func_s2    <= mult_func_s1;
             mult_instr_s2   <= mult_instr_s1;
             rd_addr_s2      <= rd_addr_s1;
             rd_wr_en_s2     <= rd_wr_en_s1;
-            end
         end
     end
 

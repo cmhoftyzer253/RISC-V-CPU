@@ -12,6 +12,7 @@ module control (
 
     //instruction opcode and funct fields
     input logic [2:0]   instr_funct3_i,
+    input logic         instr_funct7_bit0_i,
     input logic         instr_funct7_bit5_i,
     input logic [6:0]   instr_opcode_i,
     
@@ -19,7 +20,7 @@ module control (
     output logic        pc_sel_o,
     output logic        op1_sel_o,
     output logic        op2_sel_o,
-    output logic [3:0]  alu_func_sel_o,
+    output logic [3:0]  exu_func_sel_o,
     output logic [1:0]  rf_wr_data_src_o,    
     output logic        data_req_o,
     output logic [1:0]  data_byte_o,
@@ -47,19 +48,32 @@ module control (
         r_type_controls             = '0;
         r_type_controls.rf_wr_en    = 1'b1;
         r_type_controls.word_op      = (instr_opcode_i == R_TYPE_1) ? 1'b1 : 1'b0;
-        case (r_type_code)
-            ADD     : r_type_controls.alu_func_sel = OP_ADD;
-            AND     : r_type_controls.alu_func_sel = OP_AND;
-            OR      : r_type_controls.alu_func_sel = OP_OR;
-            SLL     : r_type_controls.alu_func_sel = OP_SLL;
-            SLT     : r_type_controls.alu_func_sel = OP_SLT;
-            SLTU    : r_type_controls.alu_func_sel = OP_SLTU;
-            SRA     : r_type_controls.alu_func_sel = OP_SRA;
-            SRL     : r_type_controls.alu_func_sel = OP_SRL;
-            SUB     : r_type_controls.alu_func_sel = OP_SUB;
-            XOR     : r_type_controls.alu_func_sel = OP_XOR;
-            default : r_type_controls.alu_func_sel = OP_ADD;                                    
-        endcase
+        if (instr_funct7_bit0_i) begin
+            case (instr_funct3_i)
+                MUL     : r_type_controls.exu_func_sel = OP_MUL;
+                MULH    : r_type_controls.exu_func_sel = OP_MULH;
+                MULHSU  : r_type_controls.exu_func_sel = OP_MULHSU;
+                MULHU   : r_type_controls.exu_func_sel = OP_MULHU;
+                DIV     : r_type_controls.exu_func_sel = OP_DIV;
+                DIVU    : r_type_controls.exu_func_sel = OP_DIVU;
+                REM     : r_type_controls.exu_func_sel = OP_REM;
+                REMU    : r_type_controls.exu_func_sel = OP_REMU;
+            endcase
+        end else begin
+            case (r_type_code)
+                ADD     : r_type_controls.exu_func_sel = OP_ADD;
+                AND     : r_type_controls.exu_func_sel = OP_AND;
+                OR      : r_type_controls.exu_func_sel = OP_OR;
+                SLL     : r_type_controls.exu_func_sel = OP_SLL;
+                SLT     : r_type_controls.exu_func_sel = OP_SLT;
+                SLTU    : r_type_controls.exu_func_sel = OP_SLTU;
+                SRA     : r_type_controls.exu_func_sel = OP_SRA;
+                SRL     : r_type_controls.exu_func_sel = OP_SRL;
+                SUB     : r_type_controls.exu_func_sel = OP_SUB;
+                XOR     : r_type_controls.exu_func_sel = OP_XOR;
+                default : r_type_controls.exu_func_sel = OP_ADD;                                    
+            endcase
+        end
     end
 
     // I type instruction
@@ -70,14 +84,14 @@ module control (
         i_type_controls.op2_sel     = 1'b1;
         i_type_controls.word_op     = (instr_opcode_i == I_TYPE_3) ? 1'b1 : 1'b0;
         case (i_type_code)
-            ADDI    : i_type_controls.alu_func_sel = OP_ADD;
-            ANDI    : i_type_controls.alu_func_sel = OP_AND;
-            ORI     : i_type_controls.alu_func_sel = OP_OR;
-            SLLI    : i_type_controls.alu_func_sel = OP_SLL;
-            SRXI    : i_type_controls.alu_func_sel = instr_funct7_bit5_i ? OP_SRA : OP_SRL;
-            SLTI    : i_type_controls.alu_func_sel = OP_SLT;
-            SLTIU   : i_type_controls.alu_func_sel = OP_SLTU;
-            XORI    : i_type_controls.alu_func_sel = OP_XOR;
+            ADDI    : i_type_controls.exu_func_sel = OP_ADD;
+            ANDI    : i_type_controls.exu_func_sel = OP_AND;
+            ORI     : i_type_controls.exu_func_sel = OP_OR;
+            SLLI    : i_type_controls.exu_func_sel = OP_SLL;
+            SRXI    : i_type_controls.exu_func_sel = instr_funct7_bit5_i ? OP_SRA : OP_SRL;
+            SLTI    : i_type_controls.exu_func_sel = OP_SLT;
+            SLTIU   : i_type_controls.exu_func_sel = OP_SLTU;
+            XORI    : i_type_controls.exu_func_sel = OP_XOR;
             LB      : {i_type_controls.data_req,
                         i_type_controls.data_byte,
                         i_type_controls.rf_wr_data_sel} = {1'b1, BYTE, MEM};
@@ -108,7 +122,7 @@ module control (
         if (instr_opcode_i == I_TYPE_2) begin
             i_type_controls.rf_wr_data_sel  = PC;
             i_type_controls.pc_sel          = 1'b1;
-            i_type_controls.alu_func_sel    = OP_ADD;
+            i_type_controls.exu_func_sel    = OP_ADD;
         end
     end
 
@@ -118,7 +132,7 @@ module control (
         s_type_controls.data_req        = 1'b1;
         s_type_controls.data_wr         = 1'b1;
         s_type_controls.op2_sel         = 1'b1;
-        s_type_controls.alu_func_sel    = OP_ADD;       
+        s_type_controls.exu_func_sel    = OP_ADD;       
         case (instr_funct3_i)
             SB      : s_type_controls.data_byte = BYTE;
             SH      : s_type_controls.data_byte = HALF_WORD;
@@ -131,7 +145,7 @@ module control (
     // B type instruction
     always_comb begin                          
         b_type_controls                 = '0;
-        b_type_controls.alu_func_sel    = OP_ADD;        
+        b_type_controls.exu_func_sel    = OP_ADD;        
         b_type_controls.op1_sel         = 1'b1;        
         b_type_controls.op2_sel         = 1'b1;     
     end
@@ -143,7 +157,7 @@ module control (
         case (instr_opcode_i)
             AUIPC   : {u_type_controls.op2sel, 
                         u_type_controls.op1sel, 
-                        u_type_controls.alu_func_sel} = {1'b1, 1'b1, OP_ADD};
+                        u_type_controls.exu_func_sel} = {1'b1, 1'b1, OP_ADD};
             LUI     : u_type_controls.rf_wr_data_src = IMM;
             default : u_type_controls = '0;
         endcase
@@ -157,7 +171,7 @@ module control (
         j_type_controls.op1_sel         = 1'b1;
         j_type_controls.op2_sel         = 1'b1;
         j_type_controls.pc_sel          = 1'b1;
-        j_type_controls.alu_func_sel    = OP_ADD;
+        j_type_controls.exu_func_sel    = OP_ADD;
     end
 
     assign controls =   is_r_type_i         ? r_type_controls : 
@@ -172,7 +186,7 @@ module control (
     assign pc_sel_o             = controls.pc_sel;
     assign op1_sel_o            = controls.op1_sel;
     assign op2_sel_o            = controls.op2_sel;
-    assign alu_func_sel_o       = controls.alu_func_sel;
+    assign exu_func_sel_o       = controls.exu_func_sel;
     assign rf_wr_en_o           = controls.rf_wr_en;
     assign data_req_o           = controls.data_req;
     assign data_byte_o          = controls.data_byte;

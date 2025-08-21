@@ -1,4 +1,5 @@
 import cpu_consts::*;
+import cpu_modules::*;
 
 module multiply (
     input logic clk,
@@ -7,102 +8,127 @@ module multiply (
     input logic [63:0] opr_a_i,     //multiplicand
     input logic [63:0] opr_b_i,     //multiplier
 
-    input logic         mult_instr_i;
-    input logic [2:0]   mult_func_i,
+    input logic         mul_instr_i,
+    input logic [3:0]   mul_func_i,
     input logic [4:0]   rd_addr_i,
     input logic         word_op_i,
 
-    input logic         stall_i,
+    input logic         flush_i,
     input logic         kill_i,
 
-    output logic [63:0] mult_res_o,
+    output logic [63:0] mul_res_o,
     output logic        valid_res_o,
     output logic [4:0]  rd_addr_o,
-    output logic        rd_wr_en_o
+    output logic        mul_stall_o
 );
 
-    //TODO - add stall/kill logic
-    //TODO - add MULW instruction
+    //valid signals
+    logic v_s1;
+    logic v_s2;
+    logic v_s3;
+    logic v_s4;
+
+    logic v_s1_in;
+    logic v_s2_in;
+    logic v_s3_in;
+    logic v_s4_in;
+
+    assign v_s1_in = mul_instr_i & ~kill_i;
+    assign v_s2_in = v_s1 & ~flush_i;
+    assign v_s3_in = v_s2 & ~flush_i;
+    assign v_s4_in = v_s3 & ~flush_i;
+
+    always_ff @(posedge clk) begin
+        if (reset) begin
+            v_s1 <= 1'b0;
+            v_s2 <= 1'b0;
+            v_s3 <= 1'b0;
+            v_s4 <= 1'b0;
+        end else begin
+            v_s1 <= v_s1_in;
+            v_s2 <= v_s2_in;
+            v_s3 <= v_s3_in;
+            v_s4 <= v_s4_in;
+        end
+    end
 
     // stage 1 - register inputs & split operands
-    logic nxt_a_signed;
-    logic nxt_b_signed;
-    logic nxt_negate_res;
-    logic nxt_mulw_negate;
+    logic a_signed_in;
+    logic b_signed_in;
+    logic negate_res_in;
 
-    logic a_signed_s1;
-    logic b_signed_s1;
     logic negate_res_s1;
-    logic mulw_negate_s1;
 
-    logic [31:0] nxt_a_high;
-    logic [31:0] nxt_a_low;
-    logic [31:0] nxt_b_high;
-    logic [31:0] nxt_b_low;
+    logic [63:0] a_correct;
+    logic [63:0] b_correct;
+
+    logic [31:0] a_high_in;
+    logic [31:0] a_low_in;
+    logic [31:0] b_high_in;
+    logic [31:0] b_low_in;
 
     logic [31:0] a_high_s1;
     logic [31:0] a_low_s1;
     logic [31:0] b_high_s1;
     logic [31:0] b_low_s1;
 
-    logic [2:0] mult_func_s1;
-    logic       mult_instr_s1;
+    logic [3:0] mul_func_s1;
     logic [4:0] rd_addr_s1;
     logic       word_op_s1;
 
-    assign nxt_a_signed     = (mult_func_i == MUL || mult_func_i == MULH || mult_func_i == MULHSU);
-    assign nxt_b_signed     = (mult_func_i == MUL || mult_func_i == MULH);
-    assign nxt_negate_res   = (opr_a_i[63] && nxt_a_signed) ^ (opr_b_i[63] && nxt_b_signed);
-    assign nxt_mulw_negate  = (opr_a_i[31] ^ opr_b_i[31]);
+    assign a_signed_in      =   (mul_func_i == OP_MUL | mul_func_i == OP_MULH | mul_func_i == OP_MULHSU);    
+    assign b_signed_in      =   (mul_func_i == OP_MUL | mul_func_i == OP_MULH);
+    assign negate_res_in    =   (~word_op_i & ((opr_a_i[63] & a_signed_in) ^ (opr_b_i[63] & b_signed_in))) |
+                                ( word_op_i & (opr_a_i[31] ^ opr_b_i[31]));                                
 
-    assign nxt_a_high   = get_magnitude(opr_a_i[63:32], nxt_a_signed, opr_a_i[63]);
-    assign nxt_b_high   = get_magnitude(opr_b_i[63:32], nxt_b_signed, opr_b_i[63]);
 
-    assign nxt_a_low    = (word_op_i) ?   get_magnitude(opr_a_i[31:0], 1'b1, opr_a_i[31]) : 
-                                                    get_magnitude(opr_a_i[31:0], nxt_a_signed, opr_a_i[63]);
+    assign a_correct[63:0]  =   ({64{a_signed_in & opr_a_i[63] & ~word_op_i}}     & twos_comp_64(opr_a_i[63:0])) |
+                                ({64{(~a_signed_in | ~opr_a_i[63]) & ~word_op_i}} & opr_a_i[63:0]) |
+                                ({64{word_op_i &  opr_a_i[31]}}                   & {32'h0, twos_comp_32(opr_a_i[31:0])}) |
+                                ({64{word_op_i & ~opr_a_i[31]}}                   & {32'h0, opr_a_i[31:0]});
 
-    assign nxt_b_low    = (word_op_i) ?   get_magnitude(opr_b_i[31:0], 1'b1, opr_b_i[31]) : 
-                                                    get_magnitude(opr_b_i[31:0], nxt_b_signed, opr_b_i[63]);
+    assign b_correct[63:0]  =   ({64{b_signed_in & opr_b_i[63] & ~word_op_i}}     & twos_comp_64(opr_b_i[63:0])) |
+                                ({64{(~b_signed_in | ~opr_b_i[63]) & ~word_op_i}} & opr_b_i[63:0]) |
+                                ({64{word_op_i &  opr_b_i[31]}}                   & {32'h0, twos_comp_32(opr_b_i[31:0])}) |
+                                ({64{word_op_i & ~opr_b_i[31]}}                   & {32'h0, opr_b_i[31:0]});
 
-    always_ff @(posedge clk or posedge reset) begin
+    assign a_high_in[31:0]  =   a_correct[63:32];
+    assign b_high_in[31:0]  =   b_correct[63:32];
+
+    assign a_low_in[31:0]   =   a_correct[31:0];
+    assign b_low_in[31:0]   =   b_correct[31:0];
+
+    always_ff @(posedge clk) begin
         if (reset) begin
             a_high_s1       <= 32'h0;
             a_low_s1        <= 32'h0;
             b_high_s1       <= 32'h0;
             b_low_s1        <= 32'h0;
 
-            a_signed_s1     <= 1'b0;
-            b_signed_s1     <= 1'b0;
             negate_res_s1   <= 1'b0;
-            mulw_negate_s1  <= 1'b0;
 
-            mult_func_s1    <= 3'b0;
-            mult_instr_s1   <= 1'b0;
+            mul_func_s1     <= 4'b0;
             rd_addr_s1      <= 5'b0;
             word_op_s1      <= 1'b0;
         end else begin
-            a_signed_s1     <= nxt_a_signed;
-            b_signed_s1     <= nxt_b_signed;
-            negate_res_s1   <= nxt_negate_res;
-            mulw_negate_s1  <= nxt_mulw_negate;
+            a_high_s1       <= a_high_in;
+            b_high_s1       <= b_high_in;
+            a_low_s1        <= a_low_in;
+            b_low_s1        <= b_low_in;
 
-            a_high_s1   <= nxt_a_high;
-            a_low_s1    <= nxt_a_low;
-            b_high_s1   <= nxt_b_high;
-            b_low_s1    <= nxt_b_low;
+            negate_res_s1   <= negate_res_in;
 
-            mult_func_s1    <= mult_func_i;
-            mult_instr_s1   <= mult_instr_i;
+            mul_func_s1     <= mul_func_i;
             rd_addr_s1      <= rd_addr_i;
             word_op_s1      <= word_op_i;
         end
     end
 
     // stage 2 - calculate partial products
-    logic [63:0] nxt_p0;
-    logic [63:0] nxt_p1;
-    logic [63:0] nxt_p2;
-    logic [63:0] nxt_p3;
+    logic [63:0] p0_in;
+    logic [63:0] p1_in;
+    logic [63:0] p2_in;
+    logic [63:0] p3_in;
 
     logic [63:0] p0_s2;
     logic [63:0] p1_s2;
@@ -110,19 +136,17 @@ module multiply (
     logic [63:0] p3_s2;
 
     logic       negate_res_s2;
-    logic       mulw_negate_s2;
 
-    logic [2:0] mult_func_s2;
-    logic       mult_instr_s2;
+    logic [3:0] mul_func_s2;
     logic [4:0] rd_addr_s2;
     logic       word_op_s2;
 
-    assign nxt_p0 = a_low_s1 * b_low_s1;
-    assign nxt_p1 = a_low_s1 * b_high_s1;
-    assign nxt_p2 = a_high_s1 * b_low_s1;
-    assign nxt_p3 = a_high_s1 * b_high_s1;
+    assign p0_in[63:0] = a_low_s1[31:0]  * b_low_s1[31:0];
+    assign p1_in[63:0] = a_low_s1[31:0]  * b_high_s1[31:0];
+    assign p2_in[63:0] = a_high_s1[31:0] * b_low_s1[31:0];
+    assign p3_in[63:0] = a_high_s1[31:0] * b_high_s1[31:0];
 
-    always_ff @(posedge clk or posedge reset) begin
+    always_ff @(posedge clk) begin
         if (reset) begin
             p0_s2 <= 64'h0;
             p1_s2 <= 64'h0;
@@ -130,23 +154,19 @@ module multiply (
             p3_s2 <= 64'h0;
 
             negate_res_s2   <= 1'b0;
-            mulw_negate_s2  <= 1'b0;
 
-            mult_func_s2    <= 3'b0;
-            mult_instr_s2   <= 1'b0;
+            mul_func_s2     <= 4'b0;
             rd_addr_s2      <= 5'b0;
             word_op_s2      <= 1'b0;
         end else begin
-            p0_s2 <= nxt_p0;
-            p1_s2 <= nxt_p1;
-            p2_s2 <= nxt_p2;
-            p3_s2 <= nxt_p3;
+            p0_s2 <= p0_in;
+            p1_s2 <= p1_in;
+            p2_s2 <= p2_in;
+            p3_s2 <= p3_in;
 
             negate_res_s2   <= negate_res_s1;
-            mulw_negate_s2  <= mulw_negate_s1;
 
-            mult_func_s2    <= mult_func_s1;
-            mult_instr_s2   <= mult_instr_s1;
+            mul_func_s2     <= mul_func_s1;
             rd_addr_s2      <= rd_addr_s1;
             word_op_s2      <= word_op_s1;
         end
@@ -154,83 +174,75 @@ module multiply (
 
     // stage 3 - combine lower 96 bits (((p1 + p2) << 32) + p0)
     logic [64:0]    cross_terms;
-    logic [127:0]   nxt_part_sum;
+    logic [127:0]   part_sum_in;
 
     logic [127:0]   part_sum_s3;
+    logic [63:0]    p3_s3;
 
     logic       negate_res_s3;
-    logic       mulw_negate_s3;
 
-    logic [2:0] mult_func_s3;
-    logic       mult_instr_s3;
+    logic [3:0] mul_func_s3;
     logic [4:0] rd_addr_s3;
     logic       word_op_s3;
 
-    assign cross_terms  = p1_s2 + p2_s2;
+    assign cross_terms[64:0]        = {1'b0, p1_s2[63:0]} + {1'b0, p2_s2[63:0]};
 
-    //if MULW instruction store result in nxt_part sum
-    assign nxt_part_sum     = (word_op_s2) ?  p0_s2 : 
-                                                        {{64{1'b0}}, p0_s2} + ({{63{1'b0}}, cross_terms} << 32);
+    //if MULW instruction store result in lower 64 bits of part_sum_in
+    assign  part_sum_in[127:0]      =   ({128{word_op_s2}} & {64'h0, p0_s2[63:0]}) |
+                                        ({128{~word_op_s2}} & ({64'h0, p0_s2[63:0]} + ({63'h0, cross_terms[64:0]} << 32)));
+                                                
 
-    always_ff @(posedge clk or posedge reset) begin
+    always_ff @(posedge clk) begin
         if (reset) begin
-            part_sum_s3     <= 64'h0;
+            part_sum_s3     <= 128'h0;
+            p3_s3           <= 64'h0;
 
             negate_res_s3   <= 1'b0;
-            mulw_negate_s3  <= 1'b0;
 
-            mult_func_s3    <= 3'b0;
-            mult_instr_s3   <= 1'b0;
+            mul_func_s3     <= 4'b0;
             rd_addr_s3      <= 5'b0;
             word_op_s3      <= 1'b0;
         end else begin
-            part_sum_s3     <= nxt_part_sum;
+            part_sum_s3     <= part_sum_in;
+            p3_s3           <= p3_s2;
 
             negate_res_s3   <= negate_res_s2;
-            mulw_negate_s3  <= mulw_negate_s2;
 
-            mult_func_s3    <= mult_func_s2;
-            mult_instr_s3   <= mult_instr_s2;
+            mul_func_s3     <= mul_func_s2;
             rd_addr_s3      <= rd_addr_s2;
             word_op_s3      <= word_op_s2;
         end
     end
 
     // stage 4 - add p3 to lower 96 bits
-    logic [127:0]   nxt_full_sum;
-
+    logic [127:0]   full_sum_in;
     logic [127:0]   full_sum_s4;
     
     logic       negate_res_s4;
-    logic       mulw_negate_s4;
 
-    logic [2:0] mult_func_s4;
-    logic       mult_instr_s4;
+    logic [3:0] mul_func_s4;
     logic [4:0] rd_addr_s4;
     logic       word_op_s4;     
 
-    //if MULW instruction store in bottom 64 bits of nxt_full_sum - sign extend
-    assign nxt_full_sum = (word_op_s3) ?  {{64{part_sum_s3[63]}}, part_sum_s3} :
-                                                    part_sum_s3 + ({{64{1'b0}}, p3_s2} << 64);
+    //if MULW instruction keep part_sum_s3 result
+    assign full_sum_in[127:0]   =   ({128{word_op_s3}}  & part_sum_s3[127:0]) | 
+                                    ({128{~word_op_s3}} & (part_sum_s3[127:0] + {p3_s3[63:0], 64'h0})); 
 
-    always_ff @(posedge clk or posedge reset) begin
+    always_ff @(posedge clk) begin
         if (reset) begin
             full_sum_s4     <= 128'h0;
 
             negate_res_s4   <= 1'b0;
 
-            mult_func_s4    <= 3'b0;
-            mult_instr_s4   <= 1'b0;
+            mul_func_s4     <= 4'b0;
             rd_addr_s4      <= 5'b0;
             word_op_s4      <= 1'b0;
         end else begin
-            full_sum_s4     <= nxt_full_sum;
+            full_sum_s4     <= full_sum_in;
 
             negate_res_s4   <= negate_res_s3;
-            mulw_negate_s4  <= mulw_negate_s3;
 
-            mult_func_s4    <= mult_func_s3;
-            mult_instr_s4   <= mult_instr_s3;
+            mul_func_s4    <= mul_func_s3;
             rd_addr_s4      <= rd_addr_s3;
             word_op_s4      <= word_op_s3;
         end
@@ -238,33 +250,36 @@ module multiply (
 
     // stage 5 - output
     logic [127:0]   final_sum;
-    logic [63:0]    mult_res;
-    logic [63:0]    mult_res_o;
+    logic [63:0]    mul_res;
+    logic           mul_stall;
 
-    assign final_sum = (negate_res_s4 || mulw_negate_s4) ? -full_sum_s4 : full_sum_s4;
+    assign mul_stall            =   v_s1 | v_s2 | v_s3 | v_s4;
+
+    assign final_sum[127:0]     =   ({128{ negate_res_s4}} & twos_comp_128(full_sum_s4[127:0])) | 
+                                    ({128{~negate_res_s4}} & full_sum_s4[127:0]);
     
     always_comb begin
-        case(mult_func_s4)
-            MUL     : mult_res = (word_op_s4) ? {{32{final_sum[31]}}, final_sum[31:0]} : 
-                                                final_sum[63:0];
-            MULH,
-            MULHU,
-            MULHSU  : mult_res = final_sum[127:64];
-            default : mult_res = 64'h0;
+        case(mul_func_s4)
+            OP_MUL      :   mul_res =   ({64{ word_op_s4}} & {{32{final_sum[31]}}, final_sum[31:0]}) |
+                                        ({64{~word_op_s4}} & final_sum[63:0]);
+            OP_MULH,
+            OP_MULHU,
+            OP_MULHSU   :   mul_res =   final_sum[127:64];
+            default     :   mul_res =   64'h0;
         endcase
     end
 
-    always_ff @(posedge clk or posedge reset) begin
+    always_ff @(posedge clk) begin
         if (reset) begin
-            mult_res_o      <= 64'h0;
+            mul_res_o       <= 64'h0;
             rd_addr_o       <= 5'b0;
-            rd_wr_en_o      <= 1'b0;
             valid_res_o     <= 1'b0;
+            mul_stall_o      <= 1'b0;
         end else begin
-            mult_res_o  <= mult_res;
-            rd_addr_o   <= rd_addr_s4;
-            rd_wr_en_o  <= mult_instr_s4;
-            valid_res_o <= mult_instr_s4; 
+            mul_res_o       <= mul_res;
+            rd_addr_o       <= rd_addr_s4;
+            valid_res_o     <= v_s4;
+            mul_stall_o      <= mul_stall;
         end
     end
 endmodule

@@ -30,7 +30,7 @@ package cpu_consts;
     } alu_op_t;
 
     // M extension operations
-    typedef enum logic [2:0] {
+    typedef enum logic [3:0] {
         OP_MUL,
         OP_MULH,
         OP_MULHSU,
@@ -49,7 +49,7 @@ package cpu_consts;
         DOUBLE_WORD = 2'b11
     } mem_access_size_t;
 
-    //  R type instructions
+    //  base R type instructions
     // {funct7[5], funct3}
     typedef enum logic[3:0] {
         ADD     = 4'h0,
@@ -63,6 +63,18 @@ package cpu_consts;
         SUB     = 4'h8,
         XOR     = 4'h4
     } r_type_t;
+
+    // M R type instructions
+    typedef enum logic[2:0] {
+        MUL     = 3'h0;
+        MULH    = 3'h1;
+        MULHSU  = 3'h2;
+        MULHU   = 3'h3;
+        DIV     = 3'h4;
+        DIVU    = 3'h5;
+        REM     = 3'h6;
+        REMU    = 3'h7;
+    } r_type_m_t;
 
     // I type instructions
     // {opcode[4], funct3}
@@ -118,7 +130,7 @@ package cpu_consts;
         logic       pc_sel;
         logic       op1_sel;
         logic       op2_sel;
-        logic [3:0] alu_func_sel;
+        logic [3:0] exu_func_sel;
         logic [1:0] rf_wr_data_sel;
         logic       data_req;
         logic [1:0] data_byte;
@@ -135,5 +147,13 @@ package cpu_consts;
         IMM     = 2'b10,
         PC      = 2'b11
     } rf_wr_data_src_t;
+
+    typedef enum logic[2:0] {
+        NONE            = 3'b000;
+        ZERO_DIVISOR    = 3'b001;
+        OVERFLOW        = 3'b010;
+        ZERO_DIVIDEND   = 3'b011;
+        SHORT_DIV       = 3'b100;
+    } div_status_t;
 
 endpackage

@@ -9,7 +9,7 @@ module divide (
     input logic [63:0]  opr_b_i,     //divisor
 
     input logic         div_instr_i,
-    input logic [2:0]   div_func_i,
+    input logic [3:0]   div_func_i,
     input logic [4:0]   rd_addr_i,
     input logic         word_op_i,
 

@@ -23,7 +23,6 @@ module divide (
 );
 
     //TODO - add kill logic
-    //TODO - add DIVW, DIVUW, REMW, REMUW instructions
 
     //mask upper 32 bits in case of word instruction
     logic [63:0]    opr_a_correct;
@@ -266,9 +265,9 @@ module divide (
     assign update_cnt           =   update_cnt_s1 | update_cnt_l;
     assign nxt_count[6:0]       =   {7{update_cnt}} & (count_q[6:0] + {1'b0, shift_amnt_s2} + 7'b1);
 
-    assign dividend_tc[63:0]    =   twos_comp(q_q[63:0]);
-    assign q_tc[63:0]           =   twos_comp(q_q[63:0]);
-    assign a_tc[63:0]           =   twos_comp(a_q[63:0]);
+    assign dividend_tc[63:0]    =   twos_comp_64(q_q[63:0]);
+    assign q_tc[63:0]           =   twos_comp_64(q_q[63:0]);
+    assign a_tc[63:0]           =   twos_comp_64(a_q[63:0]);
 
     assign dividend_correct     =   (signed_op & dividend_neg) ? dividend_tc[63:0] : q_q[63:0];
 

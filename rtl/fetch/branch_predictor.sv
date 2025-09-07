@@ -100,7 +100,7 @@ module branch_predictor(
     assign ras_cmd              =   btb_hit & (btb_pred_type == RETURN) & ~ras_empty;
 
     assign pred_target[63:0]    =   ({64{ ras_cmd}} & (ras_pop_addr[63:0])) |
-                                    ({64{~ras_cmd}} & (btb_target));
+                                    ({64{~ras_cmd}} & (btb_target[63:0]));
 
     //output assignments
     assign pred_taken_o     = pred_taken;

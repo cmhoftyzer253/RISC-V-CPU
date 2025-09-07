@@ -138,6 +138,9 @@ package cpu_consts;
         logic       zero_extnd;
         logic       rf_wr_en;
         logic       word_op;
+        logic       alu_instr;
+        logic       mul_instr;
+        logic       div_instr;
     } control_t;
 
     // register file writeback data source
@@ -155,5 +158,20 @@ package cpu_consts;
         ZERO_DIVIDEND   = 3'b011;
         SHORT_DIV       = 3'b100;
     } div_status_t;
+
+    typedef logic [1:0] bp_cnt_t;
+
+    typedef enum logic[1:0] {
+        BRANCH  = 2'b00,
+        CALL    = 2'b01,
+        RETURN  = 2'b10,
+        JUMP    = 2'b11
+    } btb_type_t;
+
+    typedef struct packed {
+        logic [50:0]    tag;
+        logic [61:0]    target;
+        btb_type_t      type;
+    } btb_entry_t;
 
 endpackage

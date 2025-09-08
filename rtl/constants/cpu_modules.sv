@@ -52,4 +52,14 @@ package cpu_modules
 
     endfunction
 
+    function automatic int unsigned size_bytes (mem_access_size_t s);
+        case (s)
+            (BYTE):         return 1;
+            (HALF_WORD):    return 2;
+            (WORD):         return 4;
+            (DOUBLE_WORD):  return 8;
+            default:        return 0;
+        endcase
+    endfunction
+
 endpackage

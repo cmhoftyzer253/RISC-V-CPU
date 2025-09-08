@@ -14,7 +14,7 @@ module store_align (
 
     always_comb begin
         wr_data[63:0]   = 64'h0;
-        mask[7:0]       = 8'b0;
+        mask[7:0]       = 8'b0000_0000;
 
         case (byte_en_i) 
             (BYTE): begin

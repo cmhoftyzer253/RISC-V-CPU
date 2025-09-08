@@ -10,7 +10,6 @@ module multiply (
 
     input logic         mul_instr_i,
     input logic [3:0]   mul_func_i,
-    input logic [4:0]   rd_addr_i,
     input logic         word_op_i,
 
     input logic         flush_i,
@@ -18,8 +17,7 @@ module multiply (
 
     output logic [63:0] mul_res_o,
     output logic        valid_res_o,
-    output logic [4:0]  rd_addr_o,
-    output logic        mul_stall_o
+    output logic        mul_busy_o
 );
 
     //valid signals
@@ -73,7 +71,6 @@ module multiply (
     logic [31:0] b_low_s1;
 
     logic [3:0] mul_func_s1;
-    logic [4:0] rd_addr_s1;
     logic       word_op_s1;
 
     assign a_signed_in      =   (mul_func_i == OP_MUL | mul_func_i == OP_MULH | mul_func_i == OP_MULHSU);    
@@ -108,7 +105,6 @@ module multiply (
             negate_res_s1   <= 1'b0;
 
             mul_func_s1     <= 4'b0;
-            rd_addr_s1      <= 5'b0;
             word_op_s1      <= 1'b0;
         end else begin
             a_high_s1       <= a_high_in;
@@ -119,7 +115,6 @@ module multiply (
             negate_res_s1   <= negate_res_in;
 
             mul_func_s1     <= mul_func_i;
-            rd_addr_s1      <= rd_addr_i;
             word_op_s1      <= word_op_i;
         end
     end
@@ -138,7 +133,6 @@ module multiply (
     logic       negate_res_s2;
 
     logic [3:0] mul_func_s2;
-    logic [4:0] rd_addr_s2;
     logic       word_op_s2;
 
     assign p0_in[63:0] = a_low_s1[31:0]  * b_low_s1[31:0];
@@ -156,7 +150,6 @@ module multiply (
             negate_res_s2   <= 1'b0;
 
             mul_func_s2     <= 4'b0;
-            rd_addr_s2      <= 5'b0;
             word_op_s2      <= 1'b0;
         end else begin
             p0_s2 <= p0_in;
@@ -167,7 +160,6 @@ module multiply (
             negate_res_s2   <= negate_res_s1;
 
             mul_func_s2     <= mul_func_s1;
-            rd_addr_s2      <= rd_addr_s1;
             word_op_s2      <= word_op_s1;
         end
     end
@@ -182,7 +174,6 @@ module multiply (
     logic       negate_res_s3;
 
     logic [3:0] mul_func_s3;
-    logic [4:0] rd_addr_s3;
     logic       word_op_s3;
 
     assign cross_terms[64:0]        = {1'b0, p1_s2[63:0]} + {1'b0, p2_s2[63:0]};
@@ -200,7 +191,6 @@ module multiply (
             negate_res_s3   <= 1'b0;
 
             mul_func_s3     <= 4'b0;
-            rd_addr_s3      <= 5'b0;
             word_op_s3      <= 1'b0;
         end else begin
             part_sum_s3     <= part_sum_in;
@@ -209,7 +199,6 @@ module multiply (
             negate_res_s3   <= negate_res_s2;
 
             mul_func_s3     <= mul_func_s2;
-            rd_addr_s3      <= rd_addr_s2;
             word_op_s3      <= word_op_s2;
         end
     end
@@ -221,7 +210,6 @@ module multiply (
     logic       negate_res_s4;
 
     logic [3:0] mul_func_s4;
-    logic [4:0] rd_addr_s4;
     logic       word_op_s4;     
 
     //if MULW instruction keep part_sum_s3 result
@@ -235,7 +223,6 @@ module multiply (
             negate_res_s4   <= 1'b0;
 
             mul_func_s4     <= 4'b0;
-            rd_addr_s4      <= 5'b0;
             word_op_s4      <= 1'b0;
         end else begin
             full_sum_s4     <= full_sum_in;
@@ -243,7 +230,6 @@ module multiply (
             negate_res_s4   <= negate_res_s3;
 
             mul_func_s4    <= mul_func_s3;
-            rd_addr_s4      <= rd_addr_s3;
             word_op_s4      <= word_op_s3;
         end
     end
@@ -251,9 +237,9 @@ module multiply (
     // stage 5 - output
     logic [127:0]   final_sum;
     logic [63:0]    mul_res;
-    logic           mul_stall;
+    logic           mul_busy;
 
-    assign mul_stall            =   v_s1 | v_s2 | v_s3 | v_s4;
+    assign mul_busy             =   v_s1 | v_s2 | v_s3 | v_s4;
 
     assign final_sum[127:0]     =   ({128{ negate_res_s4}} & twos_comp_128(full_sum_s4[127:0])) | 
                                     ({128{~negate_res_s4}} & full_sum_s4[127:0]);
@@ -272,14 +258,12 @@ module multiply (
     always_ff @(posedge clk) begin
         if (reset) begin
             mul_res_o       <= 64'h0;
-            rd_addr_o       <= 5'b0;
             valid_res_o     <= 1'b0;
-            mul_stall_o      <= 1'b0;
+            mul_busy_o      <= 1'b0;
         end else begin
             mul_res_o       <= mul_res;
-            rd_addr_o       <= rd_addr_s4;
             valid_res_o     <= v_s4;
-            mul_stall_o      <= mul_stall;
+            mul_busy_o      <= mul_busy;
         end
     end
 endmodule

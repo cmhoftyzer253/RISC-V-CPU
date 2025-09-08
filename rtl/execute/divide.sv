@@ -10,7 +10,6 @@ module divide (
 
     input logic         div_instr_i,
     input logic [3:0]   div_func_i,
-    input logic [4:0]   rd_addr_i,
     input logic         word_op_i,
 
     input logic         flush_i,
@@ -18,8 +17,7 @@ module divide (
 
     output logic [63:0] div_res_o,
     output logic        valid_res_o,
-    output logic [4:0]  rd_addr_o,
-    output logic        div_stall_o
+    output logic        div_busy_o
 );
 
     //TODO - add kill logic
@@ -53,7 +51,6 @@ module divide (
     logic           word_op;
     logic           dividend_neg;
     logic           divisor_neg;
-    logic [4:0]     rd_addr_l;
 
     logic           nxt_loop_run;
     logic           loop_run_q;
@@ -108,9 +105,8 @@ module divide (
     logic [63:0]    a_correct;
 
     logic [63:0]    div_res;
-    logic [4:0]     rd_addr;
     logic           valid_res;
-    logic           div_stall;
+    logic           div_busy;
 
     assign rem_op_in        =   (div_func_i == OP_REM | div_func_i == OP_REMU);
     assign signed_op_in     =   (div_func_i == OP_DIV | div_func_i == OP_REM);
@@ -303,12 +299,9 @@ module divide (
                                     ({64{~sc_output_en  &  rem_op & ~word_op}} & a_correct[63:0])  |
                                     ({64{~sc_output_en  & ~rem_op & ~word_op}} & q_correct[63:0]);
 
-    assign rd_addr[5:0]         =   ({6{sc_output_en}} & rd_addr_i) | 
-                                    ({6{loop_output_en}} & rd_addr_l);
-
     assign valid_res            =   sc_output_en | loop_output_en;
 
-    assign div_stall            =   nxt_loop_run;
+    assign div_busy             =   nxt_loop_run;
 
     //ffs - no enable pin
     always_ff @(posedge clk) begin
@@ -333,14 +326,12 @@ module divide (
             word_op         <= 1'b0;
             dividend_neg    <= 1'b0;
             divisor_neg     <= 1'b0;
-            rd_addr_l       <= 5'b0;
         end else if (div_instr_i) begin
             rem_op          <= rem_op_in;
             signed_op       <= signed_op_in;
             word_op         <= word_op_i;
             dividend_neg    <= dividend_neg_in;
             divisor_neg     <= divisor_neg_in;
-            rd_addr_l       <= rd_addr_i;
         end
     end
 
@@ -385,13 +376,11 @@ module divide (
         if (reset) begin
             div_res_o       <= 64'h0;
             valid_res_o     <= 1'b0;
-            rd_addr_o       <= 5'b0;
-            div_stall_o     <= 1'b0;
+            div_busy_o      <= 1'b0;
         end else begin
             div_res_o       <= div_res;
             valid_res_o     <= valid_res;
-            rd_addr_o       <= rd_addr;
-            div_stall_o     <= div_stall;
+            div_busy_o      <= div_busy;
         end
     end
 

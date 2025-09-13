@@ -1,30 +1,51 @@
-module fetch (
+import cpu_modules::*;
 
-    //input from program counter
+module fetch (
     input logic         clk,
     input logic         reset,
-    input logic [63:0]  pc_i, 
 
-    //request next instruction
+    //pc interface
+    input  logic [63:0] pc_i, 
+    input  logic        pc_valid_i,
+    output logic        pc_ready_o,
+
+    //instruction memory interface
+    input logic [31:0]  instr_i,   
+    input logic         instr_valid_i,
+
+    input logic         instr_mem_ready_i,
     output logic        instr_mem_req_o,
     output logic [63:0] instr_mem_addr_o,
 
-    //receive next instruction
-    input logic [31:0]  fetch_instr_i,   
-    output logic [31:0] fetch_instr_o   
+    //fetch -> decode interface
+    input  logic        decode_ready_i,
+    output logic [31:0] fetch_instr_o,
+    output logic        instr_valid_o   
 );
 
-    logic instr_mem_req_q;
+    logic           sb_ready;
+    logic           sb_valid;
+    logic [31:0]    sb_data;
 
-    //only request instructions when reset low
-    always_ff @(posedge clk or posedge reset)
-        if (reset)
-            instr_mem_req_q <= 1'b0;
-        else
-            instr_mem_req_q <= 1'b1;
+    //pc -> instruction memory
+    assign instr_mem_req_o          = pc_valid_i & sb_ready;
+    assign instr_mem_addr_o         = pc_i;
+    assign pc_ready_o               = instr_mem_ready_i & sb_ready;
 
-    assign instr_mem_req_o = instr_mem_req_q;
-    assign instr_mem_addr_o = pc_i;             //request instruction at program counter
-    assign fetch_instr_o = fetch_instr_i;        //send input instruction to decode
+    //instruction memory -> skid buffer
+    skid_buffer_32 u_skid_buffer (
+        .clk        (clk),
+        .reset      (reset),
+        .valid_i    (instr_valid_i),
+        .data_i     (instr_i),
+        .ready_o    (sb_ready),
+        .ready_i    (decode_ready_i),
+        .valid_o    (sb_valid),
+        .data_o     (sb_data)
+    );
+
+    //skid buffer -> decode
+    assign fetch_instr_o = sb_data;
+    assign instr_valid_o = sb_valid;
 
 endmodule

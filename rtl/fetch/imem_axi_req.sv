@@ -51,7 +51,6 @@ module imem_axi_req (
     logic wr_en;
 
     assign empty_cpu    = (wptr_cpu == rptr_cpu2);
-    assign full_cpu     = ~empty_cpu;
 
     assign ready        = empty_cpu;
 

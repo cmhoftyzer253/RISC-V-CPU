@@ -12,7 +12,7 @@ module ras(
     logic [63:0]    pop_addr;
     logic           empty;          
 
-    logic [63:0]    ras[16];
+    logic [63:0]    ras[15:0];
     logic [4:0]     sp;
 
     assign empty        = (sp == 5'b0);

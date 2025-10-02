@@ -3,19 +3,19 @@ import cpu_consts::*;
 
 module async_fifo_64 (
 
-    //write (axi side) interface
-    input logic         axi_clk,
-    input logic         axi_resetn,
-    input logic         wr_en_i,
-    input logic [63:0]  wr_data_i,
-    output logic        wr_full_o,
-
     //read (cpu side) interface
     input logic         cpu_clk,
     input logic         cpu_reset,
     input logic         rd_en_i,
     output logic [63:0] rd_data_o,
     output logic        rd_empty_o
+
+    //write (axi side) interface
+    input logic         axi_clk,
+    input logic         axi_resetn,
+    input logic         wr_en_i,
+    input logic [63:0]  wr_data_i,
+    output logic        wr_full_o,
 );
 
     logic [63:0]    mem [7:0];

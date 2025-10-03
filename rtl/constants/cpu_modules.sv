@@ -62,4 +62,63 @@ package cpu_modules
         endcase
     endfunction
 
+    function automatic logic bin_to_gc (input logic [3:0] bin_val);
+        return bin_val ^ (bin_val >> 1);
+    endfunction
+
+
 endpackage
+
+module skid_buffer_32 (
+    input logic clk,
+    input logic reset,
+
+    //input interface
+    input logic         valid_i,
+    input logic [31:0]  data_i,
+    output logic        ready_o,
+
+    //output interface
+    input logic         ready_i,
+    output logic        valid_o,
+    output logic [31:0] data_o
+);
+
+    logic           valid;
+    logic [31:0]    data;
+    logic           ready;
+
+    logic           b_valid;
+    logic [31:0]    b_data;
+
+    logic           buf_en_i;
+    logic           buf_en_o;
+
+    assign valid        =   b_valid | valid_i;
+    assign data[31:0]   =   ({32{ b_valid}} & b_data[31:0]) | 
+                                ({32{~b_valid}} & data_i[31:0]);
+    assign ready        =   ~b_valid | ready_i;
+
+    assign buf_en_i     =   valid_i & ~ready_i & ~b_valid;
+    assign buf_en_o     =   ready_o & b_valid;
+
+    always_ff @(posedge clk) begin
+        if (reset) begin
+            b_valid <= 1'b0;
+            b_data  <= 32'h0;
+        end else if (buf_en_i) begin
+            b_valid <= 1'b1;
+            b_data  <= data_i;
+        end else if (buf_en_o) begin
+            b_valid <= 1'b0;
+            b_data  <= 32'h0;
+        end
+    end
+
+    //output assignments
+    assign valid_o  = valid;
+    assign data_o   = data;
+    assign ready_o  = ready;
+
+endmodule
+

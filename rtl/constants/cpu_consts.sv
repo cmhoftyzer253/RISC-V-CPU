@@ -174,4 +174,30 @@ package cpu_consts;
         btb_type_t      type;
     } btb_entry_t;
 
+    typedef struct packed {
+        logic [63:0]    addr;
+        logic [7:0]     len;
+        logic [2:0]     size;
+        logic [1:0]     burst;
+    } imem_req_t;
+
+    /*
+    typedef struct packed {
+        logic [50:0] tag;
+        logic [6:0] index;
+        logic [5:0] offset;
+    } cache_addr_t;
+    */
+
+    typedef struct packed {
+        logic           valid;
+        logic [50:0]    tag;
+    } cache_tag_t;
+
+    typdef struct packed {
+        logic           error;
+        logic           last;
+        logic [63:0]    data;
+    } fifo_entry_t;
+
 endpackage

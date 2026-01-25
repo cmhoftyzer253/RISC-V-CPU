@@ -34,13 +34,7 @@ module fetch (
     output logic [31:0] fetch_instr_o,
     output logic        instr_valid_o   
 );
-
-    logic           sb_ready_o;
-    logic           sb_valid_o;
-    logic [31:0]    sb_data_o;
-
-    logic           sb_valid_i;
-    logic [31:0]    sb_data_i;
+    logic           instr_handshake;
 
     logic           BROM_instr;
     logic           BROM_instr_valid;
@@ -57,24 +51,18 @@ module fetch (
     logic           BROM_reg_write;
     logic           BROM_reg_clear;
 
+    logic           oob_addr;
+    logic           unaligned_addr;
+
+    logic           exc_valid_fetch;
+    logic [4:0]     exc_code_fetch;
+
     //Boot ROM  
     blk_mem_gen_0 Boot_ROM (
         .clka       (clk),
         .ena        (BROM_en),
         .addra      (BROM_addr),
         .douta      (BROM_data)
-    );
-
-    //instruction memory -> skid buffer
-    skid_buffer #(.WIDTH(32)) u_skid_buffer (
-        .clk        (clk),
-        .resetn     (resetn),
-        .valid_i    (sb_valid_i),
-        .data_i     (sb_data_i),
-        .ready_o    (sb_ready_o),
-        .ready_i    (decode_ready_i),
-        .valid_o    (sb_valid_o),
-        .data_o     (sb_data_o)
     );
 
     always_ff @(posedge clk or negedge resetn) begin
@@ -102,48 +90,54 @@ module fetch (
 
     always_comb begin
 
-        //CPU control signals
-        exc_valid_o                 =   exc_valid_i;
-        exc_code_o                  =   exc_code_i;
-
         kill_o                      =   kill_i;
+
+        pc_ready_o                  =   instr_mem_ready_i & (decode_ready_i | ~(BROM_hold | BROM_instr_ff));
+
+        instr_handshake             =   pc_valid_i & pc_ready_o;
 
         BROM_instr                  =   (pc_i[63:16] == 48'h0);
 
         if (BROM_instr) begin
             BROM_addr               =   pc_i[15:2];
 
-            pc_ready_o              =   sb_ready_o;  
             instr_mem_req_o         =   1'b0;
             instr_mem_addr_o        =   64'd0;    
         end else begin
-            pc_ready_o              =   instr_mem_ready_i & sb_ready_o;
-            instr_mem_req_o         =   pc_valid_i & pc_ready_o;
+            instr_mem_req_o         =   instr_handshake & ~exc_valid_fetch & ~kill_i;
             instr_mem_addr_o        =   pc_i;
 
             BROM_addr               =   14'd0;
         end
 
         if (BROM_hold) begin
-            sb_valid_i              =   1'b1;
-            sb_data_i               =   BROM_hold_instr;
+            instr_valid_o           =   1'b1;
+            fetch_instr_o           =   BROM_hold_instr;
         end else if (BROM_instr_ff) begin
-            sb_valid_i              =   1'b1;
-            sb_data_i               =   BROM_data;
+            instr_valid_o           =   1'b1;
+            fetch_instr_o           =   BROM_data;
         end else begin
-            sb_valid_i              =   instr_valid_i;
-            sb_data_i               =   instr_i;
+            instr_valid_o           =   instr_valid_i;
+            fetch_instr_o           =   instr_i;
         end
-
-        BROM_instr_valid            =   BROM_instr & pc_valid_i & sb_ready_o;
 
         BROM_en                     =   1'b1;
 
-        BROM_reg_write              =   ~BROM_hold & BROM_instr_ff & ~sb_ready_o;
-        BROM_reg_clear              =   BROM_hold & sb_ready_o;
+        BROM_reg_write              =   ~BROM_hold & BROM_instr_ff & ~decode_ready_i;
+        BROM_reg_clear              =   BROM_hold & decode_ready_i;
 
-        fetch_instr_o               =   sb_data_o;
-        instr_valid_o               =   sb_valid_o;
-        instr_ready_o               =   ~(BROM_hold | BROM_instr_ff) & sb_ready_o;
+        instr_ready_o               =   ~(BROM_hold | BROM_instr_ff) & decode_ready_i;
+
+        oob_addr                    =   ~(BROM_instr | ((pc_i >= 64'h0000_0000_8000_0000) & (pc_i <= 64'h0000_0000_9FFF_FFFF)));
+        unaligned_addr              =   |pc_i[1:0];
+
+        exc_valid_fetch             =   instr_handshake & ~kill_i & (oob_addr | unaligned_addr);
+        exc_code_fetch              =   unaligned_addr ? 5'd0 : 5'd1;
+
+        BROM_instr_valid            =   instr_handshake & BROM_instr & ~exc_valid_fetch & ~kill_i;
+
+        //CPU control signals
+        exc_valid_o                 =   exc_valid_i | exc_valid_fetch;
+        exc_code_o                  =   exc_valid_fetch ? exc_code_fetch : exc_code_i;
     end
 endmodule

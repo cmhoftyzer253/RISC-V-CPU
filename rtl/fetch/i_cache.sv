@@ -338,7 +338,25 @@ module i_cache (
                     end 
                 end
                 S_REFILL_DONE: begin
-                    if (kill_ff | error_ff | id_error) begin
+                    if (error_ff | id_error) begin
+                        if (instr_ready_i) begin
+                            if (way_fill_q == 2'b00) begin
+                                tags_w0[instr_index].valid      <= 1'b0; 
+                            end else if (way_fill_q == 2'b01) begin
+                                tags_w1[instr_index].valid      <= 1'b0;
+                            end else if (way_fill_q == 2'b10) begin
+                                tags_w2[instr_index].valid      <= 1'b0;
+                            end else if (way_fill_q == 2'b11) begin
+                                tags_w3[instr_index].valid      <= 1'b0;
+                            end
+
+                            kill_ff             <= 1'b0;
+                            error_ff            <= 1'b0;
+                            id_error            <= 1'b0;
+
+                            state               <= S_RUN;
+                        end
+                    end else if (kill_ff) begin
                         if (way_fill_q == 2'b00) begin
                             tags_w0[instr_index].valid      <= 1'b0; 
                         end else if (way_fill_q == 2'b01) begin
@@ -349,11 +367,9 @@ module i_cache (
                             tags_w3[instr_index].valid      <= 1'b0;
                         end
 
-                        kill_ff             <= 1'b0;
-                        error_ff            <= 1'b0;
-                        id_error            <= 1'b0;
+                        kill_ff                 <= 1'b0;
 
-                        state               <= S_RUN;
+                        state                   <= S_RUN;
                     end else begin
                         if (instr_ready_i) begin
                             if (way_fill_q == 2'b00) begin
@@ -431,13 +447,6 @@ module i_cache (
 
         case (state)
             S_RUN: begin
-                unaligned_addr      =   ~(instr_mem_addr_ff[1:0] == 2'b00);
-                oob_addr            =   ~((instr_mem_addr_ff >= 64'h8000_0000) & (instr_mem_addr_ff <= 64'h9FFF_FFFF));
-
-                exc_valid_o         =   valid_instr_ff & (unaligned_addr | oob_addr);
-                exc_code_o          =   ({5{unaligned_addr}} & 5'b00000) | 
-                                        ({5{oob_addr}} & 5'b00001);
-
                 instr_tag           =   instr_mem_addr_i[63:13];
                 instr_index         =   instr_mem_addr_i[12:6];
                 instr_offset        =   instr_mem_addr_i[5:2];
@@ -452,11 +461,11 @@ module i_cache (
                 hit_1h[3]           =   (tag_rd_w3.valid) & (tag_ff == tag_rd_w3.tag);
 
                 instr_hit           =   |hit_1h & valid_instr_ff;
-                cache_miss          =   valid_instr_ff & ~instr_hit & ~exc_valid_o;
+                cache_miss          =   valid_instr_ff & ~instr_hit;
 
-                instr_valid_o       =   instr_hit & ~exc_valid_o;
+                instr_valid_o       =   instr_hit;
 
-                fetch_stall         =   (instr_valid_o | exc_valid_o) & ~instr_ready_i;
+                fetch_stall         =   instr_valid_o & ~instr_ready_i;
 
                 instr_mem_ready_o   =   ~fetch_stall & ~cache_miss;
 

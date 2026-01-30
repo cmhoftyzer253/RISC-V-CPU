@@ -1,179 +1,291 @@
 import cpu_consts::*;
 import cpu_modules::*;
 
-module memory (
-    input logic                 clk,
-    input logic                 reset,
+module memory(
+    input logic clk,
+    input logic resetn,
 
-    //load/store request from datapath
-    input logic                 req_valid_i,                // valid request from datapath
-    input logic [63:0]          req_addr_i,                 // address for request
-    input mem_access_size_t     req_byte_en_i,              // read/write size           
-    input logic                 req_wr_i,                   // read/write
-    input logic [63:0]          req_wr_data_i,              // data for request (if write)
-    input logic                 req_zero_extnd_i,           // zero extend (for read)
+    //datapath request interface
+    input logic                 req_valid_i,
+    input logic [63:0]          req_addr_i;
+    input mem_access_size_t     req_byte_en_i,
+    input logic                 req_wr_i,
+    input logic                 req_zero_extnd_i,
+    input logic [63:0]          req_wr_data_i,
+    output logic                req_ready_o,
 
-    //input from data memory
-    input logic                 req_wr_done_i,              // write request completed
-    input logic                 req_rd_valid_i,             // valid data from memory
-    input logic [63:0]          req_rd_data_i,              // data returned from memory
+    //datapath response interface
+    output logic                data_mem_resp_valid_o,
+    output logic [63:0]         data_mem_rd_data_o;
 
-    //flush
+    //data memory request interface
+    input logic                 data_mem_ready_i,
+    output logic                data_mem_req_o,
+    output logic [63:0]         data_mem_addr_o,
+    output mem_access_size_t    data_mem_byte_en_o,
+    output logic                data_mem_wr_o,
+    output logic [63:0]         data_mem_wr_data_o,
+
+    //data memory response interface
+    input logic                 req_resp_valid_i,
+    input logic                 req_rd_data_i,
+    output logic                req_rd_ready_o,
+
+    //control signals
     input logic                 flush_i,
 
-    //send load/store request to data memory
-    output logic                data_mem_req_o,             // valid request to memory
-    output logic [63:0]         data_mem_addr_o,            // address for request
-    output mem_access_size_t    data_mem_byte_en_o,         // read/write size
-    output logic                data_mem_wr_o,              // read/write
-    output logic [63:0]         data_mem_wr_data_o,         // data for request (if write)
-    output logic [7:0]          data_mem_mask_o,            // 1 for bits to change, 0 otherwise
+    input logic                 exc_valid_i,
+    input logic [4:0]           exc_code_i,
 
-    //output to writeback
-    output logic                data_mem_valid_o,           // valid data to writeback
-    output logic [63:0]         data_mem_rd_data_o,         // data associated with valid signal
-
-    //pipeline control
-    output logic                mem_ready_o,                //ready this cycle
-    output logic                mem_busy_o,                 //stall after grace
-    
-    //exception flags
     output logic                exc_valid_o,
     output logic [4:0]          exc_code_o
 );
 
-    //TODO - determine OOB errors
-    //Restrict data memory to 512Kb for now
-    //Later - write AXI interface module so I can expand to DDR3 memory
-    localparam longint unsigned MEM_SIZE = 512*1024;
+    //mmio registers
+    (* ram_style "block" *) logic [63:0] mmio [511:0];
 
-    logic [7:0]         data_mem_mask;
-    logic [63:0]        data_mem_wr_data;
+    logic [2:0]                 req_addr_ff;
+    mem_access_size_t           req_byte_en_ff;
+    logic                       req_zero_extnd_ff;
+    logic                       req_wr_ff;
+    logic                       req_mmio_ff;
 
-    logic [63:0]        access_size;
-    logic               unaligned_addr;
-    logic               oob;
+    logic                       mmio_load_ff;
+    logic                       mmio_store_ff;
 
-    logic               exc_valid;
-    logic [4:0]         exc_code;
+    logic [63:0]                mmio_load_data;
 
-    logic               rd_ff_en;
+    logic                       mmio_req;
+    logic                       mn_mem_req;
 
-    logic [63:0]        rd_addr;
-    mem_access_size_t   rd_byte_en;
-    logic               rd_zero_extnd;
-    logic [63:0]        rd_data;
+    logic                       oob_addr;
+    logic                       unaligned_addr;
 
-    logic               issue_rd;
-    logic               issue_wr;
+    logic                       exc_valid_mem;
+    logic [4:0]                 exc_code_mem;
 
-    logic               pending_rd_q;
-    logic               pending_wr_q;
+    logic                       req_handshake;
 
-    logic               nxt_pending_wr;
-    logic               nxt_pending_rd;
+    logic                       mmio_store;
+    logic                       mmio_load;
 
-    logic               grace_q;
-    logic               nxt_grace;
+    logic [8:0]                 mmio_index;
 
-    logic               data_mem_req;     
-    logic               data_mem_wr;      
-    logic               data_mem_valid;  
+    logic [63:0]                store_data;
+    logic [7:0]                 store_mask;
+    
+    logic [63:0]                req_rd_data;
+    logic [63:0]                load_data;
 
-    //exception handling
-    assign access_size[63:0]    =   64'(size_bytes(req_byte_en_i));
-
-    assign oob                  =   req_valid_i & ((req_addr_i + access_size) > MEM_SIZE);
-
-    assign unaligned_addr       =   (req_byte_en_i == BYTE)        ?  1'b0 :
-                                    (req_byte_en_i == HALF_WORD)   ?  req_addr_i[0] : 
-                                    (req_byte_en_i == WORD)        ? |req_addr_i[1:0] :
-                                    (req_byte_en_i == DOUBLE_WORD) ? |req_addr_i[2:0] : 1'b0;
-
-    assign exc_valid            =   (unaligned_addr | oob);
-    assign exc_code             =   ({5{unaligned_addr &  req_wr_i}} & 5'b00110) |
-                                    ({5{unaligned_addr & ~req_wr_i}} & 5'b00100) |
-                                    ({5{oob & ~unaligned_addr &  req_wr_i}} & 5'b00111) |
-                                    ({5{oob & ~unaligned_addr & ~req_wr_i}} & 5'b00101);
-
-    assign rd_ff_en             =   issue_rd;
-
-    //store address, size, and zero extend in a flip flop for wr commands
-    always_ff @(posedge clk) begin
-        if (reset) begin
-            rd_addr         <= 64'h0;
-            rd_byte_en      <= BYTE;
-            rd_zero_extnd   <= 1'b0;
-        end else if (rd_ff_en) begin
-            rd_addr         <= req_addr_i;
-            rd_byte_en      <= req_byte_en_i;
-            rd_zero_extnd   <= req_zero_extnd_i;
+    //input ffs
+    always_ff @(posedge clk or negedge resetn) begin
+        if (~resetn) begin
+            req_addr_ff         <= 3'b0;
+            req_byte_en_ff      <= DOUBLE_WORD;
+            req_zero_extnd_ff   <= 1'b0;
+            req_wr_ff           <= 1'b0;
+            req_mmio_ff         <= 1'b0;
+        end else if (req_handshake) begin
+            req_addr_ff         <= req_addr_i[2:0];
+            req_byte_en_ff      <= req_byte_en_i;
+            req_zero_extnd_ff   <= req_zero_extnd_i;
+            req_wr_ff           <= req_wr_i;
+            req_mmio_ff         <= mmio_req;
         end
     end
 
-    //load alignment
-    load_align u_load_align (
-        .addr_i         (rd_addr),
-        .byte_en_i      (rd_byte_en),
-        .rd_data_i      (req_rd_data_i),
-        .zero_extnd_i   (rd_zero_extnd),
-        .rd_data_o      (rd_data)
-    );
+    //update mmio registers
+    always_ff @(posedge clk or negedge resetn) begin
+        if (~resetn) begin
+            mmio_load_ff        <= 1'b0;
+            mmio_store_ff       <= 1'b0;
 
-    //store alignment and mask
-    store_align u_store_align (
-        .addr_i         (req_addr_i),
-        .byte_en_i      (req_byte_en_i),
-        .wr_data_i      (req_wr_data_i),
-        .wr_data_o      (data_mem_wr_data),
-        .mask_o         (data_mem_mask)
-    );
+            mmio_load_data      <= 64'h0;
+        end else if (mmio_store) begin
+            mmio_store_ff       <= 1'b1;
 
-    //pipeline control logic
-    assign issue_rd         =   req_valid_i & ~req_wr_i & ~exc_valid & ~pending_rd_q & ~pending_wr_q;
-    assign issue_wr         =   req_valid_i &  req_wr_i & ~exc_valid & ~pending_rd_q & ~pending_wr_q;
-
-    assign nxt_pending_rd   =   (pending_rd_q & ~(req_rd_valid_i | flush_i)) |
-                                (issue_rd     & ~(req_rd_valid_i | flush_i));
-
-    assign nxt_pending_wr   =   (pending_wr_q & ~(req_wr_done_i  | flush_i)) |
-                                (issue_wr     & ~(req_wr_done_i  | flush_i));
-
-    assign nxt_grace        =   (issue_rd | issue_wr) & ~(grace_q | flush_i | req_rd_valid_i | req_wr_done_i);
-
-    always_ff @(posedge clk) begin
-        if (reset) begin
-            pending_rd_q    <= 1'b0;
-            pending_wr_q    <= 1'b0;
-            grace_q         <= 1'b0;
+            if (store_mask[0]) begin
+                mmio[mmio_index][7:0]       <= store_data[7:0];
+            end
+            if (store_mask[1]) begin
+                mmio[mmio_index][15:8]      <= store_data[15:8];
+            end
+            if (store_mask[2]) begin
+                mmio[mmio_index][23:16]     <= store_data[23:16];
+            end
+            if (store_mask[3]) begin
+                mmio[mmio_index][31:24]     <= store_data[31:24];
+            end
+            if (store_mask[4]) begin
+                mmio[mmio_index][39:32]     <= store_data[39:32];
+            end 
+            if (store_mask[5]) begin
+                mmio[mmio_index][47:40]     <= store_data[47:40];
+            end
+            if (store_mask[6]) begin
+                mmio[mmio_index][55:48]     <= store_data[55:48];
+            end
+            if (store_mask[7]) begin
+                mmio[mmio_index][63:56]     <= store_data[63:56];
+            end
+        end else if (mmio_load) begin
+            mmio_load_ff                    <= 1'b1;
+            mmio_load_data                  <= mmio[mmio_index];
         end else begin
-            pending_rd_q    <= nxt_pending_rd;
-            pending_wr_q    <= nxt_pending_wr;
-            grace_q         <= nxt_grace;
+            mmio_load_ff                    <= 1'b0;
+            mmio_store_ff                   <= 1'b0;
         end
     end
 
-    assign data_mem_req     =   issue_rd | issue_wr;
-    assign data_mem_wr      =   issue_wr;
-    assign data_mem_valid   =   req_rd_valid_i & pending_rd_q;
+    always_comb begin
+        store_data          =   64'h0;
+        store_mask          =   8'b0;
 
-    //assign outputs to memory
-    assign data_mem_req_o               =   data_mem_req;
-    assign data_mem_addr_o[63:0]        =   req_addr_i;
-    assign data_mem_byte_en_o           =   req_byte_en_i;
-    assign data_mem_wr_o                =   data_mem_wr;
-    assign data_mem_wr_data_o[63:0]     =   data_mem_wr_data;
-    assign data_mem_mask_o[7:0]         =   data_mem_mask;
+        load_data           =   64'h0;
 
-    //assign outputs to pipeline
-    assign mem_ready_o                  =   ~(pending_rd_q | pending_wr_q) & ~exc_valid;                       
-    assign mem_busy_o                   =   ((pending_rd_q | pending_wr_q) & ~grace_q);                  
+        data_mem_req_o      =   1'b0;
+        data_mem_addr_o     =   64'h0;
+        data_mem_byte_en_o  =   DOUBLE_WORD;
+        data_mem_wr_o       =   1'b0;
+        data_mem_wr_data    =   64'h0;
 
-    assign exc_valid_o                  =   exc_valid;
-    assign exc_code_o                   =   exc_code;
+        mmio_req            =   ((req_addr_i >= 64'h0000_0000_4000_0000) & (req_addr_i <= 64'h0000_0000_4000_0FFF));
+        mn_mem_req          =   ((req_addr_i >= 64'h0000_0000_8000_0000) & (req_addr_i <= 64'h0000_0000_9FFF_FFFF));
 
-    //assign outputs to writeback
-    assign data_mem_valid_o             =   data_mem_valid;
-    assign data_mem_rd_data_o[63:0]     =   rd_data[63:0];
+        oob_addr            =   req_valid_i & req_ready_o & ~(mmio_req | mn_mem_req);
+
+        unaligned_addr      =   req_valid_i & req_ready_o & 
+                                ((req_byte_en_i == BYTE)        ? 1'b0 : 
+                                 (req_byte_en_i == HALF_WORD)   ? req_addr_i[0] :
+                                 (req_byte_en_i == WORD)        ? |req_addr_i[1:0] : 
+                                 (req_byte_en_i == DOUBLE_WORD) ? |req_addr_i[2:0] : 1'b0);
+
+        exc_valid_mem       =   oob_addr | unaligned_addr;
+        exc_code_mem        =   ({5{oob_addr &  req_wr_i}} & 5'd7) |
+                                ({5{oob_addr & ~req_wr_i}} & 5'd5) | 
+                                ({5{unaligned_addr & ~oob_addr &  req_wr_i}} & 5'd6) | 
+                                ({5{unaligned_addr & ~oob_addr & ~req_wr_i}} & 5'd4);
+
+        exc_valid_o         =   exc_valid_i | exc_valid_mem;
+        exc_code_o          =   exc_valid_i ? exc_code_i : exc_code_mem;
+
+        req_handshake       =   req_valid_i & req_ready_o & ~flush_i & ~exc_valid_o;
+
+        mmio_store          =   req_handshake & mmio_req & req_wr_i;
+        mmio_load           =   req_handshake & mmio_req & ~req_wr_i;
+
+        mmio_index          =   req_addr_i[11:3];
+
+        //store align & mask
+        case (req_byte_en_i)
+            BYTE: begin
+                store_data[7:0]     =   ({8{req_addr_i[2:0] == 3'b000}} & req_wr_data_i[7:0]);
+                store_data[15:8]    =   ({8{req_addr_i[2:0] == 3'b001}} & req_wr_data_i[7:0]);
+                store_data[23:16]   =   ({8{req_addr_i[2:0] == 3'b010}} & req_wr_data_i[7:0]);
+                store_data[31:24]   =   ({8{req_addr_i[2:0] == 3'b011}} & req_wr_data_i[7:0]);
+                store_data[39:32]   =   ({8{req_addr_i[2:0] == 3'b100}} & req_wr_data_i[7:0]);
+                store_data[47:40]   =   ({8{req_addr_i[2:0] == 3'b101}} & req_wr_data_i[7:0]);
+                store_data[55:48]   =   ({8{req_addr_i[2:0] == 3'b110}} & req_wr_data_i[7:0]);
+                store_data[63:56]   =   ({8{req_addr_i[2:0] == 3'b111}} & req_wr_data_i[7:0]);
+
+                store_mask[0]       =   (req_addr_i[2:0] == 3'b000);
+                store_mask[1]       =   (req_addr_i[2:0] == 3'b001);
+                store_mask[2]       =   (req_addr_i[2:0] == 3'b010);
+                store_mask[3]       =   (req_addr_i[2:0] == 3'b011);
+                store_mask[4]       =   (req_addr_i[2:0] == 3'b100);
+                store_mask[5]       =   (req_addr_i[2:0] == 3'b101);
+                store_mask[6]       =   (req_addr_i[2:0] == 3'b110);
+                store_mask[7]       =   (req_addr_i[2:0] == 3'b111);
+            end 
+            HALF_WORD: begin
+                store_data[15:0]    =   ({16{req_addr_i[2:1] == 2'b00}} & req_wr_data_i[15:0]);
+                store_data[31:16]   =   ({16{req_addr_i[2:1] == 2'b01}} & req_wr_data_i[15:0]);
+                store_data[47:32]   =   ({16{req_addr_i[2:1] == 2'b10}} & req_wr_data_i[15:0]);
+                store_data[63:48]   =   ({16{req_addr_i[2:1] == 2'b11}} & req_wr_data_i[15:0])
+
+                store_mask[1:0]     =   {2{req_addr_i[2:1] == 2'b00}};
+                store_mask[3:2]     =   {2{req_addr_i[2:1] == 2'b01}};
+                store_mask[5:4]     =   {2{req_addr_i[2:1] == 2'b10}};
+                store_mask[7:6]     =   {2{req_addr_i[2:1] == 2'b11}};
+            end
+            WORD: begin
+                store_data[31:0]    =   ({32{~req_addr_i[2]}} & req_wr_data_i[31:0]);
+                store_data[63:32]   =   ({32{ req_addr_i[2]}} & req_wr_data_i[31:0]);
+
+                store_mask[3:0]     =   {4{~req_addr_i[2]}};
+                store_mask[7:4]     =   {4{ req_addr_i[2]}};
+            end
+            DOUBLE_WORD: begin
+                store_data          =   req_wr_data_i;
+                store_mask          =   8'b1111_1111;
+            end
+            default: begin
+                store_data          =   64'h0;
+                store_mask          =   8'b0;
+            end
+        endcase
+
+        req_rd_data                 = req_mmio_ff ? mmio_load_data : req_rd_data_i;
+
+        //load align
+        case(req_byte_en_ff)
+            BYTE: begin
+                load_data[7:0]      =   ({8{req_addr_ff[2:0] == 3'b000}} & req_rd_data[7:0])   | 
+                                        ({8{req_addr_ff[2:0] == 3'b001}} & req_rd_data[15:8])  |
+                                        ({8{req_addr_ff[2:0] == 3'b010}} & req_rd_data[23:16]) |
+                                        ({8{req_addr_ff[2:0] == 3'b011}} & req_rd_data[31:24]) |
+                                        ({8{req_addr_ff[2:0] == 3'b100}} & req_rd_data[39:32]) |
+                                        ({8{req_addr_ff[2:0] == 3'b101}} & req_rd_data[47:40]) |
+                                        ({8{req_addr_ff[2:0] == 3'b110}} & req_rd_data[55:48]) |
+                                        ({8{req_addr_ff[2:0] == 3'b111}} & req_rd_data[63:56]);
+
+                load_data[63:8]     =   {56{~req_zero_extnd_ff & load_data[7]}};
+            end 
+            HALF_WORD: begin
+                load_data[15:0]     =   ({16{req_addr_ff[2:1] == 2'b00}} & req_rd_data[15:0])  |
+                                        ({16{req_addr_ff[2:1] == 2'b01}} & req_rd_data[31:16]) |
+                                        ({16{req_addr_ff[2:1] == 2'b10}} & req_rd_data[47:32]) |
+                                        ({16{req_addr_ff[2:1] == 2'b11}} & req_rd_data[63:48]);
+
+                load_data[63:16]    =   {48{~req_zero_extnd_ff & load_data[15]}};
+            end
+            WORD: begin
+                load_data[31:0]     =   ({32{~req_addr_ff[2]}} & req_rd_data[31:0]) |
+                                        ({32{ req_addr_ff[2]}} & req_rd_data[63:32]);
+
+                load_data[63:32]    =   {32{~req_zero_extnd_ff & load_data[31]}};
+            end
+            DOUBLE_WORD: load_data  =   req_rd_data;
+            default: load_data      =   64'h0;
+        endcase
+
+        //main memory store
+        if (req_handshake & mn_mem_req & req_wr_i) begin
+            data_mem_req_o          =   1'b1;
+            data_mem_addr_o         =   req_addr_i;
+            data_mem_byte_en_o      =   req_byte_en_i;
+            data_mem_wr_o           =   1'b1;
+            data_mem_wr_data_o      =   req_wr_data_i;
+        end
+
+        //main memory load
+        if (req_handshake & mn_mem_req & ~req_wr_i) begin
+            data_mem_req_o          =   1'b1;
+            data_mem_addr_o         =   req_addr_i;
+            data_mem_byte_en_o      =   req_byte_en_i;
+            data_mem_wr_o           =   1'b0;
+            data_mem_wr_data_o      =   64'h0;
+        end
+
+        req_ready_o                 =   data_mem_ready_i;
+
+        data_mem_resp_valid_o       =   (mmio_store_ff |                          //write mmio       
+                                         mmio_load_ff  |                          //read mmio
+                                         (~req_mmio_ff &  req_resp_valid_i)) &                    //read/write main memory
+                                        ~exc_valid_i;
+        data_mem_rd_data_o          =   load_data;
+
+        req_rd_ready_o              =   1'b1;
+    end
 
 endmodule

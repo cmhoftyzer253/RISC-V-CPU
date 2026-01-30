@@ -7,7 +7,7 @@ module memory(
 
     //datapath request interface
     input logic                 req_valid_i,
-    input logic [63:0]          req_addr_i;
+    input logic [63:0]          req_addr_i,
     input mem_access_size_t     req_byte_en_i,
     input logic                 req_wr_i,
     input logic                 req_zero_extnd_i,
@@ -16,7 +16,7 @@ module memory(
 
     //datapath response interface
     output logic                data_mem_resp_valid_o,
-    output logic [63:0]         data_mem_rd_data_o;
+    output logic [63:0]         data_mem_rd_data_o,
 
     //data memory request interface
     input logic                 data_mem_ready_i,
@@ -24,6 +24,7 @@ module memory(
     output logic [63:0]         data_mem_addr_o,
     output logic                data_mem_wr_o,
     output logic [63:0]         data_mem_wr_data_o,
+    output logic [7:0]          data_mem_mask_o,
 
     //data memory response interface
     input logic                 req_resp_valid_i,
@@ -41,7 +42,7 @@ module memory(
 );
 
     //mmio registers
-    (* ram_style "block" *) logic [63:0] mmio [511:0];
+    (* ram_style = "block" *) logic [63:0] mmio [511:0];
 
     logic [2:0]                 req_addr_ff;
     mem_access_size_t           req_byte_en_ff;
@@ -145,7 +146,8 @@ module memory(
         data_mem_req_o      =   1'b0;
         data_mem_addr_o     =   64'h0;
         data_mem_wr_o       =   1'b0;
-        data_mem_wr_data    =   64'h0;
+        data_mem_wr_data_o  =   64'h0;
+        data_mem_mask_o     =   8'b0;
 
         mmio_req            =   ((req_addr_i >= 64'h0000_0000_4000_0000) & (req_addr_i <= 64'h0000_0000_4000_0FFF));
         mn_mem_req          =   ((req_addr_i >= 64'h0000_0000_8000_0000) & (req_addr_i <= 64'h0000_0000_9FFF_FFFF));
@@ -199,7 +201,7 @@ module memory(
                 store_data[15:0]    =   ({16{req_addr_i[2:1] == 2'b00}} & req_wr_data_i[15:0]);
                 store_data[31:16]   =   ({16{req_addr_i[2:1] == 2'b01}} & req_wr_data_i[15:0]);
                 store_data[47:32]   =   ({16{req_addr_i[2:1] == 2'b10}} & req_wr_data_i[15:0]);
-                store_data[63:48]   =   ({16{req_addr_i[2:1] == 2'b11}} & req_wr_data_i[15:0])
+                store_data[63:48]   =   ({16{req_addr_i[2:1] == 2'b11}} & req_wr_data_i[15:0]);
 
                 store_mask[1:0]     =   {2{req_addr_i[2:1] == 2'b00}};
                 store_mask[3:2]     =   {2{req_addr_i[2:1] == 2'b01}};
@@ -262,7 +264,8 @@ module memory(
             data_mem_req_o          =   1'b1;
             data_mem_addr_o         =   req_addr_i;
             data_mem_wr_o           =   1'b1;
-            data_mem_wr_data_o      =   req_wr_data_i;
+            data_mem_wr_data_o      =   store_data;
+            data_mem_mask_o         =   store_mask;
         end
 
         //main memory load
@@ -271,6 +274,7 @@ module memory(
             data_mem_addr_o         =   req_addr_i;
             data_mem_wr_o           =   1'b0;
             data_mem_wr_data_o      =   64'h0;
+            data_mem_mask_o         =   8'b0;
         end
 
         req_ready_o                 =   data_mem_ready_i;

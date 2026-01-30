@@ -22,13 +22,12 @@ module memory(
     input logic                 data_mem_ready_i,
     output logic                data_mem_req_o,
     output logic [63:0]         data_mem_addr_o,
-    output mem_access_size_t    data_mem_byte_en_o,
     output logic                data_mem_wr_o,
     output logic [63:0]         data_mem_wr_data_o,
 
     //data memory response interface
     input logic                 req_resp_valid_i,
-    input logic                 req_rd_data_i,
+    input logic [63:0]          req_rd_data_i,
     output logic                req_rd_ready_o,
 
     //control signals
@@ -145,7 +144,6 @@ module memory(
 
         data_mem_req_o      =   1'b0;
         data_mem_addr_o     =   64'h0;
-        data_mem_byte_en_o  =   DOUBLE_WORD;
         data_mem_wr_o       =   1'b0;
         data_mem_wr_data    =   64'h0;
 
@@ -263,7 +261,6 @@ module memory(
         if (req_handshake & mn_mem_req & req_wr_i) begin
             data_mem_req_o          =   1'b1;
             data_mem_addr_o         =   req_addr_i;
-            data_mem_byte_en_o      =   req_byte_en_i;
             data_mem_wr_o           =   1'b1;
             data_mem_wr_data_o      =   req_wr_data_i;
         end
@@ -272,7 +269,6 @@ module memory(
         if (req_handshake & mn_mem_req & ~req_wr_i) begin
             data_mem_req_o          =   1'b1;
             data_mem_addr_o         =   req_addr_i;
-            data_mem_byte_en_o      =   req_byte_en_i;
             data_mem_wr_o           =   1'b0;
             data_mem_wr_data_o      =   64'h0;
         end

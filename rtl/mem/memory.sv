@@ -101,40 +101,42 @@ module memory(
             mmio_store_ff       <= 1'b0;
 
             mmio_load_data      <= 64'h0;
-        end else if (mmio_store) begin
-            mmio_store_ff       <= 1'b1;
-
-            if (store_mask[0]) begin
-                mmio[mmio_index][7:0]       <= store_data[7:0];
-            end
-            if (store_mask[1]) begin
-                mmio[mmio_index][15:8]      <= store_data[15:8];
-            end
-            if (store_mask[2]) begin
-                mmio[mmio_index][23:16]     <= store_data[23:16];
-            end
-            if (store_mask[3]) begin
-                mmio[mmio_index][31:24]     <= store_data[31:24];
-            end
-            if (store_mask[4]) begin
-                mmio[mmio_index][39:32]     <= store_data[39:32];
-            end 
-            if (store_mask[5]) begin
-                mmio[mmio_index][47:40]     <= store_data[47:40];
-            end
-            if (store_mask[6]) begin
-                mmio[mmio_index][55:48]     <= store_data[55:48];
-            end
-            if (store_mask[7]) begin
-                mmio[mmio_index][63:56]     <= store_data[63:56];
-            end
-        end else if (mmio_load) begin
-            mmio_load_ff                    <= 1'b1;
-            mmio_load_data                  <= mmio[mmio_index];
         end else begin
-            mmio_load_ff                    <= 1'b0;
-            mmio_store_ff                   <= 1'b0;
-        end
+            mmio_store_ff       <= 1'b0;
+            mmio_load_ff        <= 1'b0;
+
+            if (mmio_store) begin
+                mmio_store_ff                   <= 1'b1;
+
+                if (store_mask[0]) begin
+                    mmio[mmio_index][7:0]       <= store_data[7:0];
+                end
+                if (store_mask[1]) begin
+                    mmio[mmio_index][15:8]      <= store_data[15:8];
+                end
+                if (store_mask[2]) begin
+                    mmio[mmio_index][23:16]     <= store_data[23:16];
+                end
+                if (store_mask[3]) begin
+                    mmio[mmio_index][31:24]     <= store_data[31:24];
+                end
+                if (store_mask[4]) begin
+                    mmio[mmio_index][39:32]     <= store_data[39:32];
+                end 
+                if (store_mask[5]) begin
+                    mmio[mmio_index][47:40]     <= store_data[47:40];
+                end
+                if (store_mask[6]) begin
+                    mmio[mmio_index][55:48]     <= store_data[55:48];
+                end
+                if (store_mask[7]) begin
+                    mmio[mmio_index][63:56]     <= store_data[63:56];
+                end
+            end else if (mmio_load) begin
+                mmio_load_ff                    <= 1'b1;
+                mmio_load_data                  <= mmio[mmio_index];
+            end
+        end 
     end
 
     always_comb begin
@@ -225,7 +227,7 @@ module memory(
             end
         endcase
 
-        req_rd_data                 = req_mmio_ff ? mmio_load_data : req_rd_data_i;
+        req_rd_data                 =   req_mmio_ff ? mmio_load_data : req_rd_data_i;
 
         //load align
         case(req_byte_en_ff)
@@ -279,9 +281,9 @@ module memory(
 
         req_ready_o                 =   data_mem_ready_i;
 
-        data_mem_resp_valid_o       =   (mmio_store_ff |                          //write mmio       
-                                         mmio_load_ff  |                          //read mmio
-                                         (~req_mmio_ff &  req_resp_valid_i)) &                    //read/write main memory
+        data_mem_resp_valid_o       =   (mmio_store_ff |                            //write mmio       
+                                         mmio_load_ff  |                            //read mmio
+                                         (~req_mmio_ff &  req_resp_valid_i)) &      //read/write main memory
                                         ~exc_valid_i;
         data_mem_rd_data_o          =   load_data;
 

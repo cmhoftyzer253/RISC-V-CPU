@@ -92,10 +92,10 @@ module i_cache (
     i_cache_state_t     state;
 
     //I-$ tags
-    cache_tag_t tags_w0 [127:0];
-    cache_tag_t tags_w1 [127:0];
-    cache_tag_t tags_w2 [127:0];
-    cache_tag_t tags_w3 [127:0];
+    i_cache_tag_t tags_w0 [127:0];
+    i_cache_tag_t tags_w1 [127:0];
+    i_cache_tag_t tags_w2 [127:0];
+    i_cache_tag_t tags_w3 [127:0];
 
     //I-$ data
     (* ram_style = "block" *) logic [31:0] data_w0 [2047:0];
@@ -353,8 +353,6 @@ module i_cache (
                             kill_ff             <= 1'b0;
                             error_ff            <= 1'b0;
                             id_error            <= 1'b0;
-
-                            state               <= S_RUN;
                         end
                     end else if (kill_ff) begin
                         if (way_fill_q == 2'b00) begin
@@ -368,8 +366,6 @@ module i_cache (
                         end
 
                         kill_ff                 <= 1'b0;
-
-                        state                   <= S_RUN;
                     end else begin
                         if (instr_ready_i) begin
                             if (way_fill_q == 2'b00) begin
@@ -392,10 +388,12 @@ module i_cache (
                             kill_ff         <= 1'b0;
                             error_ff        <= 1'b0;
                             id_error        <= 1'b0;
-
-                            state           <= S_RUN;
                         end
                     end
+
+                    valid_instr_ff          <= 1'b0;
+
+                    state                   <= S_RUN;
                 end
             endcase
         end

@@ -1,5 +1,4 @@
 import cpu_consts::*;
-import cpu_modules::*;
 
 module multiply (
     input logic         clk,

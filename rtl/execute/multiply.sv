@@ -11,7 +11,7 @@ module multiply (
     input logic         word_op_i,
     output logic        mul_ready_o,
 
-    input logic         mul_ready_i,
+    input logic         mul_res_ready_i,
     output logic [63:0] mul_res_o,
     output logic        mul_res_valid_o,
 

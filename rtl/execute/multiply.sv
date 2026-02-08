@@ -188,7 +188,7 @@ module multiply (
         cross_terms             =   65'h0;
         part_sum_in             =   128'h0;
 
-        mul_res_corr            =   64'h0;
+        mul_res_correct         =   64'h0;
         full_sum                =   128'h0;
         final_sum               =   128'h0;
 
@@ -237,8 +237,8 @@ module multiply (
                 p3_in           =   a_high_q * b_high_q;
 
                 if (word_op) begin
-                    mul_res_corr            =   negate_res ? ~p0_q + 64'b1 : p0_q;
-                    mul_res_o               =   {{32{mul_res_corr[31]}}, mul_res_corr[31:0]};
+                    mul_res_correct         =   negate_res ? ~p0_q + 64'b1 : p0_q;
+                    mul_res_o               =   {{32{mul_res_correct[31]}}, mul_res_correct[31:0]};
                     mul_res_valid_o         =   ~flush_i;
                 end
             end

@@ -66,14 +66,14 @@ package cpu_consts;
 
     // M R type instructions
     typedef enum logic[2:0] {
-        MUL     = 3'h0;
-        MULH    = 3'h1;
-        MULHSU  = 3'h2;
-        MULHU   = 3'h3;
-        DIV     = 3'h4;
-        DIVU    = 3'h5;
-        REM     = 3'h6;
-        REMU    = 3'h7;
+        MUL     = 3'h0,
+        MULH    = 3'h1,
+        MULHSU  = 3'h2,
+        MULHU   = 3'h3,
+        DIV     = 3'h4,
+        DIVU    = 3'h5,
+        REM     = 3'h6,
+        REMU    = 3'h7
     } r_type_m_t;
 
     // I type instructions
@@ -152,11 +152,11 @@ package cpu_consts;
     } rf_wr_data_src_t;
 
     typedef enum logic[2:0] {
-        NONE            = 3'b000;
-        ZERO_DIVISOR    = 3'b001;
-        OVERFLOW        = 3'b010;
-        ZERO_DIVIDEND   = 3'b011;
-        SHORT_DIV       = 3'b100;
+        NONE            = 3'b000,
+        ZERO_DIVISOR    = 3'b001,
+        OVERFLOW        = 3'b010,
+        ZERO_DIVIDEND   = 3'b011,
+        SHORT_DIV       = 3'b100
     } div_status_t;
 
     typedef logic [1:0] bp_cnt_t;
@@ -171,33 +171,61 @@ package cpu_consts;
     typedef struct packed {
         logic [50:0]    tag;
         logic [61:0]    target;
-        btb_type_t      type;
+        btb_type_t      btb_type;
     } btb_entry_t;
-
-    typedef struct packed {
-        logic [63:0]    addr;
-        logic [7:0]     len;
-        logic [2:0]     size;
-        logic [1:0]     burst;
-    } imem_req_t;
-
-    /*
-    typedef struct packed {
-        logic [50:0] tag;
-        logic [6:0] index;
-        logic [5:0] offset;
-    } cache_addr_t;
-    */
 
     typedef struct packed {
         logic           valid;
         logic [50:0]    tag;
-    } cache_tag_t;
+    } i_cache_tag_t;
 
-    typdef struct packed {
-        logic           error;
-        logic           last;
-        logic [63:0]    data;
-    } fifo_entry_t;
+    typedef enum logic[2:0] {
+        S_IC_RUN,          
+        S_IC_MISS_REQUEST,
+        S_IC_MISS_WAIT,
+        S_IC_REFILL_1,
+        S_IC_REFILL_2,
+        S_IC_REFILL_3,
+        S_IC_REFILL_DONE
+    } i_cache_state_t;
+
+    typedef struct packed {
+        logic           valid;
+        logic           dirty;
+        logic [50:0]    tag;
+    } d_cache_tag_t;
+
+    typedef enum logic [3:0] {
+        S_DC_RUN,
+        S_DC_STORE_AW_WAIT,
+        S_DC_STORE_1,
+        S_DC_STORE_2,
+        S_DC_STORE_3,
+        S_DC_STORE_4,
+        S_DC_STORE_DONE,
+        S_DC_LOAD_REQUEST,
+        S_DC_LOAD_1,
+        S_DC_LOAD_2,
+        S_DC_LOAD_3,
+        S_DC_LOAD_4,
+        S_DC_LOAD_DONE
+    } d_cache_state_t;
+
+    //multiplier states
+    typedef enum logic [2:0] {
+        S_MUL_IDLE,          
+        S_MUL_RUN_1,
+        S_MUL_RUN_2,
+        S_MUL_RUN_3,
+        S_MUL_RUN_4           
+    } mul_state_t;
+
+    //divide states
+    typedef enum logic [1:0] {
+        S_DIV_IDLE,
+        S_DIV_RUN,
+        S_DIV_OUT_SC,
+        S_DIV_OUT_CC
+    } div_state_t;
 
 endpackage

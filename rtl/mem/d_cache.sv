@@ -1,7 +1,7 @@
 import cpu_consts::*;
 
-module d_cache (
-    parameter int ID_W = 1;
+module d_cache #(
+    parameter int ID_W = 1
 )(
     input logic clk,
     input logic resetn,
@@ -88,7 +88,7 @@ module d_cache (
     logic           cache_miss;
 
     logic [63:0]    fetch_data;
-    logic [63:0]    store_data
+    logic [63:0]    store_data;
     logic [63:0]    data_hold;
 
     logic [2:0]     PLRU_tree_q;
@@ -120,6 +120,11 @@ module d_cache (
     logic [63:0]    data_rd_w1;
     logic [63:0]    data_rd_w2;
     logic [63:0]    data_rd_w3;
+
+    d_cache_tag_t   tag_rd_w0;
+    d_cache_tag_t   tag_rd_w1;
+    d_cache_tag_t   tag_rd_w2;
+    d_cache_tag_t   tag_rd_w3;
     
     d_cache_tag_t tags_w0 [127:0];
     d_cache_tag_t tags_w1 [127:0];
@@ -166,7 +171,7 @@ module d_cache (
             error_ff                            <= 1'b0;
             id_error                            <= 1'b0;
 
-            for (i=0; i<128; i++) begin
+            for (int i=0; i<128; i++) begin
                 tags_w0[i].valid                <= 1'b0;
                 tags_w1[i].valid                <= 1'b0;
                 tags_w2[i].valid                <= 1'b0;
@@ -183,10 +188,10 @@ module d_cache (
                 tags_w3[i].tag                  <= '0;
             end
 
-            state                               <= S_RUN;
+            state                               <= S_DC_RUN;
         end else begin
             case (state)
-                S_RUN: begin
+                S_DC_RUN: begin
                     req_handshake_ff            <= req_handshake;
 
                     if (data_hit) begin
@@ -245,13 +250,13 @@ module d_cache (
                         data_hold               <= 64'h0;
 
                         if (wb_dirty) begin
-                            state               <= S_STORE_AW_WAIT;
+                            state               <= S_DC_STORE_AW_WAIT;
                         end else begin
-                            state               <= S_LOAD_REQUEST;
+                            state               <= S_DC_LOAD_REQUEST;
                         end
                     end
                 end
-                S_STORE_AW_WAIT: begin
+                S_DC_STORE_AW_WAIT: begin
                     if (awready_i) begin
                         case (way_fill_q)
                             2'b00: begin
@@ -272,10 +277,10 @@ module d_cache (
                             end
                         endcase
 
-                        state                   <= S_STORE_1;
+                        state                   <= S_DC_STORE_1;
                     end
                 end
-                S_STORE_1: begin
+                S_DC_STORE_1: begin
                     if (wready_i) begin
                         case (way_fill_q)
                             2'b00: begin
@@ -296,10 +301,10 @@ module d_cache (
                             end
                         endcase
 
-                        state                   <= S_STORE_2;
+                        state                   <= S_DC_STORE_2;
                     end
                 end
-                S_STORE_2: begin
+                S_DC_STORE_2: begin
                     if (wready_i) begin
                         case (way_fill_q)
                             2'b00: begin
@@ -320,10 +325,10 @@ module d_cache (
                             end
                         endcase
 
-                        state                   <= S_STORE_3;
+                        state                   <= S_DC_STORE_3;
                     end
                 end
-                S_STORE_3: begin
+                S_DC_STORE_3: begin
                     if (wready_i) begin
                         case(way_fill_q)
                             2'b00: begin
@@ -344,29 +349,30 @@ module d_cache (
                             end
                         endcase
 
-                        state                   <= S_STORE_4;
+                        state                   <= S_DC_STORE_4;
                     end
                 end
-                S_STORE_4: begin
+                S_DC_STORE_4: begin
                     if (wready_i) begin
-                        state                   <= S_STORE_DONE;
+                        state                   <= S_DC_STORE_DONE;
                     end
                 end
-                S_STORE_DONE: begin
+                S_DC_STORE_DONE: begin
                     if (bvalid_i) begin
-                        state                   <= S_LOAD_REQUEST;
+                        state                   <= S_DC_LOAD_REQUEST;
                     end
                 end
-                S_LOAD_REQUEST: begin
+                S_DC_LOAD_REQUEST: begin
                     if (arready_i) begin
-                        state                   <= S_LOAD_1;
+                        state                   <= S_DC_LOAD_1;
                     end
                 end
-                S_LOAD_1: begin
+                S_DC_LOAD_1: begin
                     if (rvalid_i) begin
                         case (data_offset)
                             3'b000: data_hold   <= rdata_i[63:0];
                             3'b001: data_hold   <= rdata_i[127:64];
+                            default: data_hold  <= data_hold;
                         endcase
 
                         if (way_fill_q == 2'b00) begin
@@ -386,14 +392,15 @@ module d_cache (
                         error_ff                <= (rresp_i != 2'b00);
                         id_error                <= (rid_i != '0);
 
-                        state                   <= S_LOAD_2;
+                        state                   <= S_DC_LOAD_2;
                     end
                 end
-                S_LOAD_2: begin
+                S_DC_LOAD_2: begin
                     if (rvalid_i) begin
                         case (data_offset)
                             3'b010: data_hold   <= rdata_i[63:0];
                             3'b011: data_hold   <= rdata_i[127:64];
+                            default: data_hold  <= data_hold;
                         endcase
 
                         if (way_fill_q == 2'b00) begin
@@ -413,14 +420,15 @@ module d_cache (
                         error_ff                <= error_ff | (rresp_i != 2'b00);
                         id_error                <= id_error | (rid_i != '0);
 
-                        state                   <= S_LOAD_3;
+                        state                   <= S_DC_LOAD_3;
                     end
                 end
-                S_LOAD_3: begin
+                S_DC_LOAD_3: begin
                     if (rvalid_i) begin
                         case (data_offset) 
                             3'b100: data_hold   <= rdata_i[63:0];
                             3'b101: data_hold   <= rdata_i[127:64];
+                            default: data_hold  <= data_hold;
                         endcase
 
                         if (way_fill_q == 2'b00) begin
@@ -440,15 +448,16 @@ module d_cache (
                         error_ff                <= error_ff | (rresp_i != 2'b00);
                         id_error                <= id_error | (rid_i != '0);
 
-                        state                   <= S_LOAD_4;
+                        state                   <= S_DC_LOAD_4;
                     end
                 end
-                S_LOAD_4: begin
+                S_DC_LOAD_4: begin
                     if (rvalid_i) begin
                         
                         case (data_offset)
                             3'b110: data_hold   <= rdata_i[63:0];
                             3'b111: data_hold   <= rdata_i[127:64];
+                            default: data_hold  <= data_hold;
                         endcase
 
                         if (way_fill_q == 2'b00) begin
@@ -468,10 +477,10 @@ module d_cache (
                         error_ff                <= error_ff | (rresp_i != 2'b00);
                         id_error                <= id_error | (rid_i != '0);
 
-                        state                   <= S_LOAD_DONE;
+                        state                   <= S_DC_LOAD_DONE;
                     end 
                 end
-                S_LOAD_DONE: begin
+                S_DC_LOAD_DONE: begin
                     if (error_ff | id_error) begin
                         if (req_rd_ready_i) begin
                             if (way_fill_q == 2'b00) begin
@@ -491,7 +500,7 @@ module d_cache (
                             error_ff            <= 1'b0;
                             id_error            <= 1'b0;
 
-                            state               <= S_RUN;
+                            state               <= S_DC_RUN;
                         end
                     end else begin
                         if (req_rd_ready_i) begin
@@ -531,9 +540,12 @@ module d_cache (
                             error_ff            <= 1'b0;
                             id_error            <= 1'b0;
 
-                            state               <= S_RUN;
+                            state               <= S_DC_RUN;
                         end
                     end
+                end
+                default: begin
+                    state                       <= S_DC_RUN;
                 end
             endcase
         end
@@ -606,7 +618,7 @@ module d_cache (
         wb_dirty                    =   1'b0;
 
         case (state)
-            S_RUN: begin
+            S_DC_RUN: begin
                 data_tag            =   data_mem_addr_i[63:13];
                 tag_index           =   data_mem_addr_i[12:6];
                 data_offset         =   data_mem_addr_i[5:3];
@@ -687,7 +699,7 @@ module d_cache (
 
                 wb_dirty            =   way_fill_replace & way_dirty;
             end
-            S_STORE_AW_WAIT: begin
+            S_DC_STORE_AW_WAIT: begin
                 tag_index_ff        =   data_mem_addr_ff[12:6];
 
                 case(way_fill_q)
@@ -704,7 +716,7 @@ module d_cache (
                 awid_o              =   1'b1;
                 awvalid_o           =   1'b1;
             end
-            S_STORE_1: begin
+            S_DC_STORE_1: begin
                 tag_index_ff        =   data_mem_addr_ff[12:6];
 
                 wvalid_o            =   1'b1;
@@ -712,7 +724,7 @@ module d_cache (
                 wstrb_o             =   16'hFFFF;
                 wlast_o             =   1'b0;
             end
-            S_STORE_2: begin
+            S_DC_STORE_2: begin
                 tag_index_ff        =   data_mem_addr_ff[12:6];
 
                 wvalid_o            =   1'b1;
@@ -720,7 +732,7 @@ module d_cache (
                 wstrb_o             =   16'hFFFF;
                 wlast_o             =   1'b0;
             end
-            S_STORE_3: begin
+            S_DC_STORE_3: begin
                 tag_index_ff        =   data_mem_addr_ff[12:6];
 
                 wvalid_o            =   1'b1;
@@ -728,13 +740,13 @@ module d_cache (
                 wstrb_o             =   16'hFFFF;
                 wlast_o             =   1'b0;
             end
-            S_STORE_4: begin
+            S_DC_STORE_4: begin
                 wvalid_o            =   1'b1;
                 wdata_o             =   {wb_upper, wb_lower};
                 wstrb_o             =   16'hFFFF;
                 wlast_o             =   1'b1;
             end
-            S_STORE_DONE: begin
+            S_DC_STORE_DONE: begin
                 tag_index_ff        =   data_mem_addr_ff[12:6];
 
                 if (bvalid_i & ((bresp_i != 2'b00) | (bid_i != '0))) begin
@@ -742,7 +754,7 @@ module d_cache (
                     exc_code_o      =   5'd7;
                 end
             end
-            S_LOAD_REQUEST: begin
+            S_DC_LOAD_REQUEST: begin
                 araddr_o            =   {data_mem_addr_ff[63:6], 6'b0};
                 arlen_o             =   8'd3;
                 arsize_o            =   3'b100;
@@ -751,31 +763,31 @@ module d_cache (
                 arprot_o            =   3'b000;
                 arvalid_o           =   1'b1;
             end
-            S_LOAD_1: begin
+            S_DC_LOAD_1: begin
                 data_offset         =   data_mem_addr_ff[5:3];
                 data_line           =   data_mem_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
-            S_LOAD_2: begin
+            S_DC_LOAD_2: begin
                 data_offset         =   data_mem_addr_ff[5:3];
                 data_line           =   data_mem_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
-            S_LOAD_3: begin
+            S_DC_LOAD_3: begin
                 data_offset         =   data_mem_addr_ff[5:3];
                 data_line           =   data_mem_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
-            S_LOAD_4: begin
+            S_DC_LOAD_4: begin
                 data_offset         =   data_mem_addr_ff[5:3];
                 data_line           =   data_mem_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
-            S_LOAD_DONE: begin
+            S_DC_LOAD_DONE: begin
                 exc_valid_o         =   error_ff | id_error;
                 exc_code_o          =   data_mem_wr_ff ? 5'd7 : 5'd5;
 

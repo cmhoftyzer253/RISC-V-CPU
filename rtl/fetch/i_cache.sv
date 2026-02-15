@@ -1,6 +1,6 @@
 import cpu_consts::*;
 
-module i_cache (
+module i_cache #(
     parameter int ID_W = 1
 )(
     //cpu clock, reset
@@ -42,10 +42,10 @@ module i_cache (
     output logic [4:0]          exc_code_o
 
 );
-    cache_tag_t         tag_rd_w0;
-    cache_tag_t         tag_rd_w1;
-    cache_tag_t         tag_rd_w2;
-    cache_tag_t         tag_rd_w3;
+    i_cache_tag_t         tag_rd_w0;
+    i_cache_tag_t         tag_rd_w1;
+    i_cache_tag_t         tag_rd_w2;
+    i_cache_tag_t         tag_rd_w3;
 
     logic [31:0]        data_rd_w0;
     logic [31:0]        data_rd_w1;
@@ -64,9 +64,6 @@ module i_cache (
     logic               cache_miss;
     logic               fetch_stall;
     logic               valid_instr;
-
-    logic               unaligned_addr;
-    logic               oob_addr;
 
     logic [1:0]         way_fill_q;
     logic [1:0]         nxt_way_fill;
@@ -141,10 +138,10 @@ module i_cache (
                 tags_w3[i].tag      <= 51'h0;
             end
 
-            state               <= S_RUN;
+            state               <= S_IC_RUN;
         end else begin
             case (state)
-                S_RUN: begin
+                S_IC_RUN: begin
                     if (valid_instr & ~fetch_stall & ~cache_miss) begin
                         tag_rd_w0           <= tags_w0[instr_index];
                         tag_rd_w1           <= tags_w1[instr_index];
@@ -166,21 +163,21 @@ module i_cache (
 
                         instr_hold          <= 32'h0;
 
-                        state               <= S_MISS_REQUEST;
+                        state               <= S_IC_LOAD_REQUEST;
                     end
 
                     if (instr_valid_o & instr_ready_i) begin
                         PLRU_tree_q         <= nxt_PLRU_tree;
                     end
                 end
-                S_MISS_REQUEST: begin
+                S_IC_LOAD_REQUEST: begin
                     kill_ff                 <= kill_ff | kill_i;
 
                     if (arready_i) begin
-                        state               <= S_MISS_WAIT;
+                        state               <= S_IC_LOAD_WAIT;
                     end
                 end
-                S_MISS_WAIT: begin
+                S_IC_LOAD_WAIT: begin
                     kill_ff                 <= kill_ff | kill_i;
 
                     if (rvalid_i) begin
@@ -189,6 +186,7 @@ module i_cache (
                             4'b0001: instr_hold             <= rdata_i[63:32];
                             4'b0010: instr_hold             <= rdata_i[95:64];
                             4'b0011: instr_hold             <= rdata_i[127:96];
+                            default: instr_hold             <= instr_hold;
                         endcase
 
                         if (way_fill_q == 2'b00) begin
@@ -216,10 +214,10 @@ module i_cache (
                         error_ff            <= (rresp_i != 2'b00);
                         id_error            <= (rid_i != '0);
 
-                        state               <= S_REFILL_1;
+                        state               <= S_IC_LOAD_1;
                     end
                 end
-                S_REFILL_1: begin
+                S_IC_LOAD_1: begin
                     kill_ff                 <= kill_ff | kill_i;
 
                     if (rvalid_i) begin
@@ -228,6 +226,7 @@ module i_cache (
                             4'b0101: instr_hold             <= rdata_i[63:32];
                             4'b0110: instr_hold             <= rdata_i[95:64];
                             4'b0111: instr_hold             <= rdata_i[127:96];
+                            default: instr_hold             <= instr_hold;
                         endcase
 
                         if (way_fill_q == 2'b00) begin
@@ -255,10 +254,10 @@ module i_cache (
                         error_ff            <= error_ff | (rresp_i != 2'b00);
                         id_error            <= id_error | (rid_i != '0);
 
-                        state               <= S_REFILL_2;
+                        state               <= S_IC_LOAD_2;
                     end
                 end
-                S_REFILL_2: begin
+                S_IC_LOAD_2: begin
                     kill_ff                 <= kill_ff | kill_i;
 
                     if (rvalid_i) begin
@@ -267,6 +266,7 @@ module i_cache (
                             4'b1001: instr_hold             <= rdata_i[63:32];
                             4'b1010: instr_hold             <= rdata_i[95:64];
                             4'b1011: instr_hold             <= rdata_i[127:96];
+                            default: instr_hold             <= instr_hold;
                         endcase
 
                         if (way_fill_q == 2'b00) begin
@@ -294,10 +294,10 @@ module i_cache (
                         error_ff            <= error_ff | (rresp_i != 2'b00);
                         id_error            <= id_error | (rid_i != '0);
 
-                        state               <= S_REFILL_3;
+                        state               <= S_IC_LOAD_3;
                     end
                 end
-                S_REFILL_3: begin
+                S_IC_LOAD_3: begin
                     kill_ff                 <= kill_ff | kill_i;
 
                     if (rvalid_i) begin
@@ -307,6 +307,7 @@ module i_cache (
                             4'b1101: instr_hold             <= rdata_i[63:32];
                             4'b1110: instr_hold             <= rdata_i[95:64];
                             4'b1111: instr_hold             <= rdata_i[127:96];
+                            default: instr_hold             <= instr_hold;
                         endcase
 
                         if (way_fill_q == 2'b00) begin
@@ -334,10 +335,10 @@ module i_cache (
                         error_ff            <= error_ff | (rresp_i != 2'b00);
                         id_error            <= id_error | (rid_i != '0);
 
-                        state               <= S_REFILL_DONE;
+                        state               <= S_IC_LOAD_DONE;
                     end 
                 end
-                S_REFILL_DONE: begin
+                S_IC_LOAD_DONE: begin
                     if (error_ff | id_error) begin
                         if (instr_ready_i) begin
                             if (way_fill_q == 2'b00) begin
@@ -393,7 +394,10 @@ module i_cache (
 
                     valid_instr_ff          <= 1'b0;
 
-                    state                   <= S_RUN;
+                    state                   <= S_IC_RUN;
+                end
+                default: begin
+                    state                   <= S_IC_RUN;
                 end
             endcase
         end
@@ -435,16 +439,13 @@ module i_cache (
         fetch_stall                 =   1'b0;
         valid_instr                 =   1'b0;
 
-        unaligned_addr              =   1'b0;
-        oob_addr                    =   1'b0;
-
         way_fill_replace            =   1'b0;
         way_fill_invalid            =   2'b00;
         way_fill_PLRU               =   2'b00;
         nxt_way_fill                =   way_fill_q;
 
         case (state)
-            S_RUN: begin
+            S_IC_RUN: begin
                 instr_tag           =   instr_mem_addr_i[63:13];
                 instr_index         =   instr_mem_addr_i[12:6];
                 instr_offset        =   instr_mem_addr_i[5:2];
@@ -502,7 +503,7 @@ module i_cache (
 
                 nxt_way_fill        =   way_fill_replace ? way_fill_PLRU : way_fill_invalid;
             end
-            S_MISS_REQUEST: begin
+            S_IC_LOAD_REQUEST: begin
                 araddr_o            =   {instr_mem_addr_ff[63:6], 6'b0};
                 arlen_o             =   8'd3;
                 arsize_o            =   3'd4;
@@ -511,31 +512,31 @@ module i_cache (
                 arprot_o            =   3'b000;
                 arvalid_o           =   1'b1;
             end
-            S_MISS_WAIT: begin
+            S_IC_LOAD_WAIT: begin
                 instr_offset        =   instr_mem_addr_ff[5:2];
                 data_line           =   instr_mem_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
-            S_REFILL_1: begin
+            S_IC_LOAD_1: begin
                 instr_offset        =   instr_mem_addr_ff[5:2];
                 data_line           =   instr_mem_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
-            S_REFILL_2: begin
+            S_IC_LOAD_2: begin
                 instr_offset        =   instr_mem_addr_ff[5:2];
                 data_line           =   instr_mem_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
-            S_REFILL_3: begin
+            S_IC_LOAD_3: begin
                 instr_offset        =   instr_mem_addr_ff[5:2];
                 data_line           =   instr_mem_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
-            S_REFILL_DONE: begin
+            S_IC_LOAD_DONE: begin
                 exc_valid_o         =   error_ff | id_error;
                 exc_code_o          =   5'b00001;
 

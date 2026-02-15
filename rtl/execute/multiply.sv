@@ -4,18 +4,19 @@ module multiply (
     input logic         clk,
     input logic         resetn,
 
-    input logic         mul_valid_i,
     input logic [63:0]  opr_a_i,
     input logic [63:0]  opr_b_i,
+
+    input logic         mul_valid_i,
     input logic [3:0]   mul_func_i,
     input logic         word_op_i,
     output logic        mul_ready_o,
 
+    input logic         flush_i,
+
     input logic         mul_res_ready_i,
     output logic [63:0] mul_res_o,
-    output logic        mul_res_valid_o,
-
-    input logic         flush_i
+    output logic        mul_res_valid_o
 );
 
     logic [31:0]        a_high_q;
@@ -66,7 +67,7 @@ module multiply (
     
     logic [127:0]       part_sum_in;
 
-    logic [63:0]        mul_res_corr;
+    logic [63:0]        mul_res_correct;
 
     logic [127:0]       full_sum;
     logic [127:0]       final_sum;
@@ -92,10 +93,10 @@ module multiply (
 
             part_sum_q                  <= 128'h0;
 
-            state                       <= S_IDLE;
+            state                       <= S_MUL_IDLE;
         end else begin
             case (state)
-                S_IDLE: begin
+                S_MUL_IDLE: begin
                     if (mul_valid_i & ~flush_i) begin
                         a_high_q        <= a_high_in;
                         a_low_q         <= a_low_in;
@@ -106,46 +107,49 @@ module multiply (
                         mul_func        <= mul_func_i;
                         word_op         <= word_op_i;
 
-                        state           <= S_RUN_1;
+                        state           <= S_MUL_RUN_1;
                     end
                 end
-                S_RUN_1: begin
+                S_MUL_RUN_1: begin
                     if (flush_i) begin
-                        state               <= S_IDLE;
+                        state               <= S_MUL_IDLE;
                     end else begin
                         p0_q                <= p0_in;
                         p1_q                <= p1_in;
 
-                        state               <= S_RUN_2;
+                        state               <= S_MUL_RUN_2;
                     end
                 end
-                S_RUN_2: begin
+                S_MUL_RUN_2: begin
                     if (flush_i) begin
-                        state           <= S_IDLE;
+                        state           <= S_MUL_IDLE;
                     end else if (word_op) begin
-                        if (mul_ready_i) begin
-                            state       <= S_IDLE;
+                        if (mul_res_ready_i) begin
+                            state       <= S_MUL_IDLE;
                         end
                     end else begin
                         p2_q            <= p2_in;
                         p3_q            <= p3_in;
 
-                        state           <= S_RUN_3;
+                        state           <= S_MUL_RUN_3;
                     end
                 end 
-                S_RUN_3: begin
+                S_MUL_RUN_3: begin
                     if (flush_i) begin
-                        state               <= S_IDLE;
+                        state               <= S_MUL_IDLE;
                     end else begin
                         part_sum_q          <= part_sum_in;
 
-                        state               <= S_RUN_4;
+                        state               <= S_MUL_RUN_4;
                     end
                 end 
-                S_RUN_4: begin
-                    if (flush_i | mul_ready_i) begin
-                        state           <= S_IDLE;
+                S_MUL_RUN_4: begin
+                    if (flush_i | mul_res_ready_i) begin
+                        state           <= S_MUL_IDLE;
                     end 
+                end
+                default: begin
+                    state               <= S_MUL_IDLE;
                 end
             endcase
         end
@@ -192,9 +196,9 @@ module multiply (
         final_sum               =   128'h0;
 
         case (state)
-            S_IDLE: begin
-                a_signed_in     =   (mul_func_i == OP_MUL | mul_func_i == OP_MULH | mul_func_i == OP_MULHSU);
-                b_signed_in     =   (mul_func_i == OP_MUL | mul_func_i == OP_MULH);
+            S_MUL_IDLE: begin
+                a_signed_in     =   (mul_func_i == MUL | mul_func_i == MULH | mul_func_i == MULHSU);
+                b_signed_in     =   (mul_func_i == MUL | mul_func_i == MULH);
 
                 negate_res_in   =   (~word_op_i & ((opr_a_i[63] & a_signed_in) ^ (opr_b_i[63] & b_signed_in))) | 
                                     ( word_op_i &  (opr_a_i[31] ^ opr_b_i[31]));
@@ -227,11 +231,11 @@ module multiply (
 
                 mul_ready_o     =   1'b1;
             end
-            S_RUN_1: begin
+            S_MUL_RUN_1: begin
                 p0_in           =   a_low_q * b_low_q;
                 p1_in           =   a_low_q * b_high_q;
             end
-            S_RUN_2: begin
+            S_MUL_RUN_2: begin
                 p2_in           =   a_high_q * b_low_q;
                 p3_in           =   a_high_q * b_high_q;
 
@@ -241,19 +245,20 @@ module multiply (
                     mul_res_valid_o         =   ~flush_i;
                 end
             end
-            S_RUN_3: begin
+            S_MUL_RUN_3: begin
                 cross_terms     =   {1'b0, p1_q} + {1'b0, p2_q};
                 part_sum_in     =   {64'h0, p0_q} + {31'h0, cross_terms, 32'h0};
             end
-            S_RUN_4: begin
+            S_MUL_RUN_4: begin
                 full_sum        =   part_sum_q + {p3_q, 64'h0};
                 final_sum       =   negate_res ? ~full_sum + 128'b1 : full_sum;
 
                 case (mul_func)
-                    OP_MUL:     mul_res_o   =   final_sum[63:0];
-                    OP_MULH,
-                    OP_MULHU, 
-                    OP_MULHSU:  mul_res_o   =   final_sum[127:64];
+                    MUL:     mul_res_o      =   final_sum[63:0];
+                    MULH,
+                    MULHU, 
+                    MULHSU:  mul_res_o      =   final_sum[127:64];
+                    default: mul_res_o      =   64'h0;
                 endcase
                 
                 mul_res_valid_o =   ~flush_i;

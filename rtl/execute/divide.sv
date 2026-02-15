@@ -8,15 +8,15 @@ module divide (
     input logic [63:0]  opr_b_i,
 
     input logic         div_valid_i,
-    input logic [2:0]   div_func_i,
+    input logic [3:0]   div_func_i,
     input logic         word_op_i,
     output logic        div_ready_o,
 
-    input logic         div_res_ready_i,
-    output logic [63:0] div_res_o,
-    output logic        div_res_valid_o,
+    input logic         flush_i,
 
-    input logic         flush_i
+    input logic         div_res_ready_i,
+    output logic        div_res_valid_o,
+    output logic [63:0] div_res_o
 );
 
     logic [6:0]         count_q;
@@ -203,6 +203,9 @@ module divide (
 
                         state               <= S_DIV_IDLE;
                     end
+                end
+                default: begin
+                    state                   <= S_DIV_IDLE;
                 end
             endcase
         end

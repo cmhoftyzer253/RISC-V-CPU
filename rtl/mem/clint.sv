@@ -8,7 +8,6 @@ module clint (
     input logic                 valid_i,
     input mem_access_size_t     byte_en_i,
     input logic                 wr_i,
-    input logic                 zero_extnd_i,
     input logic [63:0]          wr_data_i,
     output logic                ready_o,
 
@@ -37,7 +36,7 @@ module clint (
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             msip_q <= 1'b0;
-            mtimecmp_q <= 64'h0;
+            mtimecmp_q <= 64'hFFFF_FFFF_FFFF_FFFF;
             mtime_q <= 64'h0;
         end else begin
             mtime_q                 <= mtime_q + 64'b1;
@@ -79,7 +78,7 @@ module clint (
         //loads
         if (~wr_i & handshake & ~exc_valid_o) begin
             if (msip_addr) begin
-                data_o          =   {{63{~zero_extnd_i & msip_q}}, msip_q};
+                data_o          =   {63'h0, msip_q};
                 resp_valid_o    =   1'b1;
             end else if (mtimecmp_addr) begin
                 data_o          =   mtimecmp_q;

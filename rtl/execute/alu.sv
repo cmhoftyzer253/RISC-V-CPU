@@ -18,17 +18,19 @@ module alu (
 
     always_comb begin                                                                   
         case (alu_func_i)
-            OP_ADD : alu_res = opr_a_i + opr_b_i;
-            OP_SUB : alu_res = opr_a_i - opr_b_i;
-            OP_SLL : alu_res = opr_a_i << opr_b_i[5:0];                 
-            OP_SRL : alu_res = opr_a_i >> opr_b_i[5:0];                 
-            OP_SRA : alu_res = $signed(opr_a_i) >>> opr_b_i[5:0];        
-            OP_OR : alu_res = opr_a_i | opr_b_i;
-            OP_AND : alu_res = opr_a_i & opr_b_i;
-            OP_XOR : alu_res = opr_a_i ^ opr_b_i;
-            OP_SLTU : alu_res = {63'h0, opr_a_i < opr_b_i};               
-            OP_SLT : alu_res = {63'h0, $signed(opr_a_i) < $signed(opr_b_i)};    
-            default : alu_res = 64'h0;
+            OP_ADD : alu_res    =   opr_a_i + opr_b_i;
+            OP_SUB : alu_res    =   opr_a_i - opr_b_i;
+            OP_SLL : alu_res    =   word_op_i ? {{32{1'b0}}, (opr_a_i << opr_b_i[4:0])} : (opr_a_i << opr_b_i[5:0]);                 
+            OP_SRL : alu_res    =   word_op_i ? {{32{1'b0}}, (opr_a_i >> opr_b_i[4:0])} : (opr_a_i >> opr_b_i[5:0]);                 
+            OP_SRA : alu_res    =   word_op_i ? {{32{1'b0}}, ($signed(opr_a_i) >>> opr_b_i[4:0])} : 
+                                                ($signed(opr_a_i) >>> opr_b_i[5:0]);        
+            OP_OR : alu_res     =   opr_a_i | opr_b_i;
+            OP_AND : alu_res    =   opr_a_i & opr_b_i;
+            OP_XOR : alu_res    =   opr_a_i ^ opr_b_i;
+            OP_SLTU : alu_res   =   {63'h0, opr_a_i < opr_b_i};               
+            OP_SLT : alu_res    =   {63'h0, $signed(opr_a_i) < $signed(opr_b_i)};    
+            OP_CSRRW: alu_res   =   opr_a_i;
+            default : alu_res   =   64'h0;
         endcase
     end
 

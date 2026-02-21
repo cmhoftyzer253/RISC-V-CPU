@@ -36,7 +36,7 @@ module i_cache #(
     output logic                rready_o,
 
     //CPU control signals
-    input logic                 kill_i, 
+    input logic                 flush_i, 
 
     output logic                exc_valid_o,
     output logic [4:0]          exc_code_o
@@ -74,7 +74,7 @@ module i_cache #(
     logic [1:0]         way_fill_PLRU;
 
     logic [31:0]        instr_hold;
-    logic               kill_ff;
+    logic               flush_ff;
     logic               error_ff;
     logic               id_error;
 
@@ -122,7 +122,7 @@ module i_cache #(
 
             instr_hold          <= 32'h0;
 
-            kill_ff             <= 1'b0;
+            flush_ff             <= 1'b0;
             error_ff            <= 1'b0;
             id_error            <= 1'b0;
 
@@ -159,7 +159,7 @@ module i_cache #(
                     end else if (cache_miss) begin
                         way_fill_q          <= nxt_way_fill;
 
-                        kill_ff             <= 1'b0;
+                        flush_ff             <= 1'b0;
 
                         instr_hold          <= 32'h0;
 
@@ -171,14 +171,14 @@ module i_cache #(
                     end
                 end
                 S_IC_LOAD_REQUEST: begin
-                    kill_ff                 <= kill_ff | kill_i;
+                    flush_ff                 <= flush_ff | flush_i;
 
                     if (arready_i) begin
                         state               <= S_IC_LOAD_WAIT;
                     end
                 end
                 S_IC_LOAD_WAIT: begin
-                    kill_ff                 <= kill_ff | kill_i;
+                    flush_ff                 <= flush_ff | flush_i;
 
                     if (rvalid_i) begin
                         case(instr_offset)
@@ -218,7 +218,7 @@ module i_cache #(
                     end
                 end
                 S_IC_LOAD_1: begin
-                    kill_ff                 <= kill_ff | kill_i;
+                    flush_ff                 <= flush_ff | flush_i;
 
                     if (rvalid_i) begin
                         case (instr_offset) 
@@ -258,7 +258,7 @@ module i_cache #(
                     end
                 end
                 S_IC_LOAD_2: begin
-                    kill_ff                 <= kill_ff | kill_i;
+                    flush_ff                 <= flush_ff | flush_i;
 
                     if (rvalid_i) begin
                         case(instr_offset)
@@ -298,7 +298,7 @@ module i_cache #(
                     end
                 end
                 S_IC_LOAD_3: begin
-                    kill_ff                 <= kill_ff | kill_i;
+                    flush_ff                 <= flush_ff | flush_i;
 
                     if (rvalid_i) begin
 
@@ -351,11 +351,15 @@ module i_cache #(
                                 tags_w3[instr_index].valid      <= 1'b0;
                             end
 
-                            kill_ff             <= 1'b0;
-                            error_ff            <= 1'b0;
-                            id_error            <= 1'b0;
+                            flush_ff        <= 1'b0;
+                            error_ff        <= 1'b0;
+                            id_error        <= 1'b0;
+
+                            valid_instr_ff  <= 1'b0;
+
+                            state           <= S_IC_RUN;
                         end
-                    end else if (kill_ff) begin
+                    end else if (flush_ff) begin
                         if (way_fill_q == 2'b00) begin
                             tags_w0[instr_index].valid      <= 1'b0; 
                         end else if (way_fill_q == 2'b01) begin
@@ -366,7 +370,11 @@ module i_cache #(
                             tags_w3[instr_index].valid      <= 1'b0;
                         end
 
-                        kill_ff                 <= 1'b0;
+                        flush_ff            <= 1'b0;
+
+                        valid_instr_ff      <= 1'b0;
+
+                        state               <= S_IC_RUN;
                     end else begin
                         if (instr_ready_i) begin
                             if (way_fill_q == 2'b00) begin
@@ -386,15 +394,15 @@ module i_cache #(
                             PLRU_tree_q     <= nxt_PLRU_tree;
                             instr_hold      <= 32'h0;
 
-                            kill_ff         <= 1'b0;
+                            flush_ff        <= 1'b0;
                             error_ff        <= 1'b0;
                             id_error        <= 1'b0;
+
+                            valid_instr_ff  <= 1'b0;
+
+                            state           <= S_IC_RUN;
                         end
                     end
-
-                    valid_instr_ff          <= 1'b0;
-
-                    state                   <= S_IC_RUN;
                 end
                 default: begin
                     state                   <= S_IC_RUN;
@@ -543,7 +551,7 @@ module i_cache #(
                 instr_index         =   instr_mem_addr_ff[12:6];
                 instr_tag           =   instr_mem_addr_ff[63:13];
 
-                if (~(kill_ff | error_ff | id_error)) begin
+                if (~(flush_ff)) begin
                     instr_o         =   instr_hold;
                     instr_valid_o   =   1'b1;
                 end

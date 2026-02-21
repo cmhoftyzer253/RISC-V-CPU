@@ -12,7 +12,8 @@ package cpu_consts;
         B_TYPE      = 7'h63,
         U_TYPE_0    = 7'h37,
         U_TYPE_1    = 7'h17,
-        J_TYPE      = 7'h6F
+        J_TYPE      = 7'h6F,
+        ZICSR_TYPE  = 7'h73
     } riscv_op_t;
 
     // base operations
@@ -26,7 +27,8 @@ package cpu_consts;
         OP_AND,
         OP_XOR,
         OP_SLTU,
-        OP_SLT
+        OP_SLT,
+        OP_CSRRW
     } alu_op_t;
 
     // M extension operations
@@ -49,9 +51,34 @@ package cpu_consts;
         DOUBLE_WORD = 2'b11
     } mem_access_size_t;
 
+    typedef enum logic {
+        ALU_BYPASS  = 1'b0,
+        MEM_BYPASS  = 1'b1
+    } bypass_avail_t;
+
+    // register file writeback data source
+    typedef enum logic[1:0] {
+        ALU_SRC = 2'b00,
+        MEM_SRC = 2'b01,
+        IMM_SRC = 2'b10,
+        PC_SRC  = 2'b11
+    } rd_src_t;
+
+    typedef enum logic [1:0] {
+        RS1_OPERAND_A,
+        PC_OPERAND_A,
+        CSR_OPERAND_A           
+    } alu_opr_a_sel_t;
+
+    typedef enum logic [1:0] {
+        RS2_OPERAND_B,
+        IMM_OPERAND_B,          //invert for csr_en
+        RS1_OPERAND_B           //always invert: only used for csr
+    } alu_opr_b_sel_t;
+
     //  base R type instructions
     // {funct7[5], funct3}
-    typedef enum logic[3:0] {
+    typedef enum logic [3:0] {
         ADD     = 4'h0,
         AND     = 4'h7,
         OR      = 4'h6,
@@ -65,20 +92,21 @@ package cpu_consts;
     } r_type_t;
 
     // M R type instructions
-    typedef enum logic[2:0] {
-        MUL     = 3'h0,
-        MULH    = 3'h1,
-        MULHSU  = 3'h2,
-        MULHU   = 3'h3,
-        DIV     = 3'h4,
-        DIVU    = 3'h5,
-        REM     = 3'h6,
-        REMU    = 3'h7
+    // {1'b0, funct3}
+    typedef enum logic [3:0] {
+        MUL     = 4'h0,
+        MULH    = 4'h1,
+        MULHSU  = 4'h2,
+        MULHU   = 4'h3,
+        DIV     = 4'h4,
+        DIVU    = 4'h5,
+        REM     = 4'h6,
+        REMU    = 4'h7
     } r_type_m_t;
 
     // I type instructions
     // {opcode[4], funct3}
-    typedef enum logic[3:0] {
+    typedef enum logic [3:0] {
         LB      = 4'h0,
         LBU     = 4'h4,
         LH      = 4'h1,
@@ -97,15 +125,15 @@ package cpu_consts;
     } i_type_t;
 
     //  S type instructions
-    typedef enum logic[2:0] {
-        SB = 3'h0,
-        SH = 3'h1,
-        SW = 3'h2,
-        SD = 3'h3
+    typedef enum logic [2:0] {
+        SB      = 3'h0,
+        SH      = 3'h1,
+        SW      = 3'h2,
+        SD      = 3'h3
     } s_type_t;
 
     // B type instructions
-    typedef enum logic[2:0] {
+    typedef enum logic [2:0] {
         BEQ     = 3'h0,
         BNE     = 3'h1,
         BLT     = 3'h4,
@@ -115,25 +143,37 @@ package cpu_consts;
     } b_type_t;
 
     // U type instructions
-    typedef enum logic[6:0] {
-        AUIPC = 7'h17,
-        LUI = 7'h37
+    typedef enum logic [6:0] {
+        AUIPC   = 7'h17,
+        LUI     = 7'h37
     } u_type_t;
 
     // J type instructions
-    typedef enum logic[5:0] {
-        JAL = 6'h3
+    typedef enum logic [5:0] {
+        JAL     = 6'h3
     } j_type_t;
+
+    // Zicsr type instructions
+    typedef enum logic [2:0] {
+        CSRRW   = 3'h1,
+        CSRRS   = 3'h2,
+        CSRRC   = 3'h3,
+        CSRRWI  = 3'h5,
+        CSRRSI  = 3'h6,
+        CSRRCI  = 3'h7
+    } zicsr_type_t;
 
     // control signals
     typedef struct packed {
         logic               pc_sel;
-        logic               op1_sel;
-        logic               op2_sel;
+        alu_opr_a_sel_t     opa_sel;
+        alu_opr_b_sel_t     opb_sel;
         logic [3:0]         exu_func_sel;
-        logic [1:0]         rf_wr_data_sel;
+        rd_src_t            rd_src;
+        logic               csr_en;
         logic               data_req;
         mem_access_size_t   data_byte;
+        bypass_avail_t      bypass_avail;
         logic               data_wr;
         logic               zero_extnd;
         logic               rf_wr_en;
@@ -143,15 +183,7 @@ package cpu_consts;
         logic               div_instr;
     } control_t;
 
-    // register file writeback data source
-    typedef enum logic[1:0] {
-        ALU     = 2'b00,
-        MEM     = 2'b01,
-        IMM     = 2'b10,
-        PC      = 2'b11
-    } rf_wr_data_src_t;
-
-    typedef enum logic[2:0] {
+    typedef enum logic [2:0] {
         NONE            = 3'b000,
         ZERO_DIVISOR    = 3'b001,
         OVERFLOW        = 3'b010,
@@ -161,7 +193,7 @@ package cpu_consts;
 
     typedef logic [1:0] bp_cnt_t;
 
-    typedef enum logic[1:0] {
+    typedef enum logic [1:0] {
         BRANCH  = 2'b00,
         CALL    = 2'b01,
         RETURN  = 2'b10,
@@ -174,20 +206,31 @@ package cpu_consts;
         btb_type_t      btb_type;
     } btb_entry_t;
 
+    typedef enum logic [1:0] {
+        S_FETCH_RUN,
+        S_BROM_HOLD,
+        S_FETCH_EXC_HOLD
+    } fetch_state_t;
+
     typedef struct packed {
         logic           valid;
         logic [50:0]    tag;
     } i_cache_tag_t;
 
-    typedef enum logic[2:0] {
+    typedef enum logic [2:0] {
         S_IC_RUN,          
-        S_IC_MISS_REQUEST,
-        S_IC_MISS_WAIT,
-        S_IC_REFILL_1,
-        S_IC_REFILL_2,
-        S_IC_REFILL_3,
-        S_IC_REFILL_DONE
+        S_IC_LOAD_REQUEST,
+        S_IC_LOAD_WAIT,
+        S_IC_LOAD_1,
+        S_IC_LOAD_2,
+        S_IC_LOAD_3,
+        S_IC_LOAD_DONE
     } i_cache_state_t;
+
+    typedef enum logic {
+        S_MEM_RUN,
+        S_MEM_EXC_HOLD
+    } memory_state_t;
 
     typedef struct packed {
         logic           valid;

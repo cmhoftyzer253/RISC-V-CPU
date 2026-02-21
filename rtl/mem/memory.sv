@@ -77,7 +77,7 @@ module memory (
 
                         state               <=  S_MEM_EXC_HOLD;
                     end else if (req_handshake) begin
-                        req_addr_ff         <=  req_addr_i;
+                        req_addr_ff         <=  req_addr_i[2:0];
                         req_byte_en_ff      <=  req_byte_en_i;
                         req_zero_extnd_ff   <=  req_zero_extnd_i;
                     end
@@ -92,35 +92,35 @@ module memory (
     end
 
     always_comb begin
+        req_ready_o                     =   1'b0;
+
+        data_mem_resp_valid_o           =   1'b0;
+        data_mem_rd_data_o              =   64'h0;
+
+        data_mem_req_o                  =   1'b0;
+        data_mem_addr_o                 =   64'h0;
+        data_mem_wr_o                   =   1'b0;
+        data_mem_wr_data_o              =   64'h0;
+        data_mem_mask_o                 =   8'h0;
+
+        req_resp_ready_o                =   1'b0;
+
+        exc_valid_o                     =   1'b0;
+        exc_code_o                      =   5'b0;
+
+        req_handshake                   =   1'b0;
+
+        oob                             =   1'b0;
+        unaligned_addr                  =   1'b0;
+
+        exc_valid_mem                   =   1'b0;
+        exc_code_mem                    =   5'b0;
+
+        store_data                      =   64'h0;
+        store_mask                      =   8'b0;
+        load_data                       =   64'h0;
+
         case (state)
-            req_ready_o                     =   1'b0;
-
-            data_mem_resp_valid_o           =   1'b0;
-            data_mem_rd_data_o              =   64'h0;
-
-            data_mem_req_o                  =   1'b0;
-            data_mem_addr_o                 =   64'h0;
-            data_mem_wr_o                   =   1'b0;
-            data_mem_wr_data_o              =   64'h0;
-            data_mem_mask_o                 =   8'h0;
-
-            req_resp_ready_o                =   1'b0;
-
-            exc_valid_o                     =   1'b0;
-            exc_code_o                      =   5'b0;
-
-            req_handshake                   =   1'b0;
-
-            oob                             =   1'b0;
-            unaligned_addr                  =   1'b0;
-
-            exc_valid_mem                   =   1'b0;
-            exc_code_mem                    =   5'b0;
-
-            store_data                      =   64'h0;
-            store_mask                      =   8'b0;
-            load_data                       =   64'h0;
-
             S_MEM_RUN: begin
                 oob                         =   req_valid_i & req_ready_o & ~flush_i & 
                                                 ~((req_addr_i >= 64'h0000_0000_0001_0000) & (req_addr_i <= 64'h0000_0000_0001_BFFF));
@@ -167,7 +167,7 @@ module memory (
                         store_data[15:0]    =   ({16{req_addr_i[2:1] == 2'b00}} & req_wr_data_i[15:0]);
                         store_data[31:16]   =   ({16{req_addr_i[2:1] == 2'b01}} & req_wr_data_i[15:0]);
                         store_data[47:32]   =   ({16{req_addr_i[2:1] == 2'b10}} & req_wr_data_i[15:0]);
-                        store_data[63:48]   =   ({16{req_addr_i[2:1] == 2'b01}} & req_wr_data_i[15:0]);
+                        store_data[63:48]   =   ({16{req_addr_i[2:1] == 2'b11}} & req_wr_data_i[15:0]);
 
                         store_mask[1:0]     =   {2{req_addr_i[2:1] == 2'b00}};
                         store_mask[3:2]     =   {2{req_addr_i[2:1] == 2'b01}};
@@ -250,7 +250,7 @@ module memory (
 
                 req_ready_o                 =   data_mem_ready_i;
 
-                data_mem_resp_valid_o       =   req_resp_valid_i;
+                data_mem_resp_valid_o       =   req_resp_valid_i & ~flush_i;
                 data_mem_rd_data_o          =   load_data;
 
                 req_resp_ready_o            =   1'b1;
@@ -259,7 +259,7 @@ module memory (
                 exc_valid_o                 =   1'b1;
                 exc_code_o                  =   exc_code_ff;
 
-                data_mem_resp_valid_o       =   1'b1;
+                data_mem_resp_valid_o       =   ~flush_i;
             end
         endcase
     end

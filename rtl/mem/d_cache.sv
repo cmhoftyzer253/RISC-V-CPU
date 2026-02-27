@@ -58,8 +58,6 @@ module d_cache #(
     input logic [ID_W-1:0]      bid_i,
     output logic                bready_o,               //assert when ready to accept response
 
-    input logic                 flush_i,
-
     output logic                exc_valid_o,
     output logic [4:0]          exc_code_o
 );
@@ -362,9 +360,7 @@ module d_cache #(
                 S_DC_STORE_DONE: begin
                     if (bvalid_i) begin
                         if ((bresp_i != 2'b00) | (bid_i != '0)) begin
-                            if (flush_i) begin
-                                state           <= S_DC_RUN;
-                            end 
+                            state               <= S_DC_RUN;
                         end else begin
                             state               <= S_DC_LOAD_REQUEST;
                         end
@@ -492,26 +488,24 @@ module d_cache #(
                 end
                 S_DC_LOAD_DONE: begin
                     if (error_ff | id_error) begin
-                        if (flush_i) begin
-                            if (way_fill_q == 2'b00) begin
-                                tags_w0[data_line].valid        <= 1'b0;
-                                tags_w0[data_line].dirty        <= 1'b0;
-                            end else if (way_fill_q == 2'b01) begin
-                                tags_w1[data_line].valid        <= 1'b0;
-                                tags_w1[data_line].dirty        <= 1'b0;
-                            end else if (way_fill_q == 2'b10) begin
-                                tags_w2[data_line].valid        <= 1'b0;
-                                tags_w2[data_line].dirty        <= 1'b0;
-                            end else if (way_fill_q == 2'b11) begin
-                                tags_w3[data_line].valid        <= 1'b0;
-                                tags_w3[data_line].dirty        <= 1'b0;
-                            end
-
-                            error_ff            <= 1'b0;
-                            id_error            <= 1'b0;
-
-                            state               <= S_DC_RUN;
+                        if (way_fill_q == 2'b00) begin
+                            tags_w0[data_line].valid            <= 1'b0;
+                            tags_w0[data_line].dirty            <= 1'b0;
+                        end else if (way_fill_q == 2'b01) begin
+                            tags_w1[data_line].valid            <= 1'b0;
+                            tags_w1[data_line].dirty            <= 1'b0;
+                        end else if (way_fill_q == 2'b10) begin
+                            tags_w2[data_line].valid            <= 1'b0;
+                            tags_w2[data_line].dirty            <= 1'b0;
+                        end else if (way_fill_q == 2'b11) begin
+                            tags_w3[data_line].valid            <= 1'b0;
+                            tags_w3[data_line].dirty            <= 1'b0;
                         end
+
+                        error_ff            <= 1'b0;
+                        id_error            <= 1'b0;
+
+                        state               <= S_DC_RUN;
                     end else begin
                         if (req_rd_ready_i) begin
                             if (way_fill_q == 2'b00) begin

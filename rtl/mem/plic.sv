@@ -228,51 +228,51 @@ module plic (
         if (~req_wr_i & req_valid_i & ~(unaligned_addr | acc_fault_size | acc_fault_addr_wr)) begin
             case (req_addr_i)
                 PRIORITY_IRQ1_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_irq1_q};
+                    plic_rd_data_o      =   {61'h0, priority_irq1_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 PRIORITY_IRQ2_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_irq2_q};
+                    plic_rd_data_o      =   {61'h0, priority_irq2_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 PRIORITY_IRQ3_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_irq3_q};
+                    plic_rd_data_o      =   {61'h0, priority_irq3_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 PRIORITY_IRQ4_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_irq4_q};
+                    plic_rd_data_o      =   {61'h0, priority_irq4_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 PRIORITY_IRQ5_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_irq5_q};
+                    plic_rd_data_o      =   {61'h0, priority_irq5_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 PRIORITY_IRQ6_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_irq6_q};
+                    plic_rd_data_o      =   {61'h0, priority_irq6_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 PRIORITY_IRQ7_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_irq7_q};
+                    plic_rd_data_o      =   {61'h0, priority_irq7_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 PRIORITY_IRQ8_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_irq8_q};
+                    plic_rd_data_o      =   {61'h0, priority_irq8_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 IP_ADDR: begin
-                    plic_rd_data_o      =   {24'h0, ip_q};
+                    plic_rd_data_o      =   {56'h0, ip_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 ENABLE_IRQ_ADDR: begin
-                    plic_rd_data_o      =   {24'h0, enable_irq_q};
+                    plic_rd_data_o      =   {56'h0, enable_irq_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 PRIORITY_THRESHOLD_ADDR: begin
-                    plic_rd_data_o      =   {29'h0, priority_threshold_q};
+                    plic_rd_data_o      =   {61'h0, priority_threshold_q};
                     plic_resp_valid_o   =   1'b1;
                 end
                 CLAIM_COMPLETE_ADDR: begin
-                    plic_rd_data_o      =   {28'h0, claim_complete};
+                    plic_rd_data_o      =   {60'h0, claim_complete};
                     plic_resp_valid_o   =   1'b1;
                 end
                 default: begin
@@ -370,5 +370,5 @@ module plic (
 
         eip_o           =   |ip_valid;
     end 
-    
+
 endmodule

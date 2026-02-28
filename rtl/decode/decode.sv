@@ -7,7 +7,7 @@ module decode (
     output logic [4:0]  rd_o,
     output logic [6:0]  op_o,
     output logic [2:0]  funct3_o,
-    output logic [6:0]  funct7_o,
+    output logic [6:0]  funct12_o,
     output logic [11:0] csr_addr_o,
     output logic        r_type_o,
     output logic        i_type_o,
@@ -15,7 +15,7 @@ module decode (
     output logic        b_type_o,
     output logic        u_type_o,
     output logic        j_type_o,
-    output logic        zicsr_type_o,
+    output logic        system_type_o,
     output logic [63:0] imm_o,
 
     output logic        exc_valid_o,
@@ -35,7 +35,7 @@ module decode (
     logic           b_type;
     logic           u_type;
     logic           j_type;
-    logic           zicsr_type;
+    logic           system_type;
 
     always_comb begin
         exc_valid_o     =   1'b0;
@@ -46,7 +46,7 @@ module decode (
         rd_o            =   instr_i[11:7];
         op_o            =   instr_i[6:0];
         funct3_o        =   instr_i[14:12];
-        funct7_o        =   instr_i[31:25];
+        funct12_o       =   instr_i[31:25];
         csr_addr_o      =   12'h0;
 
         r_type_o        =   1'b0;
@@ -55,7 +55,7 @@ module decode (
         b_type_o        =   1'b0;
         u_type_o        =   1'b0;
         j_type_o        =   1'b0;
-        zicsr_type_o    =   1'b0;
+        system_type_o   =   1'b0;
 
         imm_o           =   64'h0;   
 
@@ -96,10 +96,10 @@ module decode (
                 j_type_o        =   1'b1;
                 imm_o           =   {{43{instr_i[31]}}, instr_i[31], instr_i[19:12], instr_i[20], instr_i[30:21], 1'b0};
             end 
-            ZICSR_TYPE: begin
+            SYSTEM_TYPE: begin
                 rs2_o           =   5'b0;
                 csr_addr_o      =   instr_i[31:20];
-                zicsr_type_o    =   1'b1;
+                system_type_o   =   1'b1;
                 imm_o           =   {59'h0, instr_i[19:15]};
             end
             default: begin          

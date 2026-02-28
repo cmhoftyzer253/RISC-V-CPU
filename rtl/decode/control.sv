@@ -9,12 +9,11 @@ module control (
     input logic                 b_type_i,
     input logic                 u_type_i,
     input logic                 j_type_i,
-    input logic                 zicsr_type_i,
+    input logic                 system_type_i,
 
     //instruction opcode and funct fields
     input logic [2:0]           instr_funct3_i,
-    input logic                 instr_funct7_bit0_i,
-    input logic                 instr_funct7_bit5_i,
+    input logic [11:0]          instr_funct12_i,
     input logic [6:0]           instr_opcode_i,
     
     //control signals
@@ -34,6 +33,8 @@ module control (
     output logic                alu_instr_o,
     output logic                mul_instr_o,
     output logic                div_instr_o,
+    output logic                mret_o,
+    output logic                wfi_o,
 
     output logic                exc_valid_o,
     output logic [4:0]          exc_code_o
@@ -48,7 +49,9 @@ module control (
     logic       exc_valid_i;
     logic       exc_valid_s;
     logic       exc_valid_u;
-    logic       exc_valid_zicsr;
+    logic       exc_valid_system;
+
+    logic [4:0] exc_code_system;
 
     control_t   r_type_controls;
     control_t   i_type_controls;
@@ -56,18 +59,20 @@ module control (
     control_t   b_type_controls;
     control_t   u_type_controls;
     control_t   j_type_controls;
-    control_t   zicsr_type_controls;
-    control_t   controls;          
+    control_t   system_type_controls;
+    control_t   controls;      
+
+    assign instr_funct7             =   instr_funct12_i[11:5];
 
     // R type instruction
-    assign r_type_code = {instr_funct7_bit5_i, instr_funct3_i};
+    assign r_type_code = {instr_funct7[5], instr_funct3_i};
     always_comb begin
         exc_valid_r                 =   1'b0;
 
         r_type_controls             =   '0;
         r_type_controls.rf_wr_en    =   1'b1;
         r_type_controls.word_op     =   (instr_opcode_i == R_TYPE_1);
-        if (instr_funct7_bit0_i) begin
+        if (instr_funct7[0]) begin
             case ({1'b0, instr_funct3_i})
                 MUL     : {r_type_controls.exu_func_sel,
                             r_type_controls.mul_instr} = {OP_MUL, 1'b1};
@@ -142,7 +147,7 @@ module control (
                 ANDI    : i_type_controls.exu_func_sel  =   OP_AND;
                 ORI     : i_type_controls.exu_func_sel  =   OP_OR;
                 SLLI    : i_type_controls.exu_func_sel  =   OP_SLL;
-                SRXI    : i_type_controls.exu_func_sel  =   instr_funct7_bit5_i ? OP_SRA : OP_SRL;
+                SRXI    : i_type_controls.exu_func_sel  =   instr_funct7[5] ? OP_SRA : OP_SRL;
                 SLTI    : i_type_controls.exu_func_sel  =   OP_SLT;
                 SLTIU   : i_type_controls.exu_func_sel  =   OP_SLTU;
                 XORI    : i_type_controls.exu_func_sel  =   OP_XOR;
@@ -247,40 +252,80 @@ module control (
         j_type_controls.alu_instr       =   1'b1;
     end
 
-    // ZICSR type instruction
+    // system type instruction
     always_comb begin
-        exc_valid_zicsr                 =   1'b0;
+        exc_valid_system                =   1'b0;
+        exc_code_system                 =   5'd0;
 
-        zicsr_type_controls             =   '0;
-        zicsr_type_controls.opa_sel     =   CSR_OPERAND_A;
-        zicsr_type_controls.csr_en      =   1'b1;
-        zicsr_type_controls.rf_wr_en    =   1'b1;
-        zicsr_type_controls.alu_instr   =   1'b1;
+        system_type_controls            =   '0;
         
         case (instr_funct3_i)
-            3'b001: {zicsr_type_controls.opb_sel,
-                     zicsr_type_controls.exu_func_sel}  = {RS1_OPERAND_B, OP_CSRRW};
-            3'b101: {zicsr_type_controls.opb_sel,
-                     zicsr_type_controls.exu_func_sel}  = {IMM_OPERAND_B, OP_CSRRW};
-            3'b010: {zicsr_type_controls.opb_sel,
-                     zicsr_type_controls.exu_func_sel}  = {RS1_OPERAND_B, OP_OR};
-            3'b110: {zicsr_type_controls.opb_sel,
-                     zicsr_type_controls.exu_func_sel}  = {IMM_OPERAND_B, OP_OR};
-            3'b011: {zicsr_type_controls.opb_sel,
-                     zicsr_type_controls.exu_func_sel}  = {RS1_OPERAND_B, OP_AND};
-            3'b111: {zicsr_type_controls.opb_sel, 
-                     zicsr_type_controls.exu_func_sel}  = {IMM_OPERAND_B, OP_AND};   
+            CSRRW: {system_type_controls.opa_sel,
+                     system_type_controls.opb_sel,
+                     system_type_controls.exu_func_sel, 
+                     system_type_controls.csr_en,
+                     system_type_controls.rf_wr_en,
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_CSRRW, 1'b1, 1'b1, 1'b1};
+            CSRRS: {system_type_controls.opa_sel,
+                     system_type_controls.opb_sel,
+                     system_type_controls.exu_func_sel,
+                     system_type_controls.csr_en,
+                     system_type_controls.rf_wr_en,
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_CSRRW, 1'b1, 1'b1, 1'b1};
+            CSRRC: {system_type_controls.opa_sel,
+                     system_type_controls.opb_sel,
+                     system_type_controls.exu_func_sel,
+                     system_type_controls.csr_en,
+                     system_type_controls.rf_wr_en,
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_OR, 1'b1, 1'b1, 1'b1};
+            CSRRWI: {system_type_controls.opa_sel,
+                     system_type_controls.opb_sel,
+                     system_type_controls.exu_func_sel,
+                     system_type_controls.csr_en,
+                     system_type_controls.rf_wr_en,
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_OR, 1'b1, 1'b1, 1'b1};
+            CSRRSI: {system_type_controls.opa_sel,
+                     system_type_controls.opb_sel,
+                     system_type_controls.exu_func_sel,
+                     system_type_controls.csr_en,
+                     system_type_controls.rf_wr_en,
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_AND, 1'b1, 1'b1, 1'b1};
+            CSRRCI: {system_type_controls.opa_sel,
+                     system_type_controls.opb_sel, 
+                     system_type_controls.exu_func_sel,
+                     system_type_controls.csr_en,
+                     system_type_controls.rf_wr_en,
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_AND, 1'b1, 1'b1, 1'b1};  
+            3'b000: begin
+                case (instr_funct12_i)
+                    ECALL: begin
+                        exc_valid_system                = 1'b1;
+                        exc_code_system                 = 5'd11;                 
+                    end
+                    EBREAK: begin
+                        exc_valid_system                = 1'b1;
+                        exc_code_system                 = 5'd3;
+                    end
+                    MRET: begin
+                        system_type_controls.mret       = 1'b1;                 
+                    end
+                    WFI: begin
+                        system_type_controls.wfi        = 1'b1;
+                    end
+                endcase
+            end 
             default: begin
-                exc_valid_zicsr     =   zicsr_type_i;
-                zicsr_type_controls =   '0;
+                exc_valid_system        =   system_type_i;
+                exc_code_system         =   5'd2;
+                system_type_controls    =   '0;
             end
         endcase
     end
 
-    assign instr_type                   =   {r_type_i, i_type_i, s_type_i, b_type_i, u_type_i, j_type_i, zicsr_type_i};
+    assign instr_type                   =   {r_type_i, i_type_i, s_type_i, b_type_i, u_type_i, j_type_i, system_type_i};
 
     always_comb begin
-        unique case (instr_type)
+        case (instr_type)
             7'b1000000: begin
                 controls        =   r_type_controls;
                 exc_valid_o     =   exc_valid_r;
@@ -306,8 +351,8 @@ module control (
                 exc_valid_o     =   1'b0;
             end
             7'b0000001: begin
-                controls        =   zicsr_type_controls;
-                exc_valid_o     =   exc_valid_zicsr;
+                controls        =   system_type_controls;
+                exc_valid_o     =   exc_valid_system;
             end
             default: begin
                 controls        =   '0;
@@ -316,7 +361,7 @@ module control (
         endcase
     end  
 
-    assign exc_code_o           =   5'd2;             
+    assign exc_code_o           =   (instr_type == 7'b0000001) ? exc_code_system : 5'd2;             
 
     // output assigments
     assign pc_sel_o             =   controls.pc_sel;
@@ -335,5 +380,7 @@ module control (
     assign alu_instr_o          =   controls.alu_instr;
     assign mul_instr_o          =   controls.mul_instr;
     assign div_instr_o          =   controls.div_instr;
+    assign mret_o               =   controls.mret;
+    assign wfi_o                =   controls.wfi;
 
 endmodule

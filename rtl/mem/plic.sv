@@ -156,7 +156,52 @@ module plic (
         .gw_irq_o   (gw_irq8)
     );
 
-    
+    always_ff @(posedge clk or negedge resetn) begin
+        if (~resetn) begin
+            priority_irq1_q         <=  3'b0;
+            priority_irq2_q         <=  3'b0;
+            priority_irq3_q         <=  3'b0;
+            priority_irq4_q         <=  3'b0;
+            priority_irq5_q         <=  3'b0;
+            priority_irq6_q         <=  3'b0;
+            priority_irq7_q         <=  3'b0;
+            priority_irq8_q         <=  3'b0;
+
+            ip_q                    <=  8'b0;
+            irq_ongoing_q           <=  1'b0;
+            irq_ongoing_id_q        <=  4'b0;
+
+            enable_irq_q            <=  8'b0;
+            priority_threshold_q    <=  3'b0;
+        end else begin
+            ip_q                    <=  nxt_ip;
+
+            if (req_valid_i & req_wr_i & ~exc_valid_o) begin
+                case (req_addr_i)
+                    PRIORITY_IRQ1_ADDR: priority_irq1_q             <=  req_wr_data_i[2:0];
+                    PRIORITY_IRQ2_ADDR: priority_irq2_q             <=  req_wr_data_i[2:0];
+                    PRIORITY_IRQ3_ADDR: priority_irq3_q             <=  req_wr_data_i[2:0];
+                    PRIORITY_IRQ4_ADDR: priority_irq4_q             <=  req_wr_data_i[2:0];
+                    PRIORITY_IRQ5_ADDR: priority_irq5_q             <=  req_wr_data_i[2:0];
+                    PRIORITY_IRQ6_ADDR: priority_irq6_q             <=  req_wr_data_i[2:0];
+                    PRIORITY_IRQ7_ADDR: priority_irq7_q             <=  req_wr_data_i[2:0];
+                    PRIORITY_IRQ8_ADDR: priority_irq8_q             <=  req_wr_data_i[2:0];
+                    ENABLE_IRQ_ADDR: enable_irq_q                   <=  req_wr_data_i[7:0];
+                    PRIORITY_THRESHOLD_ADDR: priority_threshold_q   <=  req_wr_data_i[2:0];
+                    CLAIM_COMPLETE_ADDR: begin
+                        if (req_wr_data_i[3:0] == irq_ongoing_id_q) begin
+                            irq_ongoing_q                           <=  1'b0;
+                            irq_ongoing_id_q                        <=  4'b0;
+                        end
+                    end
+                endcase
+            end else if (req_valid_i & ~req_wr_i & ~exc_valid_o & (req_addr_i == CLAIM_COMPLETE_ADDR)) begin
+                irq_ongoing_q       <=  |claim_complete[3:0];
+                irq_ongoing_id_q    <=  claim_complete[3:0];
+            end
+        end
+    end
+
     always_comb begin
 
         plic_rd_data_o                  =   64'h0;
@@ -325,50 +370,5 @@ module plic (
 
         eip_o           =   |ip_valid;
     end 
-
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            priority_irq1_q         <=  3'b0;
-            priority_irq2_q         <=  3'b0;
-            priority_irq3_q         <=  3'b0;
-            priority_irq4_q         <=  3'b0;
-            priority_irq5_q         <=  3'b0;
-            priority_irq6_q         <=  3'b0;
-            priority_irq7_q         <=  3'b0;
-            priority_irq8_q         <=  3'b0;
-
-            ip_q                    <=  8'b0;
-            irq_ongoing_q           <=  1'b0;
-            irq_ongoing_id_q        <=  4'b0;
-
-            enable_irq_q            <=  8'b0;
-            priority_threshold_q    <=  3'b0;
-        end else begin
-            ip_q                    <=  nxt_ip;
-
-            if (req_valid_i & req_wr_i & ~exc_valid_o) begin
-                case (req_addr_i)
-                    PRIORITY_IRQ1_ADDR: priority_irq1_q             <=  req_wr_data_i[2:0];
-                    PRIORITY_IRQ2_ADDR: priority_irq2_q             <=  req_wr_data_i[2:0];
-                    PRIORITY_IRQ3_ADDR: priority_irq3_q             <=  req_wr_data_i[2:0];
-                    PRIORITY_IRQ4_ADDR: priority_irq4_q             <=  req_wr_data_i[2:0];
-                    PRIORITY_IRQ5_ADDR: priority_irq5_q             <=  req_wr_data_i[2:0];
-                    PRIORITY_IRQ6_ADDR: priority_irq6_q             <=  req_wr_data_i[2:0];
-                    PRIORITY_IRQ7_ADDR: priority_irq7_q             <=  req_wr_data_i[2:0];
-                    PRIORITY_IRQ8_ADDR: priority_irq8_q             <=  req_wr_data_i[2:0];
-                    ENABLE_IRQ_ADDR: enable_irq_q                   <=  req_wr_data_i[7:0];
-                    PRIORITY_THRESHOLD_ADDR: priority_threshold_q   <=  req_wr_data_i[2:0];
-                    CLAIM_COMPLETE_ADDR: begin
-                        if (req_wr_data_i[3:0] == irq_ongoing_id_q) begin
-                            irq_ongoing_q                           <=  1'b0;
-                            irq_ongoing_id_q                        <=  4'b0;
-                        end
-                    end
-                endcase
-            end else if (req_valid_i & ~req_wr_i & ~exc_valid_o & (req_addr_i == CLAIM_COMPLETE_ADDR)) begin
-                irq_ongoing_q       <=  |claim_complete[3:0];
-                irq_ongoing_id_q    <=  claim_complete[3:0];
-            end
-        end
-    end
+    
 endmodule

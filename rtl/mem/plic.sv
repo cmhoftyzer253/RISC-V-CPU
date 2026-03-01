@@ -330,7 +330,7 @@ module plic (
         //arbitration final stage
         claim_complete_raw          =   (stg2_priority[1] > stg2_priority[0]) ? stg2_idx[1] : stg2_idx[0];  
         claim_complete_priority     =   (stg2_priority[1] > stg2_priority[0]) ? stg2_priority[1] : stg2_priority[0];
-        claim_complete              =   irq_ongoing_q ? 4'b0 : (claim_complete_raw + 4'b1) & {4{claim_complete_priority > priority_threshold_q}};
+        claim_complete              =   (claim_complete_raw + 4'b1) & {4{claim_complete_priority > priority_threshold_q}};
 
         gw_valid[0]     =   ~(irq_ongoing_q & (irq_ongoing_id_q == 4'd1));
         gw_valid[1]     =   ~(irq_ongoing_q & (irq_ongoing_id_q == 4'd2));

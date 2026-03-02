@@ -58,4 +58,4 @@ I view this as a long-term project with the goal of emulating as closely as poss
 My long-term goal for this project is to move from a softcore CPU project to a full computing system. This would include:
 
 * **Software:** Boot an OS like Linux or XV6 and add a graphical interface.
-* **Hardware:** Move from my FPGA devboard to custom PCB with a surface mounted FPGA or ASIC tapeout, DDR memory, and dedicated peripheral ports including USB, Ethernet, and HDMI.
+* **Hardware:** Move from my FPGA devboard to a custom PCB with a surface mounted FPGA or ASIC tapeout, DDR memory, and dedicated peripheral ports including USB, Ethernet, and HDMI.

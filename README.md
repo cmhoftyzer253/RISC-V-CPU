@@ -19,8 +19,8 @@ This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical s
     * Splits operands into upper and lower segments and performs two parallel 32-bit multiplications per clock cycle.
     * **Latency:** 3 cycles for word, 5 cycles for double word instructions.
 * **Non-Restoring Divider:**
-    * **Latency:** Varies from 1-64 clock cycles depending on operand sizes.
-    * Small operands ($\le 15$, unsigned or positive) are purely combinational and are completed in one clock cycle.
+    * **Latency:** Varies from 1-64 cycles depending on operand sizes.
+    * Small operands ($\le 15$, unsigned or positive) are purely combinational and are completed in one cycle.
     * Input shifting is performed before the non-restoring division loop to eliminate redundant division steps.
 
 ### Memory System
@@ -38,7 +38,7 @@ This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical s
 * **Interrupts:** Supports software, timer, counter overflow, and a gateway for 8 external interrupts.
 
 ## Current Status: Verification
-I am currently focused on verification of the core. While I've written directed testbenches for individual modules, this is not sufficient for a project of this complexity. I am currently learning more about verification and developing a testbench setup that will cover:
+I am currently focused on verification of the core. While I've written directed testbenches for individual modules, this is not sufficient for a project of this complexity. I am learning more about verification and developing a testbench setup that will cover:
 
 * **Block Level:** Verification of individual modules.
 * **Integration:** Verification of key interfaces such as Fetch $\leftrightarrow$ I-Cache, Memory $\leftrightarrow$ D-Cache, PLIC $\leftrightarrow$ Trap Controller.

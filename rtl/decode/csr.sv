@@ -19,10 +19,15 @@ module csr (
     input logic [5:0]       nxt_mcause_i,
 
     output logic            mstatus_mie_o,
-    output logic            mie_ext_irq_en_o,
-    output logic            mie_lcof_irq_en_o,
-    output logic            mie_sw_irq_en_o,
-    output logic            mie_timer_irq_en_o,
+    output logic            mie_ext_ire_o,
+    output logic            mie_lcof_ire_o,
+    output logic            mie_sw_ire_o,
+    output logic            mie_timer_ire_o,
+
+    output logic            mie_ext_irp_o,
+    output logic            mie_lcof_irp_o,
+    output logic            mie_sw_irp_o,
+    output logic            mie_timer_irp_o,
 
     output logic [13:0]     mip_o,
 
@@ -78,7 +83,7 @@ module csr (
     logic [63:0]            mcause_q;         
     logic [63:0]            mtval_q;          
     logic [13:0]            mip_q;            
-    logic [64:0]            mcycle_q;         
+    logic [64:0]        
     logic [64:0]            minstret_q; 
     logic [2:0]             mcountovf_q;
 
@@ -179,12 +184,15 @@ module csr (
         acc_fault_addr_rd   =   1'b0;
 
         mstatus_mie_o       =   mstatus_q[3];
-        mie_ext_irq_en_o    =   mie_q[11];
-        mie_lcof_irq_en_o   =   mie_q[13];
-        mie_sw_irq_en_o     =   mie_q[3];
-        mie_timer_irq_en_o  =   mie_q[7];
+        mie_ext_ire_o       =   mie_q[11];
+        mie_lcof_ire_o      =   mie_q[13];
+        mie_sw_ire_o        =   mie_q[3];
+        mie_timer_ire_o     =   mie_q[7];
 
-        mip_o               =   mip_q;
+        mie_ext_irp_o       =   mip_q[11];
+        mie_lcof_irp_o      =   mip_q[13];
+        mie_sw_irp_o        =   mip_q[3];
+        mie_timer_irp_o     =   mip_q[7];
 
         mtvec_o             =   mtvec_q;
         mepc_o              =   mepc_q;

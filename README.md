@@ -10,7 +10,7 @@ After discovering my interest in digital hardware design during my Electrical En
 3.  Explore architectural trade-offs and how high-level design decisions affect power, timing, and area.
 4.  Become a better digital hardware designer by working on a challenging project.
 
-This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical single-cycle toy processors built in courses, implementing advanced architecture features, a realistic memory hierarchy, and system-level integration.
+This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical single-cycle toy processors built in courses, with a more advanced architecture, a realistic memory hierarchy, and system-level integration.
 
 ## Key Microarchitectural Features
 

@@ -2,13 +2,13 @@ import cpu_consts::*;
 
 module branch_control (
 
-    input logic [63:0] opr_a_i,
-    input logic [63:0] opr_b_i,
+    input logic [63:0]  opr_a_i,
+    input logic [63:0]  opr_b_i,
 
     input logic         is_b_type_i,
     input logic [2:0]   instr_funct3_i,
 
-    output logic branch_taken_o
+    output logic        branch_taken_o
 );
 
     logic branch_taken;

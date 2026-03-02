@@ -3,7 +3,6 @@ module fetch (
     input logic             resetn,
 
     input logic [63:0]      pc_i,
-    input logic             pc_valid_i,
     output logic            pc_ready_o,
 
     input logic             flush_i,
@@ -30,7 +29,6 @@ module fetch (
     input logic             decode_ready_i,
     output logic            instr_valid_o,
     output logic [31:0]     fetch_instr_o
-    
 );
 
     logic [4:0]             exc_code_ff;
@@ -50,7 +48,7 @@ module fetch (
     logic [4:0]             exc_code_fetch;
 
     logic                   BROM_en;
-    logic [13:0]            BROM_addr;
+    logic [10:0]            BROM_addr;
     logic [31:0]            BROM_data;
 
     fetch_state_t           state;
@@ -115,7 +113,7 @@ module fetch (
         fetch_instr_o               =   32'h0;
 
         BROM_en                     =   1'b0;
-        BROM_addr                   =   14'h0;
+        BROM_addr                   =   11'h0;
 
         instr_handshake             =   1'b0;
 
@@ -133,17 +131,16 @@ module fetch (
                 pc_ready_o          =   decode_ready_i & instr_mem_ready_i;
                 BROM_en             =   1'b1;
 
-                instr_handshake     =   pc_valid_i & pc_ready_o;
+                BROM_instr          =   pc_valid_i & pc_ready_o & 
+                                        (pc_i >= 64'h0000_0000_0001_0000) & (pc_i <= 64'h0000_0000_0001_1FFF);
 
-                BROM_instr          =   (pc_i[63:16] == 48'h0) & instr_handshake;
-
-                oob_addr            =   ~(BROM_instr | ((pc_i >= 64'h0000_0000_0001_C000) & (pc_i <= 64'h0000_0000_9FFF_FFFF)));
+                oob_addr            =   ~(BROM_instr | ((pc_i >= 64'h0000_0000_8000_0000) & (pc_i <= 64'h0000_0000_9FFF_FFFF)));
                 unaligned_addr      =   |pc_i[1:0];
 
-                exc_valid_fetch     =   instr_handshake & ~flush_i & (oob_addr | unaligned_addr);
+                exc_valid_fetch     =   pc_ready_o & ~flush_i & (oob_addr | unaligned_addr);
                 exc_code_fetch      =   unaligned_addr ? 5'd0 : 5'd1;
 
-                BROM_instr_valid    =   instr_handshake & BROM_instr & ~exc_valid_fetch & ~flush_i;
+                BROM_instr_valid    =   pc_ready_o & BROM_instr & ~exc_valid_fetch & ~flush_i;
 
                 exc_valid_o         =   (exc_valid_i | exc_valid_fetch) & ~flush_i;
                 exc_code_o          =   exc_valid_fetch ? exc_code_fetch : exc_code_i;
@@ -152,14 +149,14 @@ module fetch (
 
                 //load instruction
                 if (BROM_instr) begin
-                    BROM_addr           =   pc_i[15:2];
+                    BROM_addr           =   pc_i[12:2];
 
                     instr_mem_req_o     =   1'b0;
                     instr_mem_addr_o    =   64'h0;
                 end else begin
-                    BROM_addr           =   14'h0;
+                    BROM_addr           =   11'h0;
 
-                    instr_mem_req_o     =   instr_handshake & ~exc_valid_o & ~flush_i;
+                    instr_mem_req_o     =   pc_ready_o & ~exc_valid_o & ~flush_i;
                     instr_mem_addr_o    =   pc_i;
                 end
 

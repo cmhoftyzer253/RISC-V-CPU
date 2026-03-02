@@ -29,11 +29,11 @@ This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical s
     * Both are 4-way Set Associative with a write-back eviction policy.
     * Interfaces with main memory using **AXI4-Lite** protocol.
 * **Clock Domain Crossing (CDC):**
-    * My FPGA has a 512MB DDR3 memory, operating on a separate clock from the CPU core.
+    * My FPGA has a 512MiB DDR3 memory, operating on a separate clock from the CPU core.
     * **Asynchronous FIFOs** move data between DDR and CPU clock domains.
 
 ### Peripherals & System
-* **Boot ROM:** 4KiB of Boot ROM memory dedicated to boot instructions.
+* **Boot ROM:** 8KiB of Boot ROM memory dedicated to boot instructions.
 * **Exception Handling:** Full hardware support for exceptions.
 * **Interrupts:** Supports software, timer, counter overflow, and a gateway for 8 external interrupts.
 

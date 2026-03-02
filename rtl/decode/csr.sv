@@ -77,7 +77,7 @@ module csr (
     logic [63:0]            mepc_q;           
     logic [63:0]            mcause_q;         
     logic [63:0]            mtval_q;          
-    logic [13:0]            mip_q;            //RW - but writes have no effect
+    logic [13:0]            mip_q;            
     logic [64:0]            mcycle_q;         
     logic [64:0]            minstret_q; 
     logic [2:0]             mcountovf_q;

@@ -48,7 +48,7 @@ I am currently focused on verification of the core. While I've written directed 
 I view this as a long-term project with the goal of emulating as closely as possible the features and architecture of a commercial CPU/SoC. There are several features and design improvements I plan to work on next:
 
 * **Distributed Control Logic:** Move control signal generation from solely being done during Decode stage to a distributed model. This will save power and area by eliminating unnecessary pipeline registers.
-* **Multiplier Updates:** Implement a Wallace or Dadda tree instead of using DSP slices.
+* **Multiplier Updates:** Implement a Wallace or Dadda tree multiplier instead of using DSP slices.
 * **ISA Extensions:** Add Floating Point (F) and Atomic (A) extensions.
 * **Branch Prediction:** Improve pipeline performance by adding a branch predictor.
 * **Privilege Modes:** Add User and Supervisor modes for security and future OS support.

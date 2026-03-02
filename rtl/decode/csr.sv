@@ -119,7 +119,7 @@ module csr (
         if (~resetn) begin
             mstatus_q               <=  64'h0000_0000_0000_1800;
             mie_q                   <=  14'h0;
-            mtvec_q                 <=  64'h0;
+            mtvec_q                 <=  64'h0000_0000_8000_0000;
             mcountinhibit_q         <=  64'h0;
             mscratch_q              <=  64'h0;
             mepc_q                  <=  64'h0;

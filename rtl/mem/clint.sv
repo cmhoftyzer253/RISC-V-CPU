@@ -95,8 +95,8 @@ module clint (
                                     ((req_addr_i == MTIMECMPH_ADDR) & (req_byte_en_i == WORD))  | 
                                     ((req_addr_i == MTIMEH_ADDR) & (req_byte_en_i == WORD)));
 
-        msip_irq_o              =   msip_q[0];
-        mtip_irq_o              =   mtime_q >= mtimecmp_q;
+        msip_o                  =   msip_q[0];
+        mtip_o                  =   mtime_q >= mtimecmp_q;
 
         mtime_o                 =   mtime_q;
 

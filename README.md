@@ -23,6 +23,10 @@ This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical s
     * Small operands ($\le 15$, unsigned or positive) are purely combinational and are completed in one cycle.
     * Input shifting is performed before the non-restoring division loop to eliminate redundant division steps.
 
+## Pipeline
+* 5 stage in-order pipeline (Fetch, Decode, Execute, Memory, Writeback)
+* Bypassing from Execute and Memory stages
+
 ### Memory System
 * **Caches:**
     * 32 KiB Instruction and Data caches.

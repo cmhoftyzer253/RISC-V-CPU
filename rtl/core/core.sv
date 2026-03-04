@@ -141,6 +141,11 @@ module core (
     
     logic                   ctrl_exc_valid;
     logic [4:0]             ctrl_exc_code;
+
+    logic                   wfi_active;
+    logic                   wfi_stall;
+    logic                   wfi_end;
+    logic                   wfi_flush_fetch;
     
     logic [63:0]            id_rs1_rd_data;
     logic [63:0]            id_rs2_rd_data;
@@ -447,7 +452,7 @@ module core (
         .exc_code_o         (ic_exc_code)
     );
 
-    assign flush_fetch  =   trap_en | exu_branch_taken | exu_jump_instr;
+    assign flush_fetch  =   tc_flush | exu_branch_taken | exu_jump_instr | (wfi_fetch_flush & wfi_active);
 
     //valid register fetch -> decode
     always_ff @(posedge clk or negedge resetn) begin
@@ -455,7 +460,7 @@ module core (
             id_valid_q          <=  1'b0;
         end else if (flush_fetch) begin
             id_valid_q          <=  1'b0;
-        end else if (decode_ready) begin
+        end else if (decode_ready & ~wfi_stall) begin
             id_valid_q          <=  if_instr_valid;
         end
     end
@@ -466,7 +471,7 @@ module core (
             id_instr_q          <=  32'h0;
             id_pc_q             <=  64'h0;
             id_pc_incr_q        <=  64'h0;
-        end else if (decode_ready) begin
+        end else if (decode_ready & ~wfi_stall) begin
             id_instr_q          <=  if_instr;
             id_pc_q             <=  pc_q;
             id_pc_incr_q        <=  pc_incr;
@@ -481,7 +486,7 @@ module core (
         end else if (flush_fetch) begin
             id_exc_valid_q      <=  1'b0;
             id_exc_code_q       <=  5'd0;
-        end else if (decode_ready) begin
+        end else if (decode_ready & ~wfi_stall) begin
             id_exc_valid_q      <=  if_exc_valid;
             id_exc_code_q       <=  if_exc_code;
         end 
@@ -584,15 +589,20 @@ module core (
         .mepc_o             (csr_mepc),
         .mtime_i            (clint_mtime),
         .minstret_incr_i    (minstret_incr),
+        .wfi_end_o          (wfi_end),
+        .wfi_fetch_flush_o  (wfi_fetch_flush),
         .exc_valid_o        (csr_exc_valid),
         .exc_code_o         (csr_exc_code)
     );
 
     // bypassing logic 
     always_comb begin
-        flush_decode            =   trap_en | exu_branch_taken | exu_jump_instr;
+        flush_decode            =   tc_flush | exu_branch_taken | exu_jump_instr;
 
         csr_wr_en               =   id_valid_q & ctrl_csr_en & (|id_rs1 | ctrl_csr_rw);
+
+        wfi_active              =   id_valid_q & ctrl_wfi;
+        if_stall                =   wfi_active & ~wfi_end;
 
         rd_exu_rs1_bypass_sel   =   (id_rs1 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == ALU_BYPASS) & id_valid_q & exu_valid_q;
         rd_exu_rs2_bypass_sel   =   (id_rs2 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == ALU_BYPASS) & id_valid_q & exu_valid_q;
@@ -664,7 +674,7 @@ module core (
         end else if (flush_decode) begin
             exu_valid_q         <=  1'b0;
         end else if (exu_ready & ~id_stall) begin
-            exu_valid_q         <=  id_valid_q;
+            exu_valid_q         <=  id_valid_q & ~wfi_active;
         end
     end
 
@@ -737,7 +747,7 @@ module core (
             exu_exc_valid_q     <=  1'b0;
             exu_exc_code_q      <=  5'd0;
         end else if (exu_ready & ~id_stall) begin
-            exu_exc_valid_q     <= id_exc_valid_q | id_exc_valid;
+            exu_exc_valid_q     <= (id_exc_valid_q | id_exc_valid) & ~wfi_active;
             exu_exc_code_q      <= id_exc_valid_q ? id_exc_code_q : id_exc_code;
         end 
     end
@@ -749,7 +759,7 @@ module core (
         .resetn             (resetn),
         .valid_instr_i      (exu_valid),
         .exu_ready_o        (exu_ready),
-        .flush_i            (trap_en),
+        .flush_i            (tc_flush),
         .opr_a_i            (exu_opr_a),
         .opr_b_i            (exu_opr_b),
         .exu_func_i         (exu_alu_func_q),
@@ -781,7 +791,7 @@ module core (
         case (exu_opr_b_sel_q)
             RS2_OPERAND_B: exu_opr_b    =   exu_rs2_data_q;
             IMM_OPERAND_B: exu_opr_b    =   exu_instr_imm_q;
-            RS1_OPERAND_B: exu_opr_b    =   exu_rs1_data_q;
+            RS1_OPERAND_B: exu_opr_b    =   (exu_csr_instr_q & (exu_alu_func_q == OP_AND)) ? ~exu_rs1_data_q : exu_rs1_data_q;
         endcase
 
         exu_jump_instr      =   exu_pc_sel_q & exu_valid_q & ~exu_exc_valid_q;
@@ -792,7 +802,7 @@ module core (
     always_ff @(posedge clk or negedge resetn) begin
         if (~resetn) begin
             mem_valid_q         <=  1'b0;
-        end else if (trap_en) begin
+        end else if (tc_flush) begin
             mem_valid_q         <=  1'b0;
         end else if (mem_ready) begin
             mem_valid_q         <=  exu_valid_q;
@@ -843,7 +853,7 @@ module core (
         if (~resetn) begin
             mem_exc_valid_q     <=  1'b0;
             mem_exc_code_q      <=  5'd0;
-        end else if (trap_en) begin
+        end else if (tc_flush) begin
             mem_exc_valid_q     <=  1'b0;
             mem_exc_code_q      <=  5'd0;
         end else if (mem_ready) begin
@@ -971,6 +981,7 @@ module core (
         .clk                    (clk),
         .resetn                 (resetn),
         .trap_en_o              (trap_en),
+        .flush_o                (tc_flush),
         .nxt_mepc_o             (nxt_mepc),
         .nxt_mcause_o           (nxt_mcause),
         .nxt_pc_o               (nxt_pc_trap),

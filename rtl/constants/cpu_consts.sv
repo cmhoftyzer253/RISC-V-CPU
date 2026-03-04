@@ -44,7 +44,7 @@ package cpu_consts;
     } md_op_t;
 
     //memory access width
-    typedef enum logic[1:0] {
+    typedef enum logic [1:0] {
         BYTE        =   2'b00,
         HALF_WORD   =   2'b01,
         WORD        =   2'b10,
@@ -57,17 +57,17 @@ package cpu_consts;
     } bypass_avail_t;
 
     typedef enum logic [1:0] {
-        RD_NONE     =   2'b00;
-        RD_EXU      =   2'b01;
-        RD_MEM      =   2'b10;
-        RD_WB       =   2'b11;
+        RD_NONE     =   2'b00,
+        RD_EXU      =   2'b01,
+        RD_MEM      =   2'b10,
+        RD_WB       =   2'b11
     } rd_bypass_sel_t;
 
     typedef enum logic [1:0] {
-        CSR_NONE    =   2'b00;
-        CSR_EXU     =   2'b01;
-        CSR_MEM     =   2'b10;
-        CSR_WB      =   2'b11;
+        CSR_NONE    =   2'b00,
+        CSR_EXU     =   2'b01,
+        CSR_MEM     =   2'b10,
+        CSR_WB      =   2'b11
     } csr_bypass_sel_t;
 
     // register file writeback data source
@@ -192,6 +192,7 @@ package cpu_consts;
         logic [3:0]         exu_func_sel;
         rd_src_t            rd_src;
         logic               csr_en;
+        logic               csr_rw;
         logic               data_req;
         mem_access_size_t   data_byte;
         bypass_avail_t      bypass_avail;

@@ -39,6 +39,10 @@ module csr (
     input logic [63:0]      mtime_i,
     input logic             minstret_incr_i,
 
+    //id wfi interface
+    output logic            wfi_end_o,
+    output logic            wfi_fetch_flush_o,
+
     output logic            exc_valid_o,
     output logic [4:0]      exc_code_o
 );  
@@ -192,6 +196,13 @@ module csr (
 
         mtvec_o             =   mtvec_q;
         mepc_o              =   mepc_q;
+
+        wfi_end_o           =   (mie_ext_ire_o & mie_ext_irp_o)     |
+                                (mie_lcof_ire_o & mie_lcof_irp_o)   |
+                                (mie_sw_ire_o & mie_sw_irp_o)       |
+                                (mie_timer_ire_o & mie_timer_irp_o);
+
+        wfi_fetch_flush_o   =   wfi_end_o & mstatus_mie_o;
 
         mcountovf_pulse[0]    =   ~mcycle_ovf_2q & mcycle_q[64];
         mcountovf_pulse[1]    =   1'b0;

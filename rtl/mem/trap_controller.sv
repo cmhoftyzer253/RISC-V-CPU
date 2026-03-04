@@ -4,6 +4,8 @@ module trap_controller (
 
     //control outputs
     output logic            trap_en_o,
+    output logic            flush_o,
+
     output logic [63:0]     nxt_mepc_o,
     output logic [5:0]      nxt_mcause_o,
     output logic [63:0]     nxt_pc_o,
@@ -53,20 +55,31 @@ module trap_controller (
 
     always_comb begin
         trap_en_o           =   1'b0;
+        flush_o             =   1'b0;
         nxt_mepc_o          =   64'h0;
         nxt_mcause_o        =   6'b0;
         nxt_pc_o            =   64'h0;
 
         irp_code            =   5'b0;
 
-        irp_grant           =   mstatus_mie_i & ~trap_active_q & ~if_pc_ready_i & 
+        irp_grant           =   mstatus_mie_i & ~trap_active_q & if_pc_ready_i & 
                                 ((mie_ext_ire_i & mie_ext_irp_i)        |
-                                 (mie_lcof_ire_i & mie_lcof_irp_i)      |
                                  (mie_sw_ire_i & mie_sw_irp_i)          |
-                                 (mie_timer_ire_i & mie_timer_irp_i));
+                                 (mie_timer_ire_i & mie_timer_irp_i)    |
+                                 (mie_lcof_ire_i & mie_lcof_irp_i));
 
-        if (mie_ext_ire_i & mie_ext_irp_i) begin
+        if (mie_ext_ire_i & mie_ext_irp_i)
             irp_code        =   5'd11;
+        else if (mie_sw_ire_i & mie_sw_irp_i)
+            irp_code        =   5'd3;
+        else if (mie_timer_ire_i & mie_timer_irp_i)
+            irp_code        =   5'd7;
+        else if (mie_lcof_ire_i & mie_lcof_irp_i)
+            irp_code        =   5'd13;
+
+        if (exc_valid_i) begin
+            trap_en_o       =   1'b1;
+            flush_o         =   1'b1;
 
             nxt_mepc_o      =   mem_pc_i;
             nxt_pc_o        =   {mtvec_i[63:2], 2'b00};

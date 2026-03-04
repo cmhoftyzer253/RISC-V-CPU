@@ -23,6 +23,7 @@ module control (
     output logic [3:0]          exu_func_sel_o,
     output rd_src_t             rd_src_o,
     output logic                csr_en_o,    
+    output logic                csr_rw_o,
     output logic                data_req_o,
     output mem_access_size_t    data_byte_o,
     output bypass_avail_t       bypass_avail_o,
@@ -265,7 +266,8 @@ module control (
                      system_type_controls.exu_func_sel, 
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
-                     system_type_controls.alu_instr} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_CSRRW, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.alu_instr,
+                     system_type_controls.csr_rw} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_CSRRW, 1'b1, 1'b1, 1'b1, 1'b1};
             CSRRS: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel,
@@ -283,7 +285,8 @@ module control (
                      system_type_controls.exu_func_sel,
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
-                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_OR, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.alu_instr,
+                     system_type_controls.csr_rw} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_OR, 1'b1, 1'b1, 1'b1, 1'b1};
             CSRRSI: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel,
@@ -370,6 +373,7 @@ module control (
     assign exu_func_sel_o       =   controls.exu_func_sel;
     assign rd_src_o             =   controls.rd_src;
     assign csr_en_o             =   controls.csr_en;
+    assign csr_rw_o             =   controls.csr_rw;
     assign data_req_o           =   controls.data_req;
     assign data_byte_o          =   controls.data_byte;
     assign bypass_avail_o       =   controls.bypass_avail;

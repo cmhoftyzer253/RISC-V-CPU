@@ -20,16 +20,14 @@ module csr (
 
     output logic            mstatus_mie_o,
     output logic            mie_ext_ire_o,
-    output logic            mie_lcof_ire_o,
     output logic            mie_sw_ire_o,
     output logic            mie_timer_ire_o,
+    output logic            mie_lcof_ire_o,
 
     output logic            mie_ext_irp_o,
-    output logic            mie_lcof_irp_o,
     output logic            mie_sw_irp_o,
     output logic            mie_timer_irp_o,
-
-    output logic [13:0]     mip_o,
+    output logic            mie_lcof_irp_o,
 
     input logic             eip_i,
     input logic             msip_i,
@@ -40,8 +38,6 @@ module csr (
 
     input logic [63:0]      mtime_i,
     input logic             minstret_incr_i,
-
-    input logic             flush_i,
 
     output logic            exc_valid_o,
     output logic [4:0]      exc_code_o
@@ -83,7 +79,7 @@ module csr (
     logic [63:0]            mcause_q;         
     logic [63:0]            mtval_q;          
     logic [13:0]            mip_q;            
-    logic [64:0]        
+    logic [64:0]            mcycle_q;
     logic [64:0]            minstret_q; 
     logic [2:0]             mcountovf_q;
 
@@ -151,7 +147,7 @@ module csr (
                 mstatus_q[3]        <=  mstatus_q[7];
                 mstatus_q[7]        <=  1'b1;
                 mstatus_q[12:11]    <=  2'b11;
-            end else if (~flush_i & wr_en_i) begin
+            end else if (wr_en_i) begin
                 case (wr_addr_i)
                     MSTATUS_ADDR:           mstatus_q           <= nxt_mstatus;
                     MIE_ADDR:               mie_q               <= nxt_mie;
@@ -209,7 +205,7 @@ module csr (
         time_q              =   mtime_i;
         instret_q           =   minstret_q[63:0];  
 
-        acc_fault_addr_wr   =   wr_en_i & ~flush_i & ~(
+        acc_fault_addr_wr   =   wr_en_i & trap_en_i & ~(
                                 (wr_addr_i == MSTATUS_ADDR)         | 
                                 (wr_addr_i == MIE_ADDR)             | 
                                 (wr_addr_i == MTVEC_ADDR)           | 
@@ -238,7 +234,7 @@ module csr (
         nxt_mepc            =   wr_data_i & mepc_wr_mask;
         nxt_mcountovf       =   wr_data_i[2:0] & mcountovf_wr_mask;
 
-        if (rd_en_i & ~flush_i) begin
+        if (rd_en_i & ~trap_en_i) begin
             case (rd_addr_i)
                 MSTATUS_ADDR: rd_data_o         =   mstatus_q;
                 MISA_ADDR: rd_data_o            =   MISA_Q;

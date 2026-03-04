@@ -1,4 +1,4 @@
-package cpu_utils
+package cpu_utils;
     function automatic logic [2:0] exc_priority_encode (input logic [4:0] exc_code);
         begin
             case (exc_code)
@@ -25,7 +25,9 @@ module irq_sw_gw (
     output logic    gw_irq_o
 );
 
-    always_ff @(posedge clk or negedge reset) begin
+    logic           signal_q;
+
+    always_ff @(posedge clk or negedge resetn) begin
         if (~resetn) begin
             signal_q    <=  1'b0;
         end else begin

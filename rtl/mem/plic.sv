@@ -203,7 +203,6 @@ module plic (
     end
 
     always_comb begin
-
         plic_rd_data_o                  =   64'h0;
         plic_resp_valid_o               =   1'b0;
 

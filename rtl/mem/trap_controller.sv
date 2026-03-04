@@ -16,20 +16,19 @@ module trap_controller (
     //fetch/decode interface
     input logic             if_pc_ready_i,
     input logic [63:0]      if_pc_incr_i,
-    input logic [63:0]      if_pc_i,
     input logic             mret_i,
 
     //csr interface
     input logic             mstatus_mie_i,
     input logic             mie_ext_ire_i,
-    input logic             mie_lcof_ire_i,
     input logic             mie_sw_ire_i,
     input logic             mie_timer_ire_i,
+    input logic             mie_lcof_ire_i,
 
     input logic             mie_ext_irp_i,
-    input logic             mie_lcof_irp_i,
     input logic             mie_sw_irp_i,
     input logic             mie_timer_irp_i,
+    input logic             mie_lcof_irp_i,
 
     input logic [63:0]      mtvec_i,
     input logic [63:0]      mepc_i
@@ -66,17 +65,8 @@ module trap_controller (
                                  (mie_sw_ire_i & mie_sw_irp_i)          |
                                  (mie_timer_ire_i & mie_timer_irp_i));
 
-        if (mie_ext_ire_i & mie_ext_irp_i)
+        if (mie_ext_ire_i & mie_ext_irp_i) begin
             irp_code        =   5'd11;
-        else if (mie_sw_ire_i & mie_sw_irp_i) 
-            irp_code        =   5'd3;
-        else if (mie_timer_ire_i & mie_timer_irp_i) 
-            irp_code        =   5'd7;
-        else if (mie_lcof_ire_i & mie_lcof_irp_i)
-            irp_code        =   5'd13;
-
-        if (exc_valid_i) begin
-            trap_en_o       =   1'b1;
 
             nxt_mepc_o      =   mem_pc_i;
             nxt_pc_o        =   {mtvec_i[63:2], 2'b00};

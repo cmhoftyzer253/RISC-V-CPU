@@ -13,8 +13,8 @@ module clint (
     output logic [63:0]         clint_rd_data_o,
     output logic                clint_resp_valid_o,
 
-    output logic                msip_irq_o,
-    output logic                mtip_irq_o,
+    output logic                msip_irp_o,
+    output logic                mtip_irp_o,
 
     output logic                exc_valid_o,
     output logic [4:0]          exc_code_o,
@@ -95,8 +95,8 @@ module clint (
                                     ((req_addr_i == MTIMECMPH_ADDR) & (req_byte_en_i == WORD))  | 
                                     ((req_addr_i == MTIMEH_ADDR) & (req_byte_en_i == WORD)));
 
-        msip_o                  =   msip_q[0];
-        mtip_o                  =   mtime_q >= mtimecmp_q;
+        msip_irp_o              =   msip_q[0];
+        mtip_irp_o              =   mtime_q >= mtimecmp_q;
 
         mtime_o                 =   mtime_q;
 

@@ -7,17 +7,17 @@ module d_cache #(
     input logic resetn,
 
     //memory module request interface
-    input logic                 data_mem_req_i,
-    input logic [63:0]          data_mem_addr_i,
-    input logic                 data_mem_wr_i,
-    input logic [63:0]          data_mem_wr_data_i,
-    input logic [7:0]           data_mem_mask_i,
-    output logic                data_mem_ready_o,
+    input logic                 dc_req_i,
+    input logic [63:0]          dc_addr_i,
+    input logic                 dc_wr_i,
+    input logic [63:0]          dc_wr_data_i,
+    input logic [7:0]           dc_mask_i,
+    output logic                dc_ready_o,
 
     //memory module response interface
-    input logic                 req_rd_ready_i,
-    output logic                req_resp_valid_o,
-    output logic [63:0]         req_rd_data_o,
+    input logic                 mem_ready_i,
+    output logic                dc_resp_valid_o,
+    output logic [63:0]         dc_rd_data_o,
 
     //AXI Interface to DDR3 main memory
     // load request
@@ -65,10 +65,10 @@ module d_cache #(
     logic req_handshake;
     logic req_handshake_ff;
 
-    logic [63:0]    data_mem_addr_ff;
-    logic           data_mem_wr_ff;
-    logic [63:0]    data_mem_wr_data_ff;
-    logic [7:0]     data_mem_mask_ff;
+    logic [63:0]    dc_addr_ff;
+    logic           dc_wr_ff;
+    logic [63:0]    dc_wr_data_ff;
+    logic [7:0]     dc_mask_ff;
 
     logic [50:0]    data_tag;
     logic [50:0]    data_tag_ff;
@@ -142,10 +142,10 @@ module d_cache #(
         if (~resetn) begin
             req_handshake_ff                    <= 1'b0;
 
-            data_mem_addr_ff                    <= 64'h0;
-            data_mem_wr_ff                      <= 1'b0;
-            data_mem_wr_data_ff                 <= 64'h0;
-            data_mem_mask_ff                    <= 8'b0;
+            dc_addr_ff                          <= 64'h0;
+            dc_wr_ff                            <= 1'b0;
+            dc_wr_data_ff                       <= 64'h0;
+            dc_mask_ff                          <= 8'b0;
 
             tag_rd_w0                           <= '0;
             tag_rd_w1                           <= '0;
@@ -195,7 +195,7 @@ module d_cache #(
                     req_handshake_ff            <= req_handshake;
 
                     if (data_hit) begin
-                        if (data_mem_wr_ff) begin
+                        if (dc_wr_ff) begin
                             case (hit_1h)
                                 4'b0001: begin
                                     data_w0[data_index_ff]          <= store_data;
@@ -234,10 +234,10 @@ module d_cache #(
                         data_rd_w2              <= data_w2[data_index];
                         data_rd_w3              <= data_w3[data_index];
 
-                        data_mem_addr_ff        <= data_mem_addr_i;
-                        data_mem_wr_ff          <= data_mem_wr_i;
-                        data_mem_wr_data_ff     <= data_mem_wr_data_i;
-                        data_mem_mask_ff        <= data_mem_mask_i;
+                        dc_addr_ff              <= dc_addr_i;
+                        dc_wr_ff                <= dc_wr_i;
+                        dc_wr_data_ff           <= dc_wr_data_i;
+                        dc_mask_ff              <= dc_mask_i;
 
                         bypass_active           <= bypass_reg_wr;
                     end else begin
@@ -507,26 +507,26 @@ module d_cache #(
 
                         state               <= S_DC_RUN;
                     end else begin
-                        if (req_rd_ready_i) begin
+                        if (mem_ready_i) begin
                             if (way_fill_q == 2'b00) begin
                                 tags_w0[data_line].valid        <= 1'b1;
                                 tags_w0[data_line].tag          <= data_tag;
-                                tags_w0[data_line].dirty        <= data_mem_wr_ff ? 1'b1 : 1'b0;
+                                tags_w0[data_line].dirty        <= dc_wr_ff ? 1'b1 : 1'b0;
                             end else if (way_fill_q == 2'b01) begin
                                 tags_w1[data_line].valid        <= 1'b1;
                                 tags_w1[data_line].tag          <= data_tag;
-                                tags_w1[data_line].dirty        <= data_mem_wr_ff ? 1'b1 : 1'b0;
+                                tags_w1[data_line].dirty        <= dc_wr_ff ? 1'b1 : 1'b0;
                             end else if (way_fill_q == 2'b10) begin
                                 tags_w2[data_line].valid        <= 1'b1;
                                 tags_w2[data_line].tag          <= data_tag;
-                                tags_w2[data_line].dirty        <= data_mem_wr_ff ? 1'b1 : 1'b0;
+                                tags_w2[data_line].dirty        <= dc_wr_ff ? 1'b1 : 1'b0;
                             end else if (way_fill_q == 2'b11) begin
                                 tags_w3[data_line].valid        <= 1'b1;
                                 tags_w3[data_line].tag          <= data_tag;
-                                tags_w3[data_line].dirty        <= data_mem_wr_ff ? 1'b1 : 1'b0;
+                                tags_w3[data_line].dirty        <= dc_wr_ff ? 1'b1 : 1'b0;
                             end
 
-                            if (data_mem_wr_ff) begin
+                            if (dc_wr_ff) begin
                                 if (way_fill_q == 2'b00) begin
                                     data_w0[data_index]         <= store_data;
                                 end else if (way_fill_q == 2'b01) begin
@@ -557,9 +557,9 @@ module d_cache #(
 
     always_comb begin
 
-        data_mem_ready_o            =   1'b0;
-        req_resp_valid_o            =   1'b0;
-        req_rd_data_o               =   64'h0;
+        dc_ready_o                  =   1'b0;
+        dc_resp_valid_o             =   1'b0;
+        dc_rd_data_o                =   64'h0;
 
         araddr_o                    =   64'h0;
         arlen_o                     =   8'b0;
@@ -623,15 +623,15 @@ module d_cache #(
 
         case (state)
             S_DC_RUN: begin
-                data_tag            =   data_mem_addr_i[63:13];
-                tag_index           =   data_mem_addr_i[12:6];
-                data_offset         =   data_mem_addr_i[5:3];
+                data_tag            =   dc_addr_i[63:13];
+                tag_index           =   dc_addr_i[12:6];
+                data_offset         =   dc_addr_i[5:3];
 
-                data_index          =   data_mem_addr_i[12:3];
+                data_index          =   dc_addr_i[12:3];
 
-                data_tag_ff         =   data_mem_addr_ff[63:13];
-                data_index_ff       =   data_mem_addr_ff[12:3];
-                tag_index_ff        =   data_mem_addr_ff[12:6];
+                data_tag_ff         =   dc_addr_ff[63:13];
+                data_index_ff       =   dc_addr_ff[12:3];
+                tag_index_ff        =   dc_addr_ff[12:6];
 
                 hit_1h[0]           =   (tag_rd_w0.valid) & (data_tag_ff == tag_rd_w0.tag);
                 hit_1h[1]           =   (tag_rd_w1.valid) & (data_tag_ff == tag_rd_w1.tag);
@@ -641,12 +641,12 @@ module d_cache #(
                 data_hit            =   |hit_1h & req_handshake_ff;
                 cache_miss          =   req_handshake_ff & ~data_hit;
 
-                data_mem_ready_o    =   ~cache_miss;
+                dc_ready_o          =   ~cache_miss;
 
-                req_handshake       =   data_mem_req_i & data_mem_ready_o;
+                req_handshake       =   dc_req_i & dc_ready_o;
 
-                bypass_reg_wr       =   req_handshake & req_handshake_ff & ~data_mem_wr_i & data_mem_wr_ff & 
-                                        (data_mem_addr_i[63:3] == data_mem_addr_ff[63:3]);
+                bypass_reg_wr       =   req_handshake & req_handshake_ff & ~dc_wr_i & dc_wr_ff & 
+                                        (dc_addr_i[63:3] == dc_addr_ff[63:3]);
 
                 case (hit_1h)
                     4'b0001: fetch_data     =   data_rd_w0;
@@ -656,17 +656,17 @@ module d_cache #(
                     default: fetch_data     =   64'h0;
                 endcase
 
-                store_data[7:0]     =   data_mem_mask_ff[0] ? data_mem_wr_data_ff[7:0] : fetch_data[7:0];
-                store_data[15:8]    =   data_mem_mask_ff[1] ? data_mem_wr_data_ff[15:8] : fetch_data[15:8];
-                store_data[23:16]   =   data_mem_mask_ff[2] ? data_mem_wr_data_ff[23:16] : fetch_data[23:16];
-                store_data[31:24]   =   data_mem_mask_ff[3] ? data_mem_wr_data_ff[31:24] : fetch_data[31:24];
-                store_data[39:32]   =   data_mem_mask_ff[4] ? data_mem_wr_data_ff[39:32] : fetch_data[39:32];
-                store_data[47:40]   =   data_mem_mask_ff[5] ? data_mem_wr_data_ff[47:40] : fetch_data[47:40];
-                store_data[55:48]   =   data_mem_mask_ff[6] ? data_mem_wr_data_ff[55:48] : fetch_data[55:48];
-                store_data[63:56]   =   data_mem_mask_ff[7] ? data_mem_wr_data_ff[63:56] : fetch_data[63:56];
+                store_data[7:0]     =   dc_mask_ff[0] ? dc_wr_data_ff[7:0] : fetch_data[7:0];
+                store_data[15:8]    =   dc_mask_ff[1] ? dc_wr_data_ff[15:8] : fetch_data[15:8];
+                store_data[23:16]   =   dc_mask_ff[2] ? dc_wr_data_ff[23:16] : fetch_data[23:16];
+                store_data[31:24]   =   dc_mask_ff[3] ? dc_wr_data_ff[31:24] : fetch_data[31:24];
+                store_data[39:32]   =   dc_mask_ff[4] ? dc_wr_data_ff[39:32] : fetch_data[39:32];
+                store_data[47:40]   =   dc_mask_ff[5] ? dc_wr_data_ff[47:40] : fetch_data[47:40];
+                store_data[55:48]   =   dc_mask_ff[6] ? dc_wr_data_ff[55:48] : fetch_data[55:48];
+                store_data[63:56]   =   dc_mask_ff[7] ? dc_wr_data_ff[63:56] : fetch_data[63:56];
 
-                req_resp_valid_o    =   data_hit;
-                req_rd_data_o       =   bypass_active ? bypass_data : fetch_data;
+                dc_resp_valid_o     =   data_hit;
+                dc_rd_data_o        =   bypass_active ? bypass_data : fetch_data;
 
                 case (hit_1h)
                     4'b0001: nxt_PLRU_tree  =   {2'b11, PLRU_tree_q[2]};
@@ -704,7 +704,7 @@ module d_cache #(
                 wb_dirty            =   way_fill_replace & way_dirty;
             end
             S_DC_STORE_AW_WAIT: begin
-                tag_index_ff        =   data_mem_addr_ff[12:6];
+                tag_index_ff        =   dc_addr_ff[12:6];
 
                 case(way_fill_q)
                     2'b00: victim_tag       =   tag_rd_w0.tag;
@@ -721,7 +721,7 @@ module d_cache #(
                 awvalid_o           =   1'b1;
             end
             S_DC_STORE_1: begin
-                tag_index_ff        =   data_mem_addr_ff[12:6];
+                tag_index_ff        =   dc_addr_ff[12:6];
 
                 wvalid_o            =   1'b1;
                 wdata_o             =   {wb_upper, wb_lower};
@@ -729,7 +729,7 @@ module d_cache #(
                 wlast_o             =   1'b0;
             end
             S_DC_STORE_2: begin
-                tag_index_ff        =   data_mem_addr_ff[12:6];
+                tag_index_ff        =   dc_addr_ff[12:6];
 
                 wvalid_o            =   1'b1;
                 wdata_o             =   {wb_upper, wb_lower};
@@ -737,7 +737,7 @@ module d_cache #(
                 wlast_o             =   1'b0;
             end
             S_DC_STORE_3: begin
-                tag_index_ff        =   data_mem_addr_ff[12:6];
+                tag_index_ff        =   dc_addr_ff[12:6];
 
                 wvalid_o            =   1'b1;
                 wdata_o             =   {wb_upper, wb_lower};
@@ -751,7 +751,7 @@ module d_cache #(
                 wlast_o             =   1'b1;
             end
             S_DC_STORE_DONE: begin
-                tag_index_ff        =   data_mem_addr_ff[12:6];
+                tag_index_ff        =   dc_addr_ff[12:6];
 
                 if (bvalid_i & ((bresp_i != 2'b00) | (bid_i != '0))) begin
                     exc_valid_o     =   1'b1;
@@ -759,7 +759,7 @@ module d_cache #(
                 end
             end
             S_DC_LOAD_REQUEST: begin
-                araddr_o            =   {data_mem_addr_ff[63:6], 6'b0};
+                araddr_o            =   {dc_addr_ff[63:6], 6'b0};
                 arlen_o             =   8'd3;
                 arsize_o            =   3'b100;
                 arburst_o           =   2'b01;
@@ -768,48 +768,48 @@ module d_cache #(
                 arvalid_o           =   1'b1;
             end
             S_DC_LOAD_1: begin
-                data_offset         =   data_mem_addr_ff[5:3];
-                data_line           =   data_mem_addr_ff[12:6];
+                data_offset         =   dc_addr_ff[5:3];
+                data_line           =   dc_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
             S_DC_LOAD_2: begin
-                data_offset         =   data_mem_addr_ff[5:3];
-                data_line           =   data_mem_addr_ff[12:6];
+                data_offset         =   dc_addr_ff[5:3];
+                data_line           =   dc_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
             S_DC_LOAD_3: begin
-                data_offset         =   data_mem_addr_ff[5:3];
-                data_line           =   data_mem_addr_ff[12:6];
+                data_offset         =   dc_addr_ff[5:3];
+                data_line           =   dc_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
             S_DC_LOAD_4: begin
-                data_offset         =   data_mem_addr_ff[5:3];
-                data_line           =   data_mem_addr_ff[12:6];
+                data_offset         =   dc_addr_ff[5:3];
+                data_line           =   dc_addr_ff[12:6];
 
                 rready_o            =   1'b1;
             end
             S_DC_LOAD_DONE: begin
                 exc_valid_o         =   error_ff | id_error;
-                exc_code_o          =   data_mem_wr_ff ? 5'd7 : 5'd5;
+                exc_code_o          =   dc_wr_ff ? 5'd7 : 5'd5;
 
-                req_rd_data_o       =   data_hold;
-                req_resp_valid_o    =   1'b1;
+                dc_rd_data_o        =   data_hold;
+                dc_resp_valid_o     =   1'b1;
 
-                data_index          =   data_mem_addr_ff[12:3];
-                data_line           =   data_mem_addr_ff[12:6];
-                data_tag            =   data_mem_addr_ff[63:13];
+                data_index          =   dc_addr_ff[12:3];
+                data_line           =   dc_addr_ff[12:6];
+                data_tag            =   dc_addr_ff[63:13];
 
-                store_data[7:0]     =   data_mem_mask_ff[0] ? data_mem_wr_data_ff[7:0] : data_hold[7:0];
-                store_data[15:8]    =   data_mem_mask_ff[1] ? data_mem_wr_data_ff[15:8] : data_hold[15:8];
-                store_data[23:16]   =   data_mem_mask_ff[2] ? data_mem_wr_data_ff[23:16] : data_hold[23:16];
-                store_data[31:24]   =   data_mem_mask_ff[3] ? data_mem_wr_data_ff[31:24] : data_hold[31:24];
-                store_data[39:32]   =   data_mem_mask_ff[4] ? data_mem_wr_data_ff[39:32] : data_hold[39:32];
-                store_data[47:40]   =   data_mem_mask_ff[5] ? data_mem_wr_data_ff[47:40] : data_hold[47:40];
-                store_data[55:48]   =   data_mem_mask_ff[6] ? data_mem_wr_data_ff[55:48] : data_hold[55:48];
-                store_data[63:56]   =   data_mem_mask_ff[7] ? data_mem_wr_data_ff[63:56] : data_hold[63:56];
+                store_data[7:0]     =   dc_mask_ff[0] ? dc_wr_data_ff[7:0] : data_hold[7:0];
+                store_data[15:8]    =   dc_mask_ff[1] ? dc_wr_data_ff[15:8] : data_hold[15:8];
+                store_data[23:16]   =   dc_mask_ff[2] ? dc_wr_data_ff[23:16] : data_hold[23:16];
+                store_data[31:24]   =   dc_mask_ff[3] ? dc_wr_data_ff[31:24] : data_hold[31:24];
+                store_data[39:32]   =   dc_mask_ff[4] ? dc_data_ff[39:32] : data_hold[39:32];
+                store_data[47:40]   =   dc_mask_ff[5] ? dc_data_ff[47:40] : data_hold[47:40];
+                store_data[55:48]   =   dc_mask_ff[6] ? dc_data_ff[55:48] : data_hold[55:48];
+                store_data[63:56]   =   dc_mask_ff[7] ? dc_data_ff[63:56] : data_hold[63:56];
 
 
                 case (way_fill_q) 

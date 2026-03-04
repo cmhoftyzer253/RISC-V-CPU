@@ -13,12 +13,12 @@ module memory (
     output logic                data_mem_resp_valid_o,
     output logic [63:0]         data_mem_rd_data_o,
 
-    input logic                 data_mem_ready_i,
-    output logic                data_mem_req_o,
-    output logic [63:0]         data_mem_addr_o,
-    output logic                data_mem_wr_o,
-    output logic [63:0]         data_mem_wr_data_o,
-    output logic [7:0]          data_mem_mask_o,
+    input logic                 dc_ready_i,
+    output logic                dc_req_o,
+    output logic [63:0]         dc_addr_o,
+    output logic                dc_wr_o,
+    output logic [63:0]         dc_wr_data_o,
+    output logic [7:0]          dc_mask_o,
 
     input logic                 req_resp_valid_i,
     input logic [63:0]          req_rd_data_i,
@@ -62,17 +62,17 @@ module memory (
     end
 
     always_comb begin
-        data_mem_req_o              =   1'b0;
-        data_mem_addr_o             =   64'h0;
-        data_mem_wr_o               =   1'b0;
-        data_mem_wr_data_o          =   64'h0;
-        data_mem_mask_o             =   8'b0;
+        dc_req_o                    =   1'b0;
+        dc_addr_o                   =   64'h0;
+        dc_wr_o                     =   1'b0;
+        dc_wr_data_o                =   64'h0;
+        dc_mask_o                   =   8'b0;
 
         oob_addr                    =   ~((req_addr_i >= 64'h0000_0000_8000_0000) & (req_addr_i <= 64'h0000_0000_9FFF_FFFF));
         oob                         =   req_valid_i & req_ready_o & oob_addr;
 
         unaligned_addr              =   req_valid_i & req_ready_o & 
-                                        ((req_byte_en_i == BYTE ? 1'b0) : 
+                                        ((req_byte_en_i == BYTE) ? 1'b0 : 
                                          (req_byte_en_i == HALF_WORD) ? req_addr_i[0] : 
                                          (req_byte_en_i == WORD) ? req_addr_i[1:0] : 
                                          (req_byte_en_i == DOUBLE_WORD) ? req_addr_i[2:0] : 1'b0);
@@ -170,25 +170,25 @@ module memory (
         endcase
 
         if (req_handshake & req_wr_i) begin
-            data_mem_req_o          =   1'b1;
-            data_mem_addr_o         =   req_addr_i;
-            data_mem_wr_o           =   1'b1;
-            data_mem_wr_data_o      =   store_data;
-            data_mem_mask_o         =   store_mask;
+            dc_req_o          =   1'b1;
+            dc_addr_o         =   req_addr_i;
+            dc_wr_o           =   1'b1;
+            dc_wr_data_o      =   store_data;
+            dc_mask_o         =   store_mask;
         end
 
         if (req_handshake & ~req_wr_i) begin
-            data_mem_req_o          =   1'b1;
-            data_mem_addr_o         =   req_addr_i;
-            data_mem_wr_o           =   1'b0;
-            data_mem_wr_data_o      =   64'h0;
-            data_mem_mask_o         =   8'b0;
+            dc_req_o          =   1'b1;
+            dc_addr_o         =   req_addr_i;
+            dc_wr_o           =   1'b0;
+            dc_wr_data_o      =   64'h0;
+            dc_mask_o         =   8'b0;
         end
 
-        req_ready_o                 =   data_mem_ready_i;
+        req_ready_o                 =   dc_ready_i;
 
-        data_mem_resp_valid_o       =   req_resp_valid_i & ~exc_valid_i;
-        data_mem_red_data_o         =   load_data;
+        dc_resp_valid_o             =   req_resp_valid_i & ~exc_valid_i;
+        dc_red_data_o               =   load_data;
 
         req_rd_ready_o              =   1'b1;
 

@@ -56,13 +56,13 @@ module clint (
                             mtimecmp_q[31:0]    <=  req_wr_data_i[31:0];
                         end
                         MTIMECMPH_ADDR: begin
-                            mtimecmp_q[63:32]   <=  req_wr_data_i[63:32];
+                            mtimecmp_q[63:32]   <=  req_wr_data_i[31:0];
                         end
                         MTIME_ADDR: begin
                             mtime_q[31:0]       <=  req_wr_data_i[31:0];
                         end
                         MTIMEH_ADDR: begin
-                            mtime_q[63:32]      <=  req_wr_data_i[63:32];
+                            mtime_q[63:32]      <=  req_wr_data_i[31:0];
                         end
                     endcase
                 end else if (req_byte_en_i == DOUBLE_WORD) begin
@@ -114,7 +114,7 @@ module clint (
                     end
                     default: begin
                         clint_rd_data_o     =   64'h0;
-                        clint_resp_valid_o  =   1'b0;
+                        clint_resp_valid_o  =   1'b1;
 
                         acc_fault_addr_rd   =   1'b1;
                     end
@@ -122,7 +122,7 @@ module clint (
             end else if (req_byte_en_i == WORD) begin
                 case (req_addr_i)
                     MSIP_ADDR: begin
-                        clint_rd_data_o     =   {32'h0, msip_q};
+                        clint_rd_data_o     =   {63'h0, msip_q};
                         clint_resp_valid_o  =   1'b1;
                     end
                     MTIMECMP_ADDR: begin
@@ -130,7 +130,7 @@ module clint (
                         clint_resp_valid_o  =   1'b1;
                     end
                     MTIMECMPH_ADDR: begin
-                        clint_rd_data_o     =   {mtimecmp_q[63:32], 32'h0};
+                        clint_rd_data_o     =   {32'h0, mtimecmp_q[63:32]};
                         clint_resp_valid_o  =   1'b1;
                     end
                     MTIME_ADDR: begin
@@ -138,7 +138,7 @@ module clint (
                         clint_resp_valid_o  =   1'b1;
                     end
                     MTIMEH_ADDR: begin
-                        clint_rd_data_o     =   {mtime_q[63:32], 32'h0};
+                        clint_rd_data_o     =   {32'h0, mtime_q[63:32]};
                         clint_resp_valid_o  =   1'b1;
                     end 
                     default: begin

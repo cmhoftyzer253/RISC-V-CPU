@@ -53,7 +53,7 @@ package cpu_consts;
 
     typedef enum logic {
         ALU_BYPASS  =   1'b0,
-        MEM_BYPASS  =   1'b1
+        WB_BYPASS   =   1'b1
     } bypass_avail_t;
 
     typedef enum logic [1:0] {

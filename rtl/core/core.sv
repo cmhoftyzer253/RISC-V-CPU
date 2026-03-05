@@ -77,9 +77,6 @@ module core (
 
     logic                   if_pc_ready;
     logic                   if_fetch_ready;
-    
-    logic                   if_instr_valid;
-    logic [31:0]            if_instr;
 
     logic                   if_exc_valid;
     logic [4:0]             if_exc_code;
@@ -95,7 +92,8 @@ module core (
     logic [4:0]             ic_exc_code;
 
     logic                   id_valid_q;
-    logic [31:0]            id_instr_q;
+    logic                   id_instr_valid;
+    logic [31:0]            id_instr;
     logic [63:0]            id_pc_q;
     logic [63:0]            id_pc_incr_q;
     logic                   id_exc_valid_q;
@@ -103,6 +101,7 @@ module core (
 
     logic [4:0]             id_rs1;
     logic [4:0]             id_rs2;
+    logic [4:0]             id_rd;
     logic [6:0]             id_opcode;
     logic [2:0]             id_funct3;
     logic [11:0]            id_funct12;
@@ -118,7 +117,7 @@ module core (
     logic [63:0]            id_imm;
 
     logic                   id_u_exc_valid;
-    logic                   id_u_exc_code;
+    logic [4:0]             id_u_exc_code;
 
     logic                   ctrl_pc_sel;
     alu_opr_a_sel_t         ctrl_opa_sel;
@@ -129,6 +128,7 @@ module core (
     logic                   ctrl_csr_rw;
     logic                   ctrl_data_req;
     mem_access_size_t       ctrl_data_byte;
+    bypass_avail_t          ctrl_bypass_avail;
     logic                   ctrl_data_wr;
     logic                   ctrl_zero_extnd;
     logic                   ctrl_rf_wr_en;
@@ -145,7 +145,7 @@ module core (
     logic                   wfi_active;
     logic                   wfi_stall;
     logic                   wfi_end;
-    logic                   wfi_flush_fetch;
+    logic                   wfi_fetch_flush;
     
     logic [63:0]            id_rs1_rd_data;
     logic [63:0]            id_rs2_rd_data;
@@ -176,9 +176,6 @@ module core (
     logic                   rd_exu_rs1_bypass_sel;
     logic                   rd_exu_rs2_bypass_sel;
 
-    logic                   rd_mem_rs1_bypass_sel;
-    logic                   rd_mem_rs2_bypass_sel;
-
     logic                   rd_wb_rs1_bypass_sel;
     logic                   rd_wb_rs2_bypass_sel;
 
@@ -189,10 +186,12 @@ module core (
     logic [63:0]            id_rs1_data;
     logic [63:0]            id_rs2_data;
     logic [63:0]            id_csr_data;
+
+    logic                   id_ready;
     
     logic                   id_stall;
 
-    logic [2:0]             decode_exc_priority;
+    logic [2:0]             id_u_exc_priority;
     logic [2:0]             ctrl_exc_priority;
     logic [2:0]             csr_exc_priority;
 
@@ -220,7 +219,7 @@ module core (
 
     logic [63:0]            exu_rs1_data_q;
     logic [63:0]            exu_rs2_data_q;
-    logic [63:0]            exu_isntr_imm_q;
+    logic [63:0]            exu_instr_imm_q;
 
     alu_opr_a_sel_t         exu_opr_a_sel_q;
     alu_opr_b_sel_t         exu_opr_b_sel_q;
@@ -228,6 +227,7 @@ module core (
     logic [3:0]             exu_alu_func_q;
     rd_src_t                exu_rd_src_q;
 
+    logic                   exu_pc_sel_q;
     logic                   exu_data_req_q;
     mem_access_size_t       exu_data_byte_q;
     logic                   exu_data_wr_q;
@@ -235,7 +235,7 @@ module core (
     logic                   exu_rd_wr_en_q;
     logic                   exu_word_op_q;
     logic                   exu_alu_instr_q;
-    logic                   exu_mul_isntr_q;
+    logic                   exu_mul_instr_q;
     logic                   exu_div_instr_q;
 
     bypass_avail_t          exu_bypass_avail_q;
@@ -263,15 +263,16 @@ module core (
     logic [63:0]            mem_instr_imm_q;
     logic [4:0]             mem_rd_q;
 
+    logic                   mem_csr_instr_q;
     logic [11:0]            mem_csr_addr_q;
     logic [63:0]            mem_csr_data_q;
     logic                   mem_csr_wr_en_q;
 
     logic [63:0]            mem_pc_q;
     logic [63:0]            mem_pc_incr_q;
-    logic [4:0]             mem_rd_q;
+    rd_src_t                mem_rd_src_q;
 
-    logic                   mem_data_byte_q;
+    logic                   mem_data_req_q;
     mem_access_size_t       mem_data_byte_q;
     logic                   mem_data_wr_q;
     logic                   mem_zero_extnd_q;
@@ -295,9 +296,6 @@ module core (
 
     logic                   dc_exc_valid;
     logic [4:0]             dc_exc_code;
-
-    logic                   mem_resp_valid;
-    logic [63:0]            mem_u_rd_data;
 
     logic                   mem_u_exc_valid;
     logic [4:0]             mem_u_exc_code;
@@ -336,6 +334,8 @@ module core (
     logic [5:0]             nxt_mcause;
     logic [63:0]            nxt_pc_trap;
 
+    logic                   tc_flush;
+
     logic                   tc_exc_valid;
     logic [4:0]             tc_exc_code;
 
@@ -359,19 +359,33 @@ module core (
 
     logic                   wb_valid_q;
 
+    logic                   wb_valid;
+    logic                   wb_valid_mem_resp;
+
     logic [63:0]            wb_alu_res_q;
     logic [63:0]            wb_instr_imm_q;
     logic [63:0]            wb_pc_incr_q;
+
     logic [63:0]            wb_mem_rd_data_q;
+    logic [63:0]            wb_mem_rd_data;
+
+    logic [63:0]            wb_mem_wr_data;
+
+    logic                   wb_mem_req_q;
+
+    logic                   wb_data_mem_resp_valid;
 
     logic [11:0]            wb_csr_addr_q;
     logic                   wb_csr_wr_en_q;
     
-    logic [1:0]             wb_rd_src_q;
+    rd_src_t                wb_rd_src_q;
 
     logic                   wb_rf_wr_en_q;
+    logic                   wb_rf_wr_en;
+
     bypass_avail_t          wb_bypass_avail_q;
 
+    logic                   wb_csr_instr_q;
     logic                   wb_csr_wr_en;
     logic                   minstret_incr;
     
@@ -419,9 +433,9 @@ module core (
         .instr_mem_req_o    (if_req),
         .instr_mem_addr_o   (if_req_addr),
         .flush_o            (if_flush),
-        .decode_ready_i     (decode_ready),
-        .instr_valid_o      (if_instr_valid),
-        .fetch_instr_o      (if_instr)
+        .decode_ready_i     (id_ready),
+        .instr_valid_o      (id_instr_valid),
+        .fetch_instr_o      (id_instr)
     );
 
     i_cache u_i_cache (
@@ -454,47 +468,20 @@ module core (
 
     assign flush_fetch  =   tc_flush | exu_branch_taken | exu_jump_instr | (wfi_fetch_flush & wfi_active);
 
-    //valid register fetch -> decode
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            id_valid_q          <=  1'b0;
-        end else if (flush_fetch) begin
-            id_valid_q          <=  1'b0;
-        end else if (decode_ready & ~wfi_stall) begin
-            id_valid_q          <=  if_instr_valid;
-        end
-    end
-
     //pipeline registers fetch -> decode 
     always_ff @(posedge clk or negedge resetn) begin
         if (~resetn) begin
-            id_instr_q          <=  32'h0;
             id_pc_q             <=  64'h0;
             id_pc_incr_q        <=  64'h0;
-        end else if (decode_ready & ~wfi_stall) begin
-            id_instr_q          <=  if_instr;
+        end else if (id_ready) begin
             id_pc_q             <=  pc_q;
             id_pc_incr_q        <=  pc_incr;
         end
     end
 
-    //exception registers fetch -> decode
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            id_exc_valid_q      <=  1'b0;
-            id_exc_code_q       <=  5'd0;
-        end else if (flush_fetch) begin
-            id_exc_valid_q      <=  1'b0;
-            id_exc_code_q       <=  5'd0;
-        end else if (decode_ready & ~wfi_stall) begin
-            id_exc_valid_q      <=  if_exc_valid;
-            id_exc_code_q       <=  if_exc_code;
-        end 
-    end
-
     // DECODE 
     decode u_decode (
-        .instr_i            (id_instr_q),
+        .instr_i            (id_instr),
         .rs1_o              (id_rs1),
         .rs2_o              (id_rs2),
         .rd_o               (id_rd),
@@ -556,7 +543,7 @@ module core (
         .rs1_data_o         (id_rs1_rd_data),
         .rs2_data_o         (id_rs2_rd_data),
         .rd_addr_i          (wb_rd_q),
-        .wr_en_i            (wb_rf_wr_en_q),
+        .wr_en_i            (wb_rf_wr_en),
         .wr_data_i          (wb_wr_data)
     );
 
@@ -597,40 +584,41 @@ module core (
 
     // bypassing logic 
     always_comb begin
+        id_ready                =   exu_ready & ~wfi_stall & ~id_stall;
+
+        id_valid_q              =   id_instr_valid & ~flush_fetch;
+
+        id_exc_valid_q          =   if_exc_valid & ~flush_fetch;
+        id_exc_code_q           =   if_exc_code & ~flush_fetch;
+
         flush_decode            =   tc_flush | exu_branch_taken | exu_jump_instr;
 
         csr_wr_en               =   id_valid_q & ctrl_csr_en & (|id_rs1 | ctrl_csr_rw);
 
         wfi_active              =   id_valid_q & ctrl_wfi;
-        if_stall                =   wfi_active & ~wfi_end;
+        wfi_stall               =   wfi_active & ~wfi_end;
 
         rd_exu_rs1_bypass_sel   =   (id_rs1 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == ALU_BYPASS) & id_valid_q & exu_valid_q;
         rd_exu_rs2_bypass_sel   =   (id_rs2 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == ALU_BYPASS) & id_valid_q & exu_valid_q;
-        rd_mem_rs1_bypass_sel   =   (id_rs1 == mem_rd_q) & |mem_rd_q & id_valid_q & mem_valid_q;
-        rd_mem_rs2_bypass_sel   =   (id_rs2 == mem_rd_q) & |mem_rd_q & id_valid_q & mem_valid_q;
-        rd_wb_rs1_bypass_sel    =   (id_rs1 == wb_rd_q)  & |wb_rd_q  & id_valid_q & wb_valid_q;
-        rd_wb_rs2_bypass_sel    =   (id_rs2 == wb_rd_q)  & |wb_rd_q  & id_valid_q & wb_valid_q;
+        rd_wb_rs1_bypass_sel    =   (id_rs1 == wb_rd_q)  & |wb_rd_q  & id_valid_q & wb_valid;
+        rd_wb_rs2_bypass_sel    =   (id_rs2 == wb_rd_q)  & |wb_rd_q  & id_valid_q & wb_valid;
         
         csr_exu_bypass_sel      =   (id_csr_addr == exu_csr_addr_q) & |exu_csr_addr_q & ctrl_csr_en & exu_csr_instr_q & exu_valid_q;
         csr_mem_bypass_sel      =   (id_csr_addr == mem_csr_addr_q) & |mem_csr_addr_q & ctrl_csr_en & mem_csr_instr_q & mem_valid_q;
-        csr_wb_bypass_sel       =   (id_csr_addr == wb_csr_addr_q)  & |wb_csr_addr_q & ctrl_csr_en & wb_csr_instr_q & wb_valid_q;
+        csr_wb_bypass_sel       =   (id_csr_addr == wb_csr_addr_q)  & |wb_csr_addr_q & ctrl_csr_en & wb_csr_instr_q & wb_valid;
 
         if (rd_exu_rs1_bypass_sel) begin
             id_rs1_data         =   exu_res;
-        end else if (rd_mem_rs1_bypass_sel) begin
-            id_rs1_data         =   (mem_bypass_avail_q == ALU) ? mem_alu_res_q : mem_rd_data;
         end else if (rd_wb_rs1_bypass_sel) begin
-            id_rs1_data         =   (wb_bypass_avail_q == ALU) ? wb_alu_res_q : wb_mem_rd_data_q;
+            id_rs1_data         =   (wb_bypass_avail_q == ALU_BYPASS) ? wb_alu_res_q : wb_load_data;
         end else begin
             id_rs1_data         =   id_rs1_rd_data;
         end
 
         if (rd_exu_rs2_bypass_sel) begin
             id_rs2_data         =   exu_res;
-        end else if (rd_mem_rs2_bypass_sel) begin
-            id_rs2_data         =   (mem_bypass_avail_q == ALU) ? mem_alu_res_q : mem_rd_data;
         end else if (rd_wb_rs2_bypass_sel) begin
-            id_rs2_data         =   (wb_bypass_avail_q == ALU) ? wb_alu_res_q : wb_mem_rd_data_q;
+            id_rs2_data         =   (wb_bypass_avail_q == ALU_BYPASS) ? wb_alu_res_q : wb_load_data;
         end else begin
             id_rs2_data         =   id_rs2_rd_data;
         end
@@ -647,7 +635,7 @@ module core (
 
         id_stall                =   ((id_rs1 == exu_rd_q) | (id_rs2 == exu_rd_q)) & (exu_bypass_avail_q == MEM) & |exu_rd_q & id_valid_q & exu_valid_q;
 
-        decode_exc_priority     =   exc_priority_encode(decode_exc_code);
+        id_u_exc_priority     =   exc_priority_encode(id_u_exc_code);
         ctrl_exc_priority       =   exc_priority_encode(ctrl_exc_code);
         csr_exc_priority        =   exc_priority_encode(csr_exc_code);
 
@@ -691,6 +679,7 @@ module core (
             exu_rs1_data_q      <=  64'h0;
             exu_rs2_data_q      <=  64'h0;
             exu_instr_imm_q     <=  64'h0;
+            exu_pc_sel_q        <=  1'b0;
             exu_opr_a_sel_q     <=  RS1_OPERAND_A;
             exu_opr_b_sel_q     <=  RS2_OPERAND_B;
             exu_alu_func_q      <=  OP_ADD;
@@ -700,7 +689,7 @@ module core (
             exu_bypass_avail_q  <=  ALU_BYPASS;
             exu_data_wr_q       <=  1'b0;
             exu_zero_extnd_q    <=  1'b0;
-            exu_rf_wr_en_q      <=  1'b0;
+            exu_rd_wr_en_q      <=  1'b0;
             exu_word_op_q       <=  1'b0;
             exu_alu_instr_q     <=  1'b0;
             exu_mul_instr_q     <=  1'b0;
@@ -728,7 +717,7 @@ module core (
             exu_bypass_avail_q  <=  ctrl_bypass_avail;
             exu_data_wr_q       <=  ctrl_data_wr;
             exu_zero_extnd_q    <=  ctrl_zero_extnd;
-            exu_rf_wr_en_q      <=  ctrl_rf_wr_en;
+            exu_rd_wr_en_q      <=  ctrl_rf_wr_en;
             exu_word_op_q       <=  ctrl_word_op;
             exu_alu_instr_q     <=  ctrl_alu_instr;
             exu_mul_instr_q     <=  ctrl_mul_instr;
@@ -815,6 +804,7 @@ module core (
             mem_rs2_data_q      <=  64'h0;
             mem_instr_imm_q     <=  64'h0;
             mem_rd_q            <=  5'b0;
+            mem_csr_instr_q     <=  1'b0;
             mem_csr_addr_q      <=  12'h0;
             mem_csr_data_q      <=  64'h0;
             mem_csr_wr_en_q     <=  1'b0;
@@ -832,6 +822,7 @@ module core (
             mem_rs2_data_q      <=  exu_rs2_data_q;
             mem_instr_imm_q     <=  exu_instr_imm_q;
             mem_rd_q            <=  exu_rd_q;
+            mem_csr_instr_q     <=  exu_csr_instr_q;
             mem_csr_addr_q      <=  exu_csr_addr_q;
             mem_csr_data_q      <=  exu_csr_data_q;
             mem_csr_wr_en_q     <=  exu_csr_wr_en_q;
@@ -843,7 +834,7 @@ module core (
             mem_bypass_avail_q  <=  exu_bypass_avail_q;
             mem_data_wr_q       <=  exu_data_wr_q;
             mem_zero_extnd_q    <=  exu_zero_extnd_q;
-            mem_rf_wr_en_q      <=  exu_rf_wr_en_q;
+            mem_rf_wr_en_q      <=  exu_rd_wr_en_q;
             mem_alu_res_q       <=  exu_res;
         end
     end
@@ -874,8 +865,8 @@ module core (
         .req_zero_extnd_i       (mem_zero_extnd_q),
         .req_wr_data_i          (mem_rs2_data_q),
         .req_ready_o            (mem_ready),
-        .data_mem_resp_valid_o  (mem_resp_valid),
-        .data_mem_rd_data_o     (mem_u_rd_data),
+        .data_mem_resp_valid_o  (wb_data_mem_resp_valid),
+        .data_mem_rd_data_o     (wb_mem_rd_data),
         .dc_ready_i             (dc_ready),
         .dc_req_o               (dc_req),
         .dc_addr_o              (dc_addr),
@@ -1013,8 +1004,7 @@ module core (
         clint_req               =   mem_valid_q & ~mem_exc_valid_q & mem_data_req_q & clint_addr;
         plic_req                =   mem_valid_q & ~mem_exc_valid_q & mem_data_req_q & plic_addr;
 
-        mem_rd_data             =   ({64{mem_req}} & mem_u_rd_data)    | 
-                                    ({64{clint_req}} & clint_rd_data)  | 
+        mem_rd_data             =   ({64{clint_req}} & clint_rd_data)  | 
                                     ({64{plic_req}} & plic_rd_data);
 
         mem_oob_exc_valid       =   mem_valid_q & mem_data_req_q & ~(mem_addr | clint_addr | plic_addr);
@@ -1043,7 +1033,7 @@ module core (
         tc_exc_valid            =   mem_exc_valid_q | mem_exc_valid;
         tc_exc_code             =   mem_exc_valid_q ? mem_exc_code_q : mem_exc_code;
 
-        nxt_wb_valid            =   mem_valid_q & ~tc_exc_valid & (~mem_data_req_q | (mem_resp_valid | clint_resp_valid | plic_resp_valid));
+        nxt_wb_valid            =   mem_valid_q & ~tc_exc_valid & (~mem_data_req_q | (clint_resp_valid | plic_resp_valid));  
     end
 
     //valid register memory -> writeback
@@ -1060,36 +1050,47 @@ module core (
         if (~resetn) begin
             wb_alu_res_q        <=  64'h0;
             wb_instr_imm_q      <=  64'h0;
+            wb_mem_rd_data_q    <=  64'h0;
             wb_rd_q             <=  5'b0;
+            wb_csr_instr_q      <=  1'b0;
             wb_csr_addr_q       <=  12'h0;
             wb_csr_wr_en_q      <=  1'b0;
             wb_rd_src_q         <=  ALU_SRC;
             wb_pc_incr_q        <=  64'h0;
-            wb_mem_rd_data_q    <=  64'h0;
             wb_rf_wr_en_q       <=  1'b0;
             wb_bypass_avail_q   <=  ALU_BYPASS;
+            wb_mem_req_q        <=  1'b0;
         end else begin
             wb_alu_res_q        <=  mem_alu_res_q;
             wb_instr_imm_q      <=  mem_instr_imm_q;
+            wb_mem_rd_data_q    <=  mem_rd_data;
             wb_rd_q             <=  mem_rd_q;
+            wb_csr_instr_q      <=  mem_csr_instr_q;
             wb_csr_addr_q       <=  mem_csr_addr_q;
             wb_csr_wr_en_q      <=  mem_csr_wr_en_q;
             wb_rd_src_q         <=  mem_rd_src_q;
             wb_pc_incr_q        <=  mem_pc_incr_q;
-            wb_mem_rd_data_q    <=  mem_rd_data;
             wb_rf_wr_en_q       <=  mem_rf_wr_en_q;
             wb_bypass_avail_q   <=  mem_bypass_avail_q;
+            wb_mem_req_q        <=  mem_req;
         end
     end
 
     // WRITEBACK
     always_comb begin
-        wb_csr_wr_en                =   wb_valid_q & wb_csr_wr_en_q;
-        minstret_incr               =   wb_valid_q;
+        wb_valid_mem_resp           =   wb_mem_req_q & wb_data_mem_resp_valid;
+        wb_valid                    =   wb_valid_q | wb_valid_mem_resp;
+
+        wb_csr_wr_en                =   wb_valid & wb_csr_wr_en_q;
+        minstret_incr               =   wb_valid;
+
+        wb_rf_wr_en                 =   wb_rf_wr_en_q & wb_valid;
+
+        wb_wr_data                  =   wb_data_mem_resp_valid ? wb_mem_rd_data : wb_mem_rd_data_q;
 
         case (wb_rd_src_q)
             ALU_SRC: wb_wr_data     =   wb_alu_res_q;
-            MEM_SRC: wb_wr_data     =   wb_mem_rd_data_q;
+            MEM_SRC: wb_wr_data     =   wb_wr_data;
             IMM_SRC: wb_wr_data     =   wb_instr_imm_q;
             PC_SRC: wb_wr_data      =   wb_pc_incr_q;
             default: wb_wr_data     =   64'h0;

@@ -155,34 +155,34 @@ module control (
                 LB      : {i_type_controls.data_req,
                             i_type_controls.data_byte,
                             i_type_controls.rd_src,
-                            i_type_controls.bypass_avail} = {1'b1, BYTE, MEM_SRC, MEM_BYPASS};
+                            i_type_controls.bypass_avail} = {1'b1, BYTE, MEM_SRC, WB_BYPASS};
                 LH      : {i_type_controls.data_req,
                             i_type_controls.data_byte,
                             i_type_controls.rd_src,
-                            i_type_controls.bypass_avail} = {1'b1, HALF_WORD, MEM_SRC, MEM_BYPASS};
+                            i_type_controls.bypass_avail} = {1'b1, HALF_WORD, MEM_SRC, WB_BYPASS};
                 LW      : {i_type_controls.data_req,
                             i_type_controls.data_byte,
                             i_type_controls.rd_src,
-                            i_type_controls.bypass_avail} = {1'b1, WORD, MEM_SRC, MEM_BYPASS};
+                            i_type_controls.bypass_avail} = {1'b1, WORD, MEM_SRC, WB_BYPASS};
                 LD      : {i_type_controls.data_req, 
                             i_type_controls.data_byte,
                             i_type_controls.rd_src,
-                            i_type_controls.bypass_avail} = {1'b1, DOUBLE_WORD, MEM_SRC, MEM_BYPASS};
+                            i_type_controls.bypass_avail} = {1'b1, DOUBLE_WORD, MEM_SRC, WB_BYPASS};
                 LBU     : {i_type_controls.data_req, 
                             i_type_controls.data_byte,
                             i_type_controls.rd_src,
                             i_type_controls.zero_extnd,
-                            i_type_controls.bypass_avail} = {1'b1, BYTE, MEM_SRC, 1'b1, MEM_BYPASS};
+                            i_type_controls.bypass_avail} = {1'b1, BYTE, MEM_SRC, 1'b1, WB_BYPASS};
                 LHU     : {i_type_controls.data_req, 
                             i_type_controls.data_byte,
                             i_type_controls.rd_src,
                             i_type_controls.zero_extnd,
-                            i_type_controls.bypass_avail} = {1'b1, HALF_WORD, MEM_SRC, 1'b1, MEM_BYPASS};
+                            i_type_controls.bypass_avail} = {1'b1, HALF_WORD, MEM_SRC, 1'b1, WB_BYPASS};
                 LWU     : {i_type_controls.data_req,
                             i_type_controls.data_byte,
                             i_type_controls.rd_src,
                             i_type_controls.zero_extnd,
-                            i_type_controls.bypass_avail} = {1'b1, WORD, MEM_SRC, 1'b1, MEM_BYPASS};
+                            i_type_controls.bypass_avail} = {1'b1, WORD, MEM_SRC, 1'b1, WB_BYPASS};
                 default : begin
                     exc_valid_i     =   i_type_i;
                     i_type_controls =   '0;

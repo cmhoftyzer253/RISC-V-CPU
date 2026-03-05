@@ -68,9 +68,6 @@ module memory (
         dc_wr_data_o                =   64'h0;
         dc_mask_o                   =   8'b0;
 
-        oob_addr                    =   ~((req_addr_i >= 64'h0000_0000_8000_0000) & (req_addr_i <= 64'h0000_0000_9FFF_FFFF));
-        oob                         =   req_valid_i & req_ready_o & oob_addr;
-
         unaligned_addr              =   req_valid_i & req_ready_o & 
                                         ((req_byte_en_i == BYTE) ? 1'b0 : 
                                          (req_byte_en_i == HALF_WORD) ? req_addr_i[0] : 

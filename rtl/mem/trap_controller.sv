@@ -90,7 +90,7 @@ module trap_controller (
             nxt_mepc_o      =   if_pc_incr_i;
             nxt_pc_o        =   {mtvec_i[63:2], 2'b00} + ((mtvec_i[1:0] == 2'b01) ? {57'h0, irp_code, 2'b00} : 64'h0);
             nxt_mcause_o    =   {1'b1, irp_code};
-        end 
+        end
 
         if (mret_i) begin
             nxt_pc_o        =   mepc_i;

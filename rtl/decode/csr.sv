@@ -77,7 +77,7 @@ module csr (
     logic [63:0]            mstatus_q;        
     logic [13:0]            mie_q;            
     logic [63:0]            mtvec_q;          
-    logic [63:0]            mcountinhibit_q;  
+    logic [2:0]             mcountinhibit_q;  
     logic [63:0]            mscratch_q;       
     logic [63:0]            mepc_q;           
     logic [63:0]            mcause_q;         
@@ -95,7 +95,6 @@ module csr (
     logic [13:0]            nxt_mip;
     logic [13:0]            nxt_mie;
     logic [63:0]            nxt_mtvec;
-    logic [63:0]            nxt_mcountinhibit;
     logic [63:0]            nxt_mepc;
     logic [2:0]             nxt_mcountovf;
 
@@ -105,7 +104,6 @@ module csr (
     logic [63:0]            mstatus_one_mask;
     logic [13:0]            mie_wr_mask; 
     logic [63:0]            mtvec_wr_mask;
-    logic [63:0]            mcountinhibit_mask;
     logic [63:0]            mepc_wr_mask;
     logic [2:0]             mcountovf_wr_mask;
 
@@ -122,7 +120,7 @@ module csr (
             mstatus_q               <=  64'h0000_0000_0000_1800;
             mie_q                   <=  14'h0;
             mtvec_q                 <=  64'h0000_0000_8000_0000;
-            mcountinhibit_q         <=  64'h0;
+            mcountinhibit_q         <=  3'b0;
             mscratch_q              <=  64'h0;
             mepc_q                  <=  64'h0;
             mcause_q                <=  64'h0;
@@ -158,7 +156,7 @@ module csr (
                     MSTATUS_ADDR:           mstatus_q           <= nxt_mstatus;
                     MIE_ADDR:               mie_q               <= nxt_mie;
                     MTVEC_ADDR:             mtvec_q             <= nxt_mtvec;
-                    MCOUNTINHIBIT_ADDR:     mcountinhibit_q     <= nxt_mcountinhibit;
+                    MCOUNTINHIBIT_ADDR:     mcountinhibit_q     <= wr_data_i[2:0];
                     MSCRATCH_ADDR:          mscratch_q          <= wr_data_i;
                     MEPC_ADDR:              mepc_q              <= nxt_mepc;
                     MCAUSE_ADDR:            mcause_q            <= wr_data_i;
@@ -241,13 +239,11 @@ module csr (
         mtvec_wr_mask       =   64'hFFFF_FFFF_FFFF_FFFD;
         mepc_wr_mask        =   64'hFFFF_FFFF_FFFF_FFFC;
         mcountovf_wr_mask   =   3'b101;
-        mcountinhibit_mask  =   64'h0000_0000_FFFF_FFFD;
 
         nxt_mie             =   wr_data_i[13:0] & mie_wr_mask;
         nxt_mtvec           =   wr_data_i & mtvec_wr_mask;
         nxt_mepc            =   wr_data_i & mepc_wr_mask;
         nxt_mcountovf       =   wr_data_i[2:0] & mcountovf_wr_mask;
-        nxt_mcountinhibit   =   wr_data_i & mcountinhibit_mask;
 
         if (rd_en_i & ~trap_en_i) begin
             case (rd_addr_i)
@@ -255,7 +251,7 @@ module csr (
                 MISA_ADDR: rd_data_o            =   MISA_Q;
                 MIE_ADDR: rd_data_o             =   mie_q;
                 MTVEC_ADDR: rd_data_o           =   mtvec_q;
-                MCOUNTINHIBIT_ADDR: rd_data_o   =   mcountinhibit_q;
+                MCOUNTINHIBIT_ADDR: rd_data_o   =   {61'h0, mcountinhibit_q[2:0]};
                 MSCRATCH_ADDR: rd_data_o        =   mscratch_q;
                 MEPC_ADDR: rd_data_o            =   mepc_q;
                 MCAUSE_ADDR: rd_data_o          =   mcause_q;

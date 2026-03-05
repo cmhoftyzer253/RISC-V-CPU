@@ -756,6 +756,8 @@ module d_cache #(
                 if (bvalid_i & ((bresp_i != 2'b00) | (bid_i != '0))) begin
                     exc_valid_o     =   1'b1;
                     exc_code_o      =   5'd7;
+
+                    dc_resp_valid_o =   1'b1;
                 end
             end
             S_DC_LOAD_REQUEST: begin

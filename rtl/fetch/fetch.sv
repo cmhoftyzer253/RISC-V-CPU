@@ -15,7 +15,7 @@ module fetch (
     input logic [31:0]      instr_i,
     output logic            instr_ready_o,
 
-    input logic             exc_valid_i,
+    input logic [4:0]       exc_valid_i,
     input logic             exc_code_i,
 
     //instruction memory request interface
@@ -131,7 +131,7 @@ module fetch (
                 pc_ready_o          =   decode_ready_i & instr_mem_ready_i;
                 BROM_en             =   1'b1;
 
-                BROM_instr          =   pc_valid_i & pc_ready_o & 
+                BROM_instr          =   pc_ready_o & 
                                         (pc_i >= 64'h0000_0000_0001_0000) & (pc_i <= 64'h0000_0000_0001_1FFF);
 
                 oob_addr            =   ~(BROM_instr | ((pc_i >= 64'h0000_0000_8000_0000) & (pc_i <= 64'h0000_0000_9FFF_FFFF)));

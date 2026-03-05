@@ -1,6 +1,7 @@
 # **SV-RV64IM: A 64-bit RISC-V CPU in SystemVerilog**
 
-<img width="1168" height="755" alt="image" src="https://github.com/user-attachments/assets/ed6ea207-5f66-47c6-b288-477802db59b7" />
+<img width="1162" height="750" alt="image" src="https://github.com/user-attachments/assets/55ca89b5-959a-462e-8e08-64da4a71b2ed" />
+
 
 ## Motivation
 After discovering my interest in digital hardware design during my Electrical Engineering degree, I started this project to satisfy my interest in the field with several main goals in mind:

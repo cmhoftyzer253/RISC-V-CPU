@@ -7,7 +7,7 @@ module decode (
     output logic [4:0]  rd_o,
     output logic [6:0]  op_o,
     output logic [2:0]  funct3_o,
-    output logic [6:0]  funct12_o,
+    output logic [11:0]  funct12_o,
     output logic [11:0] csr_addr_o,
     output logic        r_type_o,
     output logic        i_type_o,
@@ -21,21 +21,6 @@ module decode (
     output logic        exc_valid_o,
     output logic [4:0]  exc_code_o
 );
-
-    logic [4:0]     rs1;
-    logic [4:0]     rs2;
-    logic [4:0]     rd;
-    logic [6:0]     op;
-    logic [6:0]     funct7;
-    logic [2:0]     funct3;
-    logic [63:0]    imm;
-    logic           r_type;
-    logic           i_type;
-    logic           s_type;
-    logic           b_type;
-    logic           u_type;
-    logic           j_type;
-    logic           system_type;
 
     always_comb begin
         exc_valid_o     =   1'b0;

@@ -611,7 +611,7 @@ module core (
             id_rs1_data         =   exu_res;
         end else if (rd_wb_rs1_bypass_sel) begin
             id_rs1_data         =   (wb_bypass_avail_q == ALU_BYPASS) ? wb_alu_res_q : wb_load_data;
-        end else begin
+        end else beginC
             id_rs1_data         =   id_rs1_rd_data;
         end
 

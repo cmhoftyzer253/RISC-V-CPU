@@ -56,20 +56,6 @@ package cpu_consts;
         WB_BYPASS   =   1'b1
     } bypass_avail_t;
 
-    typedef enum logic [1:0] {
-        RD_NONE     =   2'b00,
-        RD_EXU      =   2'b01,
-        RD_MEM      =   2'b10,
-        RD_WB       =   2'b11
-    } rd_bypass_sel_t;
-
-    typedef enum logic [1:0] {
-        CSR_NONE    =   2'b00,
-        CSR_EXU     =   2'b01,
-        CSR_MEM     =   2'b10,
-        CSR_WB      =   2'b11
-    } csr_bypass_sel_t;
-
     // register file writeback data source
     typedef enum logic[1:0] {
         ALU_SRC,
@@ -86,8 +72,8 @@ package cpu_consts;
 
     typedef enum logic [1:0] {
         RS2_OPERAND_B,
-        IMM_OPERAND_B,          //invert for csr_en
-        RS1_OPERAND_B           //always invert: only used for csr
+        IMM_OPERAND_B,          
+        RS1_OPERAND_B           
     } alu_opr_b_sel_t;
 
     //  base R type instructions
@@ -206,29 +192,6 @@ package cpu_consts;
         logic               mret;
         logic               wfi;
     } control_t;
-
-    typedef enum logic [2:0] {
-        NONE            =   3'b000,
-        ZERO_DIVISOR    =   3'b001,
-        OVERFLOW        =   3'b010,
-        ZERO_DIVIDEND   =   3'b011,
-        SHORT_DIV       =   3'b100
-    } div_status_t;
-
-    typedef logic [1:0] bp_cnt_t;
-
-    typedef enum logic [1:0] {
-        BRANCH  =   2'b00,
-        CALL    =   2'b01,
-        RETURN  =   2'b10,
-        JUMP    =   2'b11
-    } btb_type_t;
-
-    typedef struct packed {
-        logic [50:0]    tag;
-        logic [61:0]    target;
-        btb_type_t      btb_type;
-    } btb_entry_t;
 
     typedef enum logic [1:0] {
         S_FETCH_RUN,

@@ -74,7 +74,7 @@ module memory (
                                          (req_byte_en_i == WORD) ? req_addr_i[1:0] : 
                                          (req_byte_en_i == DOUBLE_WORD) ? req_addr_i[2:0] : 1'b0);
 
-        exc_valid_mem               =   oob | unaligned_addr;
+        exc_valid_mem               =   unaligned_addr;
         exc_code_mem                =   ({5{oob &  req_wr_i}} & 5'd7)                   |
                                         ({5{oob & ~req_wr_i}} & 5'd5)                   |
                                         ({5{unaligned_addr & ~oob &  req_wr_i}} & 5'd6) |
@@ -184,7 +184,7 @@ module memory (
 
         req_ready_o                 =   dc_ready_i;
 
-        dc_resp_valid_o             =   req_resp_valid_i & ~exc_valid_i;
+        dc_resp_valid_o             =   req_resp_valid_i;
         dc_red_data_o               =   load_data;
 
         req_rd_ready_o              =   1'b1;

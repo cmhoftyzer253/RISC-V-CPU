@@ -1,5 +1,4 @@
-import cpu_functions::*;
-
+import cpu_utils::*;
 
 module plic (
     input logic                 clk,
@@ -224,7 +223,7 @@ module plic (
                                             (req_addr_i == CLAIM_COMPLETE_ADDR));
 
         //loads
-        if (~req_wr_i & req_valid_i & ~(unaligned_addr | acc_fault_size | acc_fault_addr_wr)) begin
+        if (~req_wr_i & req_valid_i & ~(unaligned_addr | acc_fault_size)) begin
             case (req_addr_i)
                 PRIORITY_IRQ1_ADDR: begin
                     plic_rd_data_o      =   {61'h0, priority_irq1_q};
@@ -276,7 +275,7 @@ module plic (
                 end
                 default: begin
                     plic_rd_data_o      =   64'h0;
-                    plic_resp_valid_o   =   1'b0;
+                    plic_resp_valid_o   =   1'b1;
 
                     acc_fault_addr_rd   =   1'b1;
                 end
@@ -358,14 +357,14 @@ module plic (
         nxt_ip[6]       =   ~claim_irq7 & ((gw_irq7 & gw_valid[6]) | ip_q[6]);
         nxt_ip[7]       =   ~claim_irq8 & ((gw_irq8 & gw_valid[7]) | ip_q[7]);
 
-        ip_valid[0]     =   ip_q[0] & enable_irq_q[0] & (priority_irq1_q > priority_threshold_q);
-        ip_valid[1]     =   ip_q[1] & enable_irq_q[1] & (priority_irq2_q > priority_threshold_q);
-        ip_valid[2]     =   ip_q[2] & enable_irq_q[2] & (priority_irq3_q > priority_threshold_q);
-        ip_valid[3]     =   ip_q[3] & enable_irq_q[3] & (priority_irq4_q > priority_threshold_q);
-        ip_valid[4]     =   ip_q[4] & enable_irq_q[4] & (priority_irq5_q > priority_threshold_q);
-        ip_valid[5]     =   ip_q[5] & enable_irq_q[5] & (priority_irq6_q > priority_threshold_q);
-        ip_valid[6]     =   ip_q[6] & enable_irq_q[6] & (priority_irq7_q > priority_threshold_q);
-        ip_valid[7]     =   ip_q[7] & enable_irq_q[7] & (priority_irq8_q > priority_threshold_q);
+        ip_valid[0]     =   nxt_ip[0] & enable_irq_q[0] & (priority_irq1_q > priority_threshold_q);
+        ip_valid[1]     =   nxt_ip[1] & enable_irq_q[1] & (priority_irq2_q > priority_threshold_q);
+        ip_valid[2]     =   nxt_ip[2] & enable_irq_q[2] & (priority_irq3_q > priority_threshold_q);
+        ip_valid[3]     =   nxt_ip[3] & enable_irq_q[3] & (priority_irq4_q > priority_threshold_q);
+        ip_valid[4]     =   nxt_ip[4] & enable_irq_q[4] & (priority_irq5_q > priority_threshold_q);
+        ip_valid[5]     =   nxt_ip[5] & enable_irq_q[5] & (priority_irq6_q > priority_threshold_q);
+        ip_valid[6]     =   nxt_ip[6] & enable_irq_q[6] & (priority_irq7_q > priority_threshold_q);
+        ip_valid[7]     =   nxt_ip[7] & enable_irq_q[7] & (priority_irq8_q > priority_threshold_q);
 
         eip_o           =   |ip_valid;
     end 

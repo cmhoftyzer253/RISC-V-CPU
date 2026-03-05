@@ -31,15 +31,15 @@ This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical s
 * **Caches:**
     * 32 KiB Instruction and Data caches.
     * Both are 4-way Set Associative with a write-back eviction policy.
-    * Interfaces with main memory using **AXI4-Lite** protocol.
+    * Interfaces with main memory using **AXI4** protocol.
 * **Clock Domain Crossing (CDC):**
     * My FPGA has a 512MiB DDR3 memory, operating on a separate clock from the CPU core.
     * **Asynchronous FIFOs** move data between DDR and CPU clock domains.
 
 ### Peripherals & System
 * **Boot ROM:** 8KiB of Boot ROM memory dedicated to boot instructions.
-* **Exception Handling:** Full hardware support for exceptions.
-* **Interrupts:** Supports software, timer, counter overflow, and a gateway for 8 external interrupts.
+* **Exception Handling:** Hardware support for misaligned loads/stores, access faults, illegal instructions, ecall and ebreak exceptions in machine mode.
+* **Interrupts:** Supports software, timer, local counter overflow, and a gateway for 8 external interrupts.
 
 ## Current Status: Verification & IP Integration
 I am currently focused on IP integration and verification of the core. While I've written directed testbenches for individual modules, this is not sufficient for a project of this complexity. I am learning more about verification and developing a testbench setup that will cover:

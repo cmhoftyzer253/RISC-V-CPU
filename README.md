@@ -26,7 +26,7 @@ This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical s
 
 ### Pipeline
 * 5 stage in-order pipeline (Fetch, Decode, Execute, Memory, Writeback)
-* Bypassing from Execute and Memory stages
+* Bypassing from Execute and Writeback stages
 
 ### Memory System
 * **Caches:**

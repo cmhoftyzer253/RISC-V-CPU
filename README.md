@@ -1,6 +1,6 @@
 # **SV-RV64IM: A 64-bit RISC-V CPU in SystemVerilog**
 
-<img width="1162" height="750" alt="image" src="https://github.com/user-attachments/assets/55ca89b5-959a-462e-8e08-64da4a71b2ed" />
+<img width="1172" height="767" alt="image" src="https://github.com/user-attachments/assets/e6a56086-b414-497f-bd26-3eb9366a7ef8" />
 
 
 ## Motivation

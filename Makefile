@@ -3,7 +3,7 @@
 #	Usage: 
 #		make test						run all testbenches
 #		make test_alu					run specific testbench
-#		make test_alu SEED = 42			reproduce a specific failing testcase
+#		make test_alu SEED=42			reproduce a specific failing testcase
 #		make test_alu WAVES = 1			dump waveform in sum/alu_tb/alu_tb.vcd	
 #		make clean						clean simulation artifacts
 
@@ -20,7 +20,8 @@ ALU_TOP		=	alu_tb
 ALU_SIM_DIR	=	$(SIM_DIR)/$(ALU_TOP)
 ALU_SRCS    = 	$(RTL_DIR)/constants/cpu_consts.sv	\
 				$(RTL_DIR)/execute/alu.sv 			\
-              	$(TB_DIR)/alu_tb.sv
+              	$(TB_DIR)/alu_tb.sv					\
+				$(TB_DIR)/interfaces/alu_if.sv
 
 $(ALU_SIM_DIR)/$(ALU_TOP): $(ALU_SRCS)
 	mkdir -p $(ALU_SIM_DIR)

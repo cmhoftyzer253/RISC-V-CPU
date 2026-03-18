@@ -611,7 +611,7 @@ module core (
             id_rs1_data         =   exu_res;
         end else if (rd_wb_rs1_bypass_sel) begin
             id_rs1_data         =   (wb_bypass_avail_q == ALU_BYPASS) ? wb_alu_res_q : wb_load_data;
-        end else beginC
+        end else begin
             id_rs1_data         =   id_rs1_rd_data;
         end
 
@@ -633,7 +633,9 @@ module core (
             id_csr_data         =   id_csr_rd_data;
         end
 
-        id_stall                =   ((id_rs1 == exu_rd_q) | (id_rs2 == exu_rd_q)) & (exu_bypass_avail_q == MEM) & |exu_rd_q & id_valid_q & exu_valid_q;
+        id_stall                =   (((id_rs1 == exu_rd_q) | (id_rs2 == exu_rd_q)) & (exu_bypass_avail_q == WB_BYPASS) & |exu_rd_q & id_valid_q & exu_valid_q)  |
+                                    (((id_rs1 == mem_rd_q) | (id_rs2 == mem_rd_q)) & (mem_bypass_avail_q == WB_BYPASS) & |mem_rd_q & id_valid_q & mem_valid_q);
+        
 
         id_u_exc_priority     =   exc_priority_encode(id_u_exc_code);
         ctrl_exc_priority       =   exc_priority_encode(ctrl_exc_code);

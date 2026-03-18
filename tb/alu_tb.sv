@@ -4,26 +4,18 @@ import cpu_consts::*;
 
 module alu_tb;
 
-    // dut
-    logic [63:0]    opr_a_i;
-    logic [63:0]    opr_b_i;
-    logic           alu_valid_i;
-    logic [3:0]     alu_func_i;
-    logic           word_op_i;
-    logic           flush_i;
-
-    logic           valid_res_o;
-    logic [63:0]    alu_res_o;
+    //dut
+    alu_if          alu_vif();
 
     alu dut (
-        .opr_a_i        (opr_a_i),
-        .opr_b_i        (opr_b_i),
-        .alu_valid_i    (alu_valid_i),
-        .alu_func_i     (alu_func_i),
-        .word_op_i      (word_op_i),
-        .flush_i        (flush_i),
-        .valid_res_o    (valid_res_o),
-        .alu_res_o      (alu_res_o)
+        .opr_a_i        (alu_vif.opr_a_i),
+        .opr_b_i        (alu_vif.opr_b_i),
+        .alu_valid_i    (alu_vif.alu_valid_i),
+        .alu_func_i     (alu_vif.alu_func_i),
+        .word_op_i      (alu_vif.word_op_i),
+        .flush_i        (alu_vif.flush_i),
+        .valid_res_o    (alu_vif.valid_res_o),
+        .alu_res_o      (alu_vif.alu_res_o)
     );
 
     //test  
@@ -45,15 +37,6 @@ module alu_tb;
             $display("[TB] waveform -> alu_tb.vcd");
         end
     end
-
-    //assertions
-/*    assert_flush_kill_valid : assert property (
-        ~(flush_i & valid_res_o)
-    ) else $error("ASSERT FAIL: valid_res_o stayed high with flush_i");
-
-    assert_no_resp_without_req : assert property (
-        (~alu_valid_i & ~flush_i)   |-> ~valid_res_o
-    ) else $error("ASSERT FAIL: valid_res_o = 1'b1 but alu_valid_i = 1'b0 and flush = 1'b0"); */
 
     //golden model 
     function automatic logic [63:0] golden_alu (
@@ -120,18 +103,18 @@ module alu_tb;
         logic [63:0] exp;
         logic [63:0] got;
 
-        opr_a_i         =   a;
-        opr_b_i         =   b;
-        alu_func_i      =   op;
-        word_op_i       =   word_op;
-        alu_valid_i     =   1'b1;
-        flush_i         =   1'b0;
+        alu_vif.opr_a_i         =   a;
+        alu_vif.opr_b_i         =   b;
+        alu_vif.alu_func_i      =   op;
+        alu_vif.word_op_i       =   word_op;
+        alu_vif.alu_valid_i     =   1'b1;
+        alu_vif.flush_i         =   1'b0;
         #1;
 
         exp =   golden_alu(a, b, op, word_op);
-        got =   alu_res_o;
+        got =   alu_vif.alu_res_o;
 
-        if (~valid_res_o) begin
+        if (~alu_vif.valid_res_o) begin
             $display("FAIL %-48s | valid_res_o not asserted", label);
             fail_cnt++;
             return;
@@ -215,14 +198,14 @@ module alu_tb;
         apply_and_check("XOR same",    64'hDEAD_BEEF_CAFE_1234, 64'hDEAD_BEEF_CAFE_1234,  OP_XOR, 1'b0); 
         apply_and_check("XOR all-1s",  64'hDEAD_BEEF_CAFE_1234, 64'hFFFF_FFFF_FFFF_FFFF, OP_XOR, 1'b0);
 
-        opr_a_i     =   64'h1;
-        opr_b_i     =   64'h2;
-        alu_func_i  =   OP_ADD;
-        word_op_i   =   1'b0;
-        alu_valid_i =   1'b1;
-        flush_i     =   1'b1;
+        alu_vif.opr_a_i     =   64'h1;
+        alu_vif.opr_b_i     =   64'h2;
+        alu_vif.alu_func_i  =   OP_ADD;
+        alu_vif.word_op_i   =   1'b0;
+        alu_vif.alu_valid_i =   1'b1;
+        alu_vif.flush_i     =   1'b1;
         #1;
-        if (valid_res_o !== 1'b0) begin
+        if (alu_vif.valid_res_o !== 1'b0) begin
             $display("FAIL  flush test");
             fail_cnt++;
         end else begin
@@ -230,13 +213,13 @@ module alu_tb;
             pass_cnt++;
         end
 
-        alu_valid_i =   1'b0;
-        flush_i     =   1'b0;
-        opr_a_i     =   64'hDEAD;
-        opr_b_i     =   64'hBEEF;
-        alu_func_i  =   OP_ADD;
+        alu_vif.alu_valid_i =   1'b0;
+        alu_vif.flush_i     =   1'b0;
+        alu_vif.opr_a_i     =   64'hDEAD;
+        alu_vif.opr_b_i     =   64'hBEEF;
+        alu_vif.alu_func_i  =   OP_ADD;
         #1;
-        if (valid_res_o !== 1'b0) begin
+        if (alu_vif.valid_res_o !== 1'b0) begin
             $display("FAIL  no request test");
             fail_cnt++;
         end else begin
@@ -246,14 +229,14 @@ module alu_tb;
     endtask
 
     initial begin
-        opr_a_i         =   64'h0;
-        opr_b_i         =   64'h0;
-        alu_valid_i     =   1'b0;
-        alu_func_i      =   4'b0;
-        word_op_i       =   1'b0;
-        flush_i         =   1'b0;
-        pass_cnt        =   0;
-        fail_cnt        =   0;
+        alu_vif.opr_a_i         =   64'h0;
+        alu_vif.opr_b_i         =   64'h0;
+        alu_vif.alu_valid_i     =   1'b0;
+        alu_vif.alu_func_i      =   4'b0;
+        alu_vif.word_op_i       =   1'b0;
+        alu_vif.flush_i         =   1'b0;
+        pass_cnt                =   0;
+        fail_cnt                =   0;
         #5;
 
         $display("[TB] ===== Random tests (%0d vectors) =====", NUM_TESTS);

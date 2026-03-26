@@ -54,5 +54,5 @@ test: $(ALL_TESTS)
 
 .PHONY: clean
 clean: 
-	rm -rf $(SIM_DIR)
+	rm -rf $(SIM_DIR)/*
 	@echo "Removed $(SIM_DIR)"

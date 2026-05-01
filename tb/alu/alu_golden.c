@@ -61,7 +61,7 @@ void alu_golden(
         case 4:
             if (word_op_i) {
                 res32 = (int32_t)opr_a_i >> shift32;
-                res = (uint64_t)(int64_t)res32;
+                res = (uint64_t)(int64_t)(int32_t)res32;
             } else {
                 res = (uint64_t)(opr_a_i >> shift64);
             }

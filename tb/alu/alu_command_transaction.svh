@@ -42,6 +42,10 @@ class alu_command_transaction extends uvm_sequence_item;
         flush_i dist {1'b0 := 99, 1'b1 := 1};
     }
 
+    constraint word_op_legal {
+        word_op_i == 1'b1 -> alu_func_i inside {OP_ADD, OP_SUB, OP_SLL, OP_SRL, OP_SRA};
+    }
+
     function bit do_compare(uvm_object rhs, uvm_comparer comparer);
         alu_command_transaction     RHS;
         bit                         same;

@@ -152,13 +152,13 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
         control_cov = new();
     endfunction : new
 
-    function void write(alu_command_transaction instr);
-        opr_a_i         =   instr.opr_a_i;
-        opr_b_i         =   instr.opr_b_i;
-        alu_valid_i     =   instr.alu_valid_i;
-        alu_func_i      =   instr.alu_func_i;
-        word_op_i       =   instr.word_op_i;
-        flush_i         =   instr.flush_i;
+    function void write(alu_command_transaction t);
+        opr_a_i         =   t.opr_a_i;
+        opr_b_i         =   t.opr_b_i;
+        alu_valid_i     =   t.alu_valid_i;
+        alu_func_i      =   t.alu_func_i;
+        word_op_i       =   t.word_op_i;
+        flush_i         =   t.flush_i;
 
         basic_cov.sample();
         boundary_cov.sample();

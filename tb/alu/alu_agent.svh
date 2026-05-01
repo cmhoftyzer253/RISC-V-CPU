@@ -13,7 +13,7 @@ class alu_agent extends uvm_agent;
     uvm_analysis_port #(alu_result_transaction)     result_ap;
 
     function new(string name, uvm_component parent);
-        super.new(name, phase);
+        super.new(name, parent);
     endfunction : new
 
     function void build_phase(uvm_phase phase);

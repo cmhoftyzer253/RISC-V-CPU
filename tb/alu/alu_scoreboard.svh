@@ -36,7 +36,7 @@ class alu_scoreboard extends uvm_subscriber #(alu_result_transaction);
 
     endfunction : predict_result
 
-    function void write(alu_result_transaction res_tr);
+    function void write(alu_result_transaction t);
         string                      data_str;
         alu_command_transaction     instr;
         alu_result_transaction      predicted;
@@ -48,11 +48,11 @@ class alu_scoreboard extends uvm_subscriber #(alu_result_transaction);
 
         data_str = {
             instr.convert2string(),
-            " ==> Actual ", res_tr.convert2string(),
+            " ==> Actual ", t.convert2string(),
             "/Predicted ", predicted.convert2string()
         };
 
-        if (!predicted.compare(res_tr))
+        if (!predicted.compare(t))
             `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
         else
             `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_HIGH)

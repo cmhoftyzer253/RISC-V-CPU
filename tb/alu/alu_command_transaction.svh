@@ -36,11 +36,11 @@ class alu_command_transaction extends uvm_sequence_item;
 
     constraint valid {
         alu_valid_i dist {1'b0 := 1, 1'b1 := 9};
-    };
+    }
 
     constraint flush {
-        flush_i dist {1'b0 := 99, 1'b1 := 1}
-    };
+        flush_i dist {1'b0 := 99, 1'b1 := 1};
+    }
 
     function bit do_compare(uvm_object check, uvm_comparer comparer);
         alu_command_transaction     check_transaction;
@@ -81,7 +81,7 @@ class alu_command_transaction extends uvm_sequence_item;
 
     function string convert2string();
         string s;
-        s = $sformatf("opr_a_i: 64'h%h, opr_b_i: 64'h%h, alu_valid_i: %b, alu_func_i: %s, word_op_i: %b, flush_i: %b"
+        s = $sformatf("opr_a_i: 64'h%h, opr_b_i: 64'h%h, alu_valid_i: %b, alu_func_i: %s, word_op_i: %b, flush_i: %b",
             opr_a_i, opr_b_i, alu_valid_i, alu_func_i.name(), word_op_i, flush_i);
 
         return s;

@@ -25,6 +25,15 @@ module alu_tb_top;
     end
 
     initial begin
+        alu_vif.opr_a_i     = '0;
+        alu_vif.opr_b_i     = '0;
+        alu_vif.alu_valid_i = '0;
+        alu_vif.alu_func_i  = '0;
+        alu_vif.word_op_i   = '0;
+        alu_vif.flush_i     = '0;
+    end
+
+    initial begin
         uvm_config_db #(virtual alu_if)::set(null, "*", "alu_vif", alu_vif);
         run_test();
     end

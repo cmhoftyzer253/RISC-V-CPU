@@ -8,19 +8,19 @@ class alu_result_transaction extends uvm_transaction;
         super.new(name);
     endfunction : new
 
-    function bit do_compare(uvm_object check, uvm_comparer comparer);
-        alu_result_transaction check_transaction;
-        bit same;
+    function bit do_compare(uvm_object rhs, uvm_comparer comparer);
+        alu_result_transaction  RHS;
+        bit                     same;
 
-        assert (check != null) else
+        assert (rhs != null) else
             $fatal(1, "Tried to compare null transaction");
         
-        same    =   super.do_compare(check, comparer);
-        assert ($cast(check_transaction, check)) else
+        same    =   super.do_compare(rhs, comparer);
+        assert ($cast(RHS, rhs)) else
             $fatal(1, "Failed to cast in do_copy");
 
-        same    =   (valid_res_o == check_transaction.valid_res_o) &&
-                    (alu_res_o == check_transaction.alu_res_o) && 
+        same    =   (valid_res_o == RHS.valid_res_o) &&
+                    (alu_res_o == RHS.alu_res_o) && 
                     same;
 
         return same;

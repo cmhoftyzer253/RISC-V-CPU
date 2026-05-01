@@ -42,23 +42,23 @@ class alu_command_transaction extends uvm_sequence_item;
         flush_i dist {1'b0 := 99, 1'b1 := 1};
     }
 
-    function bit do_compare(uvm_object check, uvm_comparer comparer);
-        alu_command_transaction     check_transaction;
+    function bit do_compare(uvm_object rhs, uvm_comparer comparer);
+        alu_command_transaction     RHS;
         bit                         same;
 
-        if (check == null)
+        if (rhs == null)
             `uvm_fatal(get_type_name(), "Tried to do comparison to null pointer")
         
-        if (!$cast(check_transaction, check))
+        if (!$cast(RHS, rhs))
             same    =   0;
         else 
-            same    =   super.do_compare(check, comparer)               &&
-                        (check_transaction.opr_a_i == opr_a_i)          &&
-                        (check_transaction.opr_b_i == opr_b_i)          && 
-                        (check_transaction.alu_valid_i == alu_valid_i)  && 
-                        (check_transaction.alu_func_i == alu_func_i)    && 
-                        (check_transaction.word_op_i == word_op_i)      && 
-                        (check_transaction.flush_i == flush_i);
+            same    =   super.do_compare(rhs, comparer) &&
+                        (RHS.opr_a_i == opr_a_i)          &&
+                        (RHS.opr_b_i == opr_b_i)          && 
+                        (RHS.alu_valid_i == alu_valid_i)  && 
+                        (RHS.alu_func_i == alu_func_i)    && 
+                        (RHS.word_op_i == word_op_i)      && 
+                        (RHS.flush_i == flush_i);
         return same;
     endfunction : do_compare
 

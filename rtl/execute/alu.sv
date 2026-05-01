@@ -5,7 +5,7 @@ module alu (
         input logic [63:0]  opr_b_i,
 
         input logic         alu_valid_i,
-        input logic [3:0]   alu_func_i,
+        alu_op_t            alu_func_i,
         input logic         word_op_i,
 
         input logic         flush_i,

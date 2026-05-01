@@ -13,7 +13,7 @@ class alu_base_test extends uvm_test;
     endfunction : build_phase
 
     function void end_of_elaboration_phase(uvm_phase phase);
-        alu_sequencer_h = alu_env_h.alu_sequencer_h;
+        alu_sequencer_h = alu_env_h.alu_agent_h.alu_sequencer_h;
     endfunction : end_of_elaboration_phase
 
 endclass : alu_base_test

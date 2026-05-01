@@ -1,2 +1,2 @@
-../rtl/constants/cpu_consts.sv
-../rtl/execute/alu.sv
+../../rtl/constants/cpu_consts.sv
+../../rtl/execute/alu.sv

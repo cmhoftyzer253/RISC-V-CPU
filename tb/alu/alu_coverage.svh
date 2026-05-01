@@ -90,11 +90,8 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
 
             bins sub_neg_to_pos_64b = binsof(alu_funcs.sub) && binsof(opr_a.min_neg_64b_s) && binsof(opr_b.one) && binsof(word_op.double_word);
             bins sub_pos_to_neg_64b = binsof(alu_funcs.sub) && binsof(opr_a.zero) && binsof(opr_b.max_pos_64b_s) && binsof(word_op.double_word);
-
-            ignore_bins rest = default;
         }
 
-        //TODO: can we do special bins for shift bits? bottom 5/6 bits?
         shift_funcs : cross alu_funcs, opr_a, opr_b, word_op {
             bins shift_0 = binsof(alu_funcs.shift_ops) && binsof(opr_b.zero);
 
@@ -108,8 +105,6 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
             bins word_sra_min_neg_32 = binsof(alu_funcs) intersect {OP_SRA} && binsof(opr_a.min_neg_32b_s) && binsof(word_op.single_word);
             bins double_word_sra_all_ones = binsof(alu_funcs) intersect {OP_SRA} && binsof(opr_a.all_ones) && binsof(word_op.double_word);
             bins double_word_sra_min_neg_64 = binsof(alu_funcs) intersect {OP_SRA} && binsof(opr_a.min_neg_64b_s) && binsof(word_op.double_word);
-
-            ignore_bins rest = default;
         }
 
         logic_funcs : cross alu_funcs, opr_a, opr_b {
@@ -117,8 +112,6 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
             bins logic_zero_b = binsof(alu_funcs.logic_ops) && binsof(opr_b.zero);
             bins logic_ones_a = binsof(alu_funcs.logic_ops) && binsof(opr_a.all_ones);
             bins logic_ones_b = binsof(alu_funcs.logic_ops) && binsof(opr_b.all_ones);
-
-            ignore_bins rest = default;
         }
 
         slt_funcs : cross alu_funcs, opr_a, opr_b {
@@ -129,8 +122,6 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
 
             bins sltu_max_min = binsof(alu_funcs.slt_ops) intersect {OP_SLTU} && binsof(opr_a.zero) && binsof(opr_b.all_ones);
             bins sltu_min_max = binsof(alu_funcs.slt_ops) intersect {OP_SLTU} && binsof(opr_a.all_ones) && binsof(opr_b.zero);
-
-            ignore_bins rest = default;
         }
 
     endgroup

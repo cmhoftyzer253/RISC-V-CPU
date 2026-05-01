@@ -24,4 +24,4 @@ class alu_agent_config extends uvm_object;
         return is_active;
     endfunction : get_is_active
 
-endclass : alu_agent_config;
+endclass : alu_agent_config

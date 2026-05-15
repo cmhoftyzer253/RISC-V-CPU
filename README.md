@@ -43,11 +43,7 @@ This project is a **64-bit RISC-V RV64IM** core. This core goes beyond typical s
 * **Interrupts:** Supports software, timer, local counter overflow, and a gateway for 8 external interrupts.
 
 ## Current Status: Verification & IP Integration
-I am currently focused on IP integration and verification of the core. While I've written directed testbenches for individual modules, this is not sufficient for a project of this complexity. I am learning more about verification and developing a testbench setup that will cover:
-
-* **Block Level:** Verification of individual modules.
-* **Integration:** Verification of key interfaces such as Fetch $\leftrightarrow$ I-Cache, Memory $\leftrightarrow$ D-Cache, PLIC $\leftrightarrow$ Trap Controller.
-* **System Level:** Running full test suites to ensure correct behavior for I, M, and privileged instructions.
+I am currently focused on IP integration and verification of the core. I'm writing UVM testbenches for each module, and after each module has been verified, I plan to use a RISC-V test suite to ensure the entire core is working properly. 
 
 ## Roadmap & Next Steps
 I view this as a long-term project with the goal of emulating as closely as possible the features and architecture of a commercial CPU/SoC. There are several features and design improvements I plan to work on next:

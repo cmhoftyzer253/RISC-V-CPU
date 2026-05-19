@@ -44,15 +44,7 @@ module control (
     logic [3:0] r_type_code;
     logic [3:0] i_type_code;
 
-    logic [6:0] instr_type;
-
-    logic       exc_valid_r;
-    logic       exc_valid_i;
-    logic       exc_valid_s;
-    logic       exc_valid_u;
-    logic       exc_valid_system;
-
-    logic [4:0] exc_code_system;
+    logic [6:0] instr_funct7;
 
     control_t   r_type_controls;
     control_t   i_type_controls;
@@ -61,15 +53,16 @@ module control (
     control_t   u_type_controls;
     control_t   j_type_controls;
     control_t   system_type_controls;
-    control_t   controls;      
+    control_t   controls;   
+
+    logic       exc_valid_system;
+    logic [4:0] exc_code_system;   
 
     assign instr_funct7             =   instr_funct12_i[11:5];
 
     // R type instruction
     assign r_type_code = {instr_funct7[5], instr_funct3_i};
     always_comb begin
-        exc_valid_r                 =   1'b0;
-
         r_type_controls             =   '0;
         r_type_controls.rf_wr_en    =   1'b1;
         r_type_controls.word_op     =   (instr_opcode_i == R_TYPE_1);
@@ -91,10 +84,6 @@ module control (
                             r_type_controls.div_instr} = {OP_REM, 1'b1};
                 REMU    : {r_type_controls.exu_func_sel,
                             r_type_controls.div_instr} = {OP_REMU, 1'b1};
-                default: begin
-                    exc_valid_r         =   r_type_i; 
-                    r_type_controls     =   '0;
-                end
             endcase
         end else begin
             case (r_type_code)
@@ -117,11 +106,7 @@ module control (
                 SUB     : {r_type_controls.exu_func_sel, 
                             r_type_controls.alu_instr} = {OP_SUB, 1'b1};
                 XOR     : {r_type_controls.exu_func_sel,
-                            r_type_controls.alu_instr} = {OP_XOR, 1'b1};
-                default: begin
-                    exc_valid_r         =   r_type_i;
-                    r_type_controls     =   '0;
-                end                                    
+                            r_type_controls.alu_instr} = {OP_XOR, 1'b1};                 
             endcase
         end
     end
@@ -129,8 +114,6 @@ module control (
     // I type instruction
     assign i_type_code = {instr_opcode_i[4], instr_funct3_i};
     always_comb begin
-        exc_valid_i                 = 1'b0;
-
         i_type_controls             = '0;
         i_type_controls.rf_wr_en    = 1'b1;
         i_type_controls.op2_sel     = IMM_OPERAND_B;
@@ -183,18 +166,12 @@ module control (
                             i_type_controls.rd_src,
                             i_type_controls.zero_extnd,
                             i_type_controls.bypass_avail} = {1'b1, WORD, MEM_SRC, 1'b1, WB_BYPASS};
-                default : begin
-                    exc_valid_i     =   i_type_i;
-                    i_type_controls =   '0;
-                end
             endcase
         end 
     end
 
     // S type instruction
     always_comb begin
-        exc_valid_s                     = 1'b0;
-
         s_type_controls                 = '0;
         s_type_controls.data_req        = 1'b1;
         s_type_controls.data_wr         = 1'b1;
@@ -206,10 +183,6 @@ module control (
             SH      : s_type_controls.data_byte = HALF_WORD;
             SW      : s_type_controls.data_byte = WORD;
             SD      : s_type_controls.data_byte = DOUBLE_WORD;
-            default : begin
-                exc_valid_s     =   s_type_i;
-                s_type_controls =   '0;
-            end
         endcase
     end
 
@@ -224,8 +197,6 @@ module control (
 
     // U type instruction
     always_comb begin
-        exc_valid_u                 = 1'b0;
-
         u_type_controls             = '0;
         u_type_controls.rf_wr_en    = 1'b1;
         case (instr_opcode_i)
@@ -234,10 +205,6 @@ module control (
                         u_type_controls.exu_func_sel,
                         u_type_controls.alu_instr}      = {IMM_OPERAND_B, PC_OPERAND_A, OP_ADD, 1'b1};
             LUI     : u_type_controls.rd_src            = IMM_SRC;
-            default : begin
-                exc_valid_u     =   u_type_i;
-                u_type_controls =   '0;
-            end
         endcase
     end
 
@@ -255,10 +222,9 @@ module control (
 
     // system type instruction
     always_comb begin
+        system_type_controls            =   '0;
         exc_valid_system                =   1'b0;
         exc_code_system                 =   5'd0;
-
-        system_type_controls            =   '0;
         
         case (instr_funct3_i)
             CSRRW: {system_type_controls.opa_sel,
@@ -302,69 +268,34 @@ module control (
             3'b000: begin
                 case (instr_funct12_i)
                     ECALL: begin
-                        exc_valid_system                = 1'b1;
-                        exc_code_system                 = 5'd11;                 
+                        exc_valid_system            = 1'b1;
+                        exc_code_system             = 5'd11;                 
                     end
                     EBREAK: begin
-                        exc_valid_system                = 1'b1;
-                        exc_code_system                 = 5'd3;
+                        exc_valid_system            = 1'b1;
+                        exc_code_system             = 5'd3;
                     end
                     MRET: begin
-                        system_type_controls.mret       = 1'b1;                 
+                        system_type_controls.mret   = 1'b1;                 
                     end
                     WFI: begin
-                        system_type_controls.wfi        = 1'b1;
+                        system_type_controls.wfi    = 1'b1;
                     end
                 endcase
             end 
-            default: begin
-                exc_valid_system        =   system_type_i;
-                exc_code_system         =   5'd2;
-                system_type_controls    =   '0;
-            end
         endcase
     end
 
-    assign instr_type                   =   {r_type_i, i_type_i, s_type_i, b_type_i, u_type_i, j_type_i, system_type_i};
+    assign exc_valid_o  =   exc_valid_system & system_type_i;
+    assign exc_code_o   =   system_type_i ? exc_code_system : 5'd0;
 
-    always_comb begin
-        case (instr_type)
-            7'b1000000: begin
-                controls        =   r_type_controls;
-                exc_valid_o     =   exc_valid_r;
-            end
-            7'b0100000: begin
-                controls        =   i_type_controls;
-                exc_valid_o     =   exc_valid_i;
-            end
-            7'b0010000: begin
-                controls        =   s_type_controls;
-                exc_valid_o     =   exc_valid_s;
-            end
-            7'b0001000: begin
-                controls        =   b_type_controls;
-                exc_valid_o     =   1'b0;
-            end
-            7'b0000100: begin
-                controls        =   u_type_controls;
-                exc_valid_o     =   exc_valid_u;
-            end
-            7'b0000010: begin
-                controls        =   j_type_controls;
-                exc_valid_o     =   1'b0;
-            end
-            7'b0000001: begin
-                controls        =   system_type_controls;
-                exc_valid_o     =   exc_valid_system;
-            end
-            default: begin
-                controls        =   '0;
-                exc_valid_o     =   1'b1;
-            end
-        endcase
-    end  
-
-    assign exc_code_o           =   (instr_type == 7'b0000001) ? exc_code_system : 5'd2;             
+    assign controls     =   r_type_i ? r_type_controls : 
+                            i_type_i ? i_type_controls : 
+                            s_type_i ? s_type_controls : 
+                            b_type_i ? b_type_controls : 
+                            u_type_i ? u_type_controls :
+                            j_type_i ? j_type_controls : 
+                            system_type_i ? system_type_controls : '0;          
 
     // output assigments
     assign pc_sel_o             =   controls.pc_sel;

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <decode_golden.h>
 
 void decode_golden (
     uint32_t instr_i, 
@@ -7,18 +8,6 @@ void decode_golden (
     uint32_t *r_type_o, uint32_t *i_type_o, uint32_t *s_type_o, uint32_t *b_type_o, uint32_t *u_type_o, uint32_t *j_type_o, uint32_t *system_type_o,
     uint64_t *imm_o, uint32_t *exc_valid_o, uint32_t *exc_code_o
 ) {
-    #define R_TYPE_0 0x33
-    #define R_TYPE_1 0x3B
-    #define I_TYPE_0 0x03
-    #define I_TYPE_1 0x13
-    #define I_TYPE_2 0x67
-    #define I_TYPE_3 0x1B
-    #define S_TYPE 0x23
-    #define B_TYPE 0x63
-    #define U_TYPE_0 0x37
-    #define U_TYPE_1 0x17
-    #define J_TYPE 0x6F
-    #define SYSTEM_TYPE 0x73
 
     uint32_t exc_opcode = 0;
     uint32_t exc_funct;

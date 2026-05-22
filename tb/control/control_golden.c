@@ -130,32 +130,26 @@ void control_golden (
                     ctrl.data_byte = BYTE;
                     ctrl.zero_extnd = 0;
                     break;
-
                 case LH:
                     ctrl.data_byte = HALF_WORD;
                     ctrl.zero_extnd = 0;
                     break;
-
                 case LW:
                     ctrl.data_byte = WORD;
                     ctrl.zero_extnd = 0;
                     break;
-
                 case LD:
                     ctrl.data_byte = DOUBLE_WORD;
                     ctrl.zero_extnd = 0;
                     break;
-
                 case LBU:
                     ctrl.data_byte = BYTE;
                     ctrl.zero_extnd = 1;
                     break;
-
                 case LHU:
                     ctrl.data_byte = HALF_WORD;
                     ctrl.zero_extnd = 1;
                     break;
-
                 case LWU:
                     ctrl.data_byte = WORD;
                     ctrl.zero_extnd = 1;

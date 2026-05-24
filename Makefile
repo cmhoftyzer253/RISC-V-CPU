@@ -34,9 +34,9 @@ endif
 # Tool flags
 XELAB_OPTS := -L uvm $(DPI_OPT) -debug typical
 
-XSIM_OPTS := 	-testplusarg UVM_TESTNAME=$(TEST) \
-				-tclbatch $(CURDIR)/$(TCL_DIR)/xsim_run.tcl \
-				-wdb $(CURDIR)/$(SIM_DIR)/waves.wdb
+XSIM_OPTS := +UVM_TESTNAME=$(TEST) \
+             -tclbatch $(CURDIR)/$(TCL_DIR)/xsim_run.tcl \
+             -wdb $(CURDIR)/$(SIM_DIR)/waves.wdb
 
 ifdef SEED
 	XSIM_OPTS += -sv_seed $(SEED)

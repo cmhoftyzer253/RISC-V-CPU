@@ -51,8 +51,9 @@ test: $(DPI_DEP)
 		-log $(CURDIR)/$(SIM_DIR)/xvlog.log
 	cd $(TB_DIR) && $(XELAB) $(XELAB_OPTS) $(TOP_MOD) -s $(SNAPSHOT) \
 		-log $(CURDIR)/$(SIM_DIR)/xelab.log
-	cd $(TB_DIR) && $(XSIM) $(SNAPSHOT) $(XSIM_OPTS) \
-		-log $(CURDIR)/$(SIM_DIR)/xsim.log
+	cd $(TB_DIR) && $(XSIM) $(XSIM_OPTS) \
+		-log $(CURDIR)/$(SIM_DIR)/xsim.log \
+		$(SNAPSHOT)
 
 $(DPI_LIB): $(DPI_SRC)
 	cd $(TB_DIR) && $(XSC) $(notdir $(DPI_SRC))

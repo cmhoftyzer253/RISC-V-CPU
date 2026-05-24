@@ -29,9 +29,4 @@ module alu_tb_top;
         run_test();
     end
 
-    initial begin
-        $dumpfile("alu_tb_top.vcd");
-        $dumpvars(0, alu_tb_top);
-    end
-
 endmodule : alu_tb_top

@@ -46,7 +46,7 @@ endif
 
 test: $(DPI_DEP)
 	@mkdir -p $(SIM_DIR)
-	cd $(TB_DIR) && $(XVLOG) -sv -f dut.f -f tb.f \
+	cd $(TB_DIR) && $(XVLOG) -sv -L uvm -f dut.f -f tb.f \
 		-i $(CURDIR)/$(TB_DIR) \
 		-log $(CURDIR)/$(SIM_DIR)/xvlog.log
 	cd $(TB_DIR) && $(XELAB) $(XELAB_OPTS) $(TOP_MOD) -s $(SNAPSHOT) \

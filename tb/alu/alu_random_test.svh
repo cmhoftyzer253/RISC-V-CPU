@@ -8,7 +8,8 @@ class alu_random_test extends alu_base_test;
     endfunction : new
 
     task run_phase(uvm_phase phase);
-        alu_random_sequence_h = new("alu_random_sequence_h");
+        super.run_phase(phase);
+        alu_random_sequence_h = alu_random_sequence::type_id::create("alu_random_sequence_h");
         phase.raise_objection(this);
         alu_random_sequence_h.start(alu_sequencer_h);
         phase.drop_objection(this);

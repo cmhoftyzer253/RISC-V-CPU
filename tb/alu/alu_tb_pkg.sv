@@ -5,14 +5,14 @@ package alu_tb_pkg;
     import cpu_consts::*;
 
     import "DPI-C" function void alu_golden(
-        input longint   opr_a_i,
-        input longint   opr_b_i,
-        input int       alu_valid_i,
-        input int       alu_func_i,
-        input int       word_op_i,
-        input int       flush_i,
-        output int      valid_res_o,
-        output longint  alu_res_o
+        input longint       opr_a_i,
+        input longint       opr_b_i,
+        input int unsigned  alu_valid_i,
+        input int unsigned  alu_func_i,
+        input int unsigned  word_op_i,
+        input int unsigned  flush_i,
+        output int unsigned valid_res_o,
+        output longint      alu_res_o
     );
 
     `include "alu_command_transaction.svh"

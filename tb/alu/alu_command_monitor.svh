@@ -9,8 +9,10 @@ class alu_command_monitor extends uvm_component;
     endfunction : new
 
     function void build_phase(uvm_phase phase);
-        if (!uvm_config_db #(virtual alu_if)::get(null, "*", "alu_vif", alu_vif))
-            `uvm_fatal("COMMAND_MONITOR", "Failed to get alu_vif");
+        super.build_phase(phase);
+
+        if (!uvm_config_db #(virtual alu_if)::get(this, "", "alu_vif", alu_vif))
+            `uvm_fatal("COMMAND_MONITOR", "Failed to get alu_vif")
 
         ap = new("ap", this);
     endfunction : build_phase
@@ -18,15 +20,15 @@ class alu_command_monitor extends uvm_component;
     task run_phase(uvm_phase phase);
         alu_command_transaction instr;
         forever begin
-            @(posedge alu_vif.clk);
+            @(posedge alu_vif.mon_cb);
             instr = alu_command_transaction::type_id::create("instr");
 
-            instr.opr_a_i       =   alu_vif.opr_a_i;
-            instr.opr_b_i       =   alu_vif.opr_b_i;
-            instr.alu_valid_i   =   alu_vif.alu_valid_i;
-            instr.alu_func_i    =   alu_vif.alu_func_i;
-            instr.word_op_i     =   alu_vif.word_op_i;
-            instr.flush_i       =   alu_vif.flush_i;
+            instr.opr_a_i       =   alu_vif.mon_cb.opr_a_i;
+            instr.opr_b_i       =   alu_vif.mon_cb.opr_b_i;
+            instr.alu_valid_i   =   alu_vif.mon_cb.alu_valid_i;
+            instr.alu_func_i    =   alu_vif.mon_cb.alu_func_i;
+            instr.word_op_i     =   alu_vif.mon_cb.word_op_i;
+            instr.flush_i       =   alu_vif.mon_cb.flush_i;
 
             `uvm_info("COMMAND_MONITOR", instr.convert2string(), UVM_HIGH)
             ap.write(instr);

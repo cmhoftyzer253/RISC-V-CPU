@@ -1,7 +1,7 @@
 class alu_command_transaction extends uvm_sequence_item;
     `uvm_object_utils(alu_command_transaction)
 
-    function new(string name = "");
+    function new(string name = "alu_command_transaction");
         super.new(name);
     endfunction : new
 
@@ -54,27 +54,28 @@ class alu_command_transaction extends uvm_sequence_item;
             `uvm_fatal(get_type_name(), "Tried to do comparison to null pointer")
         
         if (!$cast(RHS, rhs))
-            same    =   0;
-        else 
-            same    =   super.do_compare(rhs, comparer) &&
-                        (RHS.opr_a_i == opr_a_i)          &&
-                        (RHS.opr_b_i == opr_b_i)          && 
-                        (RHS.alu_valid_i == alu_valid_i)  && 
-                        (RHS.alu_func_i == alu_func_i)    && 
-                        (RHS.word_op_i == word_op_i)      && 
-                        (RHS.flush_i == flush_i);
+            `uvm_fatal(get_type_name(), "Failed to cast in do_compare")
+
+        same    =   super.do_compare(rhs, comparer)   &&
+                    (RHS.opr_a_i == opr_a_i)          &&
+                    (RHS.opr_b_i == opr_b_i)          && 
+                    (RHS.alu_valid_i == alu_valid_i)  && 
+                    (RHS.alu_func_i == alu_func_i)    && 
+                    (RHS.word_op_i == word_op_i)      && 
+                    (RHS.flush_i == flush_i);
+
         return same;
     endfunction : do_compare
-
+        
     function void do_copy(uvm_object rhs);
         alu_command_transaction RHS;
-        assert (rhs != null) else 
-            $fatal(1, "Tried to copy null transaction");
+        if (rhs == null)
+            `uvm_fatal(get_type_name(), "Tried to copy null transaction")
         
-        super.do_copy(rhs);
-        assert($cast(RHS, rhs)) else
-            $fatal(1, "Failed to cast in do_copy");
+        if (!$cast(RHS, rhs))
+            `uvm_fatal(get_type_name(), "Failed to cast in do_copy")
 
+        super.do_copy(rhs);
         opr_a_i         =   RHS.opr_a_i;
         opr_b_i         =   RHS.opr_b_i;
         alu_valid_i     =   RHS.alu_valid_i;

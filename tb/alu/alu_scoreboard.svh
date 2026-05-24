@@ -8,6 +8,8 @@ class alu_scoreboard extends uvm_subscriber #(alu_result_transaction);
     endfunction : new
 
     function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+
         instr_fifo = new("instr_fifo", this);
     endfunction : build_phase
 
@@ -16,7 +18,7 @@ class alu_scoreboard extends uvm_subscriber #(alu_result_transaction);
         int                     valid_res_o;
         longint                 alu_res_o;
 
-        predicted = new("predicted");
+        predicted = alu_result_transaction::type_id::create("predicted");
 
         alu_golden(
             instr.opr_a_i,

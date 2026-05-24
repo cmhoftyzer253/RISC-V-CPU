@@ -1,18 +1,20 @@
 class alu_random_sequence extends uvm_sequence #(alu_command_transaction);
     `uvm_object_utils(alu_random_sequence)
 
-    alu_command_transaction instr;
+    int unsigned num_tests = 1000;
 
     function new(string name = "alu_random_sequence");
         super.new(name);
     endfunction : new
 
     task body();
-        repeat (1000) begin : random_loop
-            instr = alu_command_transaction::type_id::create("instr");
-            start_item(instr);
-            assert(instr.randomize());
-            finish_item(instr);
+        alu_command_transaction cmd;
+
+        repeat (num_tests) begin : random_loop
+            cmd = alu_command_transaction::type_id::create("cmd");
+            start_item(cmd);
+            assert(cmd.randomize());
+            finish_item(cmd);
         end : random_loop
     endtask : body
 

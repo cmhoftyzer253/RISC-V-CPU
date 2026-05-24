@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-void alu_golden(
+void alu_golden (
     int64_t opr_a_i, int64_t opr_b_i, uint32_t alu_valid_i, uint32_t alu_func_i, uint32_t word_op_i, uint32_t flush_i,
     uint32_t *valid_res_o, int64_t *alu_res_o) {
 

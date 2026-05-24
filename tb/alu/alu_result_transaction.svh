@@ -4,7 +4,7 @@ class alu_result_transaction extends uvm_transaction;
     logic           valid_res_o;
     logic [63:0]    alu_res_o;
 
-    function new(string name = "");
+    function new(string name = "alu_result_transaction");
         super.new(name);
     endfunction : new
 
@@ -12,32 +12,31 @@ class alu_result_transaction extends uvm_transaction;
         alu_result_transaction  RHS;
         bit                     same;
 
-        assert (rhs != null) else
-            $fatal(1, "Tried to compare null transaction");
+        if (rhs == null)
+            `uvm_fatal(get_type_name(), "Tried to do comparison to null pointer")
         
-        same    =   super.do_compare(rhs, comparer);
-        assert ($cast(RHS, rhs)) else
-            $fatal(1, "Failed to cast in do_copy");
+        if (!$cast(RHS, rhs))
+            `uvm_fatal(get_type_name(), "Failed to cast in do_compare")
 
-        same    =   (valid_res_o == RHS.valid_res_o) &&
-                    (alu_res_o == RHS.alu_res_o) && 
-                    same;
+        same    =   super.do_compare(rhs, comparer) &&
+                    (valid_res_o == RHS.valid_res_o) &&
+                    (alu_res_o == RHS.alu_res_o);
 
         return same;
     endfunction : do_compare
 
     function void do_copy(uvm_object rhs);
-        alu_result_transaction copied_transaction_h;
+        alu_result_transaction RHS;
 
-        assert (rhs != null) else
-            $fatal(1, "Tried to copy null transaction");
+        if (rhs == null)
+            `uvm_fatal(get_type_name(), "Tried to copy null transaction")
+
+        if (!$cast(RHS, rhs))  
+            `uvm_fatal(get_type_name(), "Failed to cast in do_copy")
 
         super.do_copy(rhs);
-        assert($cast(copied_transaction_h, rhs)) else   
-            $fatal(1, "Failed to cast in do_copy");
-
-        valid_res_o     =   copied_transaction_h.valid_res_o;
-        alu_res_o       =   copied_transaction_h.alu_res_o;
+        valid_res_o     =   RHS.valid_res_o;
+        alu_res_o       =   RHS.alu_res_o;
     endfunction : do_copy
 
     function string convert2string();

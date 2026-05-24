@@ -9,7 +9,9 @@ class alu_result_monitor extends uvm_component;
     endfunction : new
 
     function void build_phase(uvm_phase phase);
-        if (!uvm_config_db #(virtual alu_if)::get(null, "*", "alu_vif", alu_vif))
+        super.build_phase(phase);
+        
+        if (!uvm_config_db #(virtual alu_if)::get(this, "", "alu_vif", alu_vif))
             `uvm_fatal("RESULT_MONITOR", "Failed to get alu_vif")
 
         ap = new("ap", this);
@@ -17,8 +19,9 @@ class alu_result_monitor extends uvm_component;
 
     task run_phase(uvm_phase phase);
         alu_result_transaction res;
+        
         forever begin
-            @(posedge alu_vif.clk);
+            @(alu_vif.result_cb);
             res = alu_result_transaction::type_id::create("res");
 
             res.valid_res_o = alu_vif.valid_res_o;

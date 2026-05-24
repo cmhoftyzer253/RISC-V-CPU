@@ -29,5 +29,5 @@ add_files rtl/mem/trap_controller.sv
 
 add_files rtl/top.sv   
 
-set property top top [current_fileset]
+set_property top top [current_fileset]
 update_compile_order -fileset -sources_1

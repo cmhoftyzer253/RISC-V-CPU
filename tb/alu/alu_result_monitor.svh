@@ -22,13 +22,16 @@ class alu_result_monitor extends uvm_component;
         
         forever begin
             @(alu_vif.result_cb);
-            res = alu_result_transaction::type_id::create("res");
+            
+            if (alu_vif.result_cb.valid_res_o) begin
+                res = alu_result_transaction::type_id::create("res");
 
-            res.valid_res_o = alu_vif.valid_res_o;
-            res.alu_res_o = alu_vif.alu_res_o;
+                res.valid_res_o = alu_vif.valid_res_o;
+                res.alu_res_o = alu_vif.alu_res_o;
 
-            `uvm_info("RESULT_MONITOR", res.convert2string(), UVM_HIGH)
-            ap.write(res);
+                `uvm_info("RESULT_MONITOR", res.convert2string(), UVM_HIGH)
+                ap.write(res);
+            end
         end
     endtask : run_phase
 

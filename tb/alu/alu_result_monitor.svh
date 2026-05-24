@@ -23,7 +23,7 @@ class alu_result_monitor extends uvm_component;
         forever begin
             @(alu_vif.result_cb);
             
-            if (alu_vif.result_cb.valid_res_o) begin
+            if (alu_vif.mon_cb.alu_valid_i) begin
                 res = alu_result_transaction::type_id::create("res");
 
                 res.valid_res_o = alu_vif.result_cb.valid_res_o;

@@ -1,55 +1,73 @@
-#	SV-RV64IM Verification Makefile
-#
-#	Usage: 
-#		make test_alu						run all testbenches
-#		make test_alu TEST=alu_random_test	run specific testbench
-#		make test_alu SEED=42				reproduce a specific failing testcase
-#		make test_alu WAVES = 1				dump waveform in sim/alu_tb/alu_tb.vcd	
-#		make cov_alu						open coverage report in IMC
-#		make clean							clean simulation artifacts
+# Vivado Verification Makefile
 
-XRUN ?= xrun 
-XRUN_FLAGS = -uvm -access +rwc -coverage
+# Usage:
+# make test MODULE=alu					run test for alu 
+# make test_alu 						same
+# make test_alu TEST=alu_random_test	run specific UVM test class
+# make test_alu SEED=42					reproduce a run with a seed
+# make waves_alu 						open alu wdb file in xsim
+# make clean
 
-RTL_DIR = rtl 
-TB_DIR = tb 
-SIM_DIR = sim 
+XVLOG 	?= xvlog 
+XELAB 	?= xelab 
+XSIM 	?= xsim 
+XSC 	?= xsc  
 
-#default uvm test if none selected
-TEST ?= alu_random_test
+MODULE 	?= alu
 
-ALU_TB_DIR = $(TB_DIR)/alu_golden
-ALU_SIM_DIR = $(SIM_DIR)/alu 
+RTL_DIR 	:= rtl 
+TB_DIR 		:= tb/$(MODULE)
+SIM_DIR 	:= sim/$(MODULE)
+TCL_DIR 	:= scripts
 
-.PHONY: test_alu
-test_alu:
-	mkdir -p $(ALU_SIM_DIR)
-	cd $(ALU_TB_DIR) && $(XRUN) $(XRUN_FLAGS) 			\
-		-l $(CURDIR)/$(ALU_SIM_DIR)/xrun.log 			\
-		-xmlibdirpath $(CURDIR)/$(ALU_SIM_DIR)			\
-		-covworkdir $(CURDIR)/$(ALU_SIM_DIR)/cov_work 	\
-		-f dut.f -f tb.f 								\
-		+UVM_TESTNAME=$(TEST) 							\
-		$(if $(SEED), -svseed $(SEED),) 				\
-		$(if $(filter, 1,$(WAVES)), UVM_VERBOSITY=UVM_HIGH,)
+TOP_MOD		:= $(MODULE)_tb_top
+SNAPSHOT	:= $(MODULE)_tb_top_snap
+TEST		?= $(MODULE)_random_test
 
-.PHONY: cov_alu
-cov_alu:
-	imc -load $(ALU_SIM_DIR)/cov_work &
+DPI_SRC 	:= $(TB_DIR)/$(MODULE)_golden.c 
+DPI_LIB		:= $(TB_DIR)/xsim.dir/xsc/dpi.so 
+ifneq ($(wildcard $(DPI_SRC)),)
+	DPI_OPT := -sv_lib dpi
+	DPI_DEP := $(DPI_LIB)
+endif
 
-ALL_TESTS	=	test_alu
+# Tool flags
+XELAB_OPTS := -L uvm -sv_lib $(DPI_OPT) -debug typical
 
-.PHONY: test
-test: $(ALL_TESTS)
-	@echo ""
-	@echo "=============================================="
-	@echo "		ALL TESTS PASSED"
-	@echo "=============================================="
+XSIM_OPTS := 	-testplusarg "UVM_TESTNAME=$(TEST)" \
+				-tclbatch $(CURDIR)/$(TCL_DIR)/xsim_run.tcl \
+				-wdb $(CURDIR)/$(SIM_DIR)/waves.wdb
 
-.PHONY: clean
+ifdef SEED
+	XSIM_OPTS += -sv_seed $(SEED)
+endif
+
+.PHONY: test waves clean
+
+test: $(DPI_DEP)
+	@mkdir -p $(SIM_DIR)
+	cd $(TB_DIR) && $(XVLOG) -sv -f dut.f -f tb.f \
+		-i $(CURDIR)/$(TB_DIR) \
+		-log $(CURDIR)/$(SIM_DIR)/xvlog.log
+	cd $(TB_DIR) && $(XELAB) $(XELAB_OPTS) $(TOP_MOD) -s $(SNAPSHOT) \
+		-log $(CURDIR)/$(SIM_DIR)/xelab.log
+	cd $(TB_DIR) && $(XSIM) $(SNAPSHOT) $(XSIM_OPTS) \
+		-log $(CURDIR)/$(SIM_DIR)/xsim.log
+
+$(DPI_LIB): $(DPI_SRC)
+	cd $(TB_DIR) && $(XSC) $(notdir $(DPI_SRC))
+
+waves:
+	$(XSIM) -gui $(SIM_DIR)/waves.wdb &
+
 clean: 
-	rm -rf $(SIM_DIR)/*
-	rm -rf $(ALU_TB_DIR)/xcelium.d $(ALU_TB_DIR)/xrun.log
-	rm -rf $(ALU_TB_DIR)/cov_work $(ALU_TB_DIR)/.simvision
-	rm -rf $(ALU_TB_DIR)/INCA_libs $(ALU_TB_DIR)/waves.shm
-	@echo "Removed simulation artificats"
+	rm -rf sim/
+	rm -rf tb/*/xsim.dir
+	rm -rf tb/*/*.jou tb/*/*.log tb/*/*.pb
+	@echo "Removed simulation artifacts"
+
+test_%:
+	@$(MAKE) test MODULE=$*
+
+waves_%:
+	@$(MAKE) waves MODULE=$*

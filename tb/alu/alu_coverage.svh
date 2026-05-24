@@ -63,9 +63,9 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
             bins min_neg_64b_s = {64'h8000_0000_0000_0000};
             bins all_ones = {64'hFFFF_FFFF_FFFF_FFFF};
 
-            wildcard bins shift_31 = {{59{1'b?}}, 5'b11111}};
-            wildcard bins shift_32 = {{58{1'b?}}, 6'b100000}}; 
-            wildcard bins shift_63 = {{58{1'b?}}, 6'b111111}};
+            wildcard bins shift_31 = {{59{1'b?}}, 5'b11111};
+            wildcard bins shift_32 = {{58{1'b?}}, 6'b100000}; 
+            wildcard bins shift_63 = {{58{1'b?}}, 6'b111111};
             bins shift_mask = {[64'h40 : 64'hFFFF_FFFF_FFFF_FFFF]};
 
             bins rest = default;

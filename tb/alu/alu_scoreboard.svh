@@ -53,11 +53,11 @@ class alu_scoreboard extends uvm_scoreboard;
 
         data_str = {
             cmd.convert2string(),
-            " ==> Actual ", t.convert2string(),
+            " ==> Actual ", res.convert2string(),
             "/Predicted ", predicted.convert2string()
         };
 
-        if (!predicted.compare(t))
+        if (!predicted.compare(res))
             `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
         else
             `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_HIGH)

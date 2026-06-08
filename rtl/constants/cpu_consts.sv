@@ -28,7 +28,7 @@ package cpu_consts;
         OP_XOR,
         OP_SLTU,
         OP_SLT,
-        OP_CSRRW
+        OP_PASS_A
     } alu_op_t;
 
     // M extension operations
@@ -52,13 +52,13 @@ package cpu_consts;
     } mem_access_size_t;
 
     typedef enum logic {
-        ALU_BYPASS  =   1'b0,
+        EXU_BYPASS  =   1'b0,
         WB_BYPASS   =   1'b1
     } bypass_avail_t;
 
     // register file writeback data source
     typedef enum logic[1:0] {
-        ALU_SRC,
+        EXU_SRC,
         MEM_SRC,
         IMM_SRC,
         PC_SRC
@@ -67,7 +67,8 @@ package cpu_consts;
     typedef enum logic [1:0] {
         RS1_OPERAND_A,
         PC_OPERAND_A,
-        CSR_OPERAND_A           
+        CSR_OPERAND_A,
+        IMM_OPERAND_A        
     } alu_opr_a_sel_t;
 
     typedef enum logic [1:0] {
@@ -257,5 +258,25 @@ package cpu_consts;
         S_DIV_OUT_SC,
         S_DIV_OUT_CC
     } div_state_t;
+
+    //exception causes
+    typedef enum logic [4:0] {
+        INSTR_ADDR_MISALIGNED       =   5'd0;
+        INSTR_ACC_FAULT             =   5'd1;
+        ILLEGAL_INSTR               =   5'd2;
+        EBREAK                      =   5'd3;
+        LOAD_ADDR_MISALIGNED        =   5'd4;
+        LOAD_ACC_FAULT              =   5'd5;
+        STORE_AMO_ADDR_MISALIGNED   =   5'd6;
+        STORE_AMO_ACC_FAULT         =   5'd7;
+        M_ECALL                     =   5'd11;
+    } exc_cause_t;
+
+    typedef enum logic [4:0] {
+        M_SW_IRQ      =   5'd3;
+        M_TIMER_IRQ   =   5'd7;
+        M_EXT_IRQ     =   5'd11;
+        M_LCOVF_IRQ   =   5'd13;
+    } irq_cause_t;
 
 endpackage

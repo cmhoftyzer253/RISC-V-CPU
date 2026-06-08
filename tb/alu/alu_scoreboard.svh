@@ -1,4 +1,4 @@
-class alu_scoreboard extends uvm_scoreboard #(alu_result_transaction);
+class alu_scoreboard extends uvm_scoreboard;
     `uvm_component_utils(alu_scoreboard)
 
     uvm_tlm_analysis_fifo #(alu_command_transaction) cmd_fifo;

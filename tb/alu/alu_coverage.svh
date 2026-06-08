@@ -11,7 +11,7 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
     covergroup basic_cov;
 
         all_alu_funcs : coverpoint alu_func_i {
-            bins ops[] = {OP_ADD, OP_SUB, OP_SLL, OP_SRL, OP_SRA, OP_OR, OP_AND, OP_XOR, OP_SLTU, OP_SLT, OP_CSRRW};
+            bins ops[] = {OP_ADD, OP_SUB, OP_SLL, OP_SRL, OP_SRA, OP_OR, OP_AND, OP_XOR, OP_SLTU, OP_SLT, OP_PASS_A};
         }
 
         word_op : coverpoint word_op_i {
@@ -128,7 +128,7 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
 
     covergroup control_cov;
         all_alu_funcs : coverpoint alu_func_i {
-            bins ops[] = {OP_ADD, OP_SUB, OP_SLL, OP_SRL, OP_SRA, OP_OR, OP_AND, OP_XOR, OP_SLTU, OP_SLT, OP_CSRRW};
+            bins ops[] = {OP_ADD, OP_SUB, OP_SLL, OP_SRL, OP_SRA, OP_OR, OP_AND, OP_XOR, OP_SLTU, OP_SLT, OP_PASS_A};
         }
 
         alu_valid : coverpoint alu_valid_i {

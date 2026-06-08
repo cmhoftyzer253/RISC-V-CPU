@@ -40,7 +40,7 @@ class alu_scoreboard extends uvm_scoreboard;
 
     endfunction : predict_result
 
-    function void write(alu_result_transaction t);
+    task run_phase(uvm_phase phase);
         string                      data_str;
         alu_command_transaction     cmd;
         alu_result_transaction      res;
@@ -61,7 +61,6 @@ class alu_scoreboard extends uvm_scoreboard;
             `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
         else
             `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_HIGH)
-
-    endfunction : write
+    endtask : run_phase
 
 endclass : alu_scoreboard

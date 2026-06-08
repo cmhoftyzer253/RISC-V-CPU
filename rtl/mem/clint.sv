@@ -1,4 +1,5 @@
 import cpu_modules::*;
+import cpu_defines::*;
 
 module clint (
     input logic                 clk,
@@ -21,12 +22,6 @@ module clint (
 
     output logic [63:0]         mtime_o
 );
-
-    localparam MSIP_ADDR        =   64'h0000_0000_0200_0000;
-    localparam MTIMECMP_ADDR    =   64'h0000_0000_0200_4000;
-    localparam MTIMECMPH_ADDR   =   64'h0000_0000_0200_4004;
-    localparam MTIME_ADDR       =   64'h0000_0000_0200_BFF8;
-    localparam MTIMEH_ADDR      =   64'h0000_0000_0200_BFFC;
 
     logic           msip_q;
     logic [63:0]    mtimecmp_q;

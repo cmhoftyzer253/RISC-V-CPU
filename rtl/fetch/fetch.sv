@@ -1,3 +1,5 @@
+import cpu_defines::*;
+
 module fetch (
     input logic             clk,
     input logic             resetn,
@@ -132,9 +134,9 @@ module fetch (
                 BROM_en             =   1'b1;
 
                 BROM_instr          =   pc_ready_o & 
-                                        (pc_i >= 64'h0000_0000_0001_0000) & (pc_i <= 64'h0000_0000_0001_1FFF);
+                                        (pc_i >= BOOT_ROM_ADDR_LOW) & (pc_i <= BOOT_ROM_ADDR_HIGH);
 
-                oob_addr            =   ~(BROM_instr | ((pc_i >= 64'h0000_0000_8000_0000) & (pc_i <= 64'h0000_0000_9FFF_FFFF)));
+                oob_addr            =   ~(BROM_instr | ((pc_i >= DRAM_ADDR_LOW) & (pc_i <= DRAM_ADDR_HIGH)));
                 unaligned_addr      =   |pc_i[1:0];
 
                 exc_valid_fetch     =   pc_ready_o & ~flush_i & (oob_addr | unaligned_addr);

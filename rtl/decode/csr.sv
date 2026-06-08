@@ -1,3 +1,5 @@
+import cpu_defines::*;
+
 module csr (
     input logic             clk,
     input logic             resetn,
@@ -46,33 +48,6 @@ module csr (
     output logic            exc_valid_o,
     output logic [4:0]      exc_code_o
 );  
-
-    localparam MSTATUS_ADDR         =   12'h300;
-    localparam MISA_ADDR            =   12'h301;
-    localparam MIE_ADDR             =   12'h304;
-    localparam MTVEC_ADDR           =   12'h305;
-    localparam MCOUNTINHIBIT_ADDR   =   12'h320;
-    localparam MSCRATCH_ADDR        =   12'h340;
-    localparam MEPC_ADDR            =   12'h341;
-    localparam MCAUSE_ADDR          =   12'h342;
-    localparam MTVAL_ADDR           =   12'h343;
-    localparam MIP_ADDR             =   12'h344;
-    localparam MCOUNTOVF_ADDR       =   12'h7E8;
-    localparam MCYCLE_ADDR          =   12'hB00;
-    localparam MINSTRET_ADDR        =   12'hB02;
-    localparam CYCLE_ADDR           =   12'hC00;
-    localparam TIME_ADDR            =   12'hC01;
-    localparam INSTRET_ADDR         =   12'hC02;
-    localparam MVENDORID_ADDR       =   12'hF11;
-    localparam MARCHID_ADDR         =   12'hF12;
-    localparam MIMPID_ADDR          =   12'hF13;
-    localparam MHARTID_ADDR         =   12'hF14;
-        
-    localparam MISA_Q               =   64'h8000_0000_0000_1100;
-    localparam MVENDORID_Q          =   64'h0;
-    localparam MARCHID_Q            =   64'h0;
-    localparam MIMPID_Q             =   64'h0;
-    localparam MHARTID_Q            =   64'h0;  
 
     logic [63:0]            mstatus_q;        
     logic [13:0]            mie_q;            

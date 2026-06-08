@@ -1,3 +1,4 @@
+import cpu_defines::*;
 import cpu_utils::*;
 
 module plic (
@@ -28,19 +29,6 @@ module plic (
     output logic [4:0]          exc_code_o
 
 );
-
-    localparam PRIORITY_IRQ1_ADDR           =   64'h0000_0000_0C00_0004;
-    localparam PRIORITY_IRQ2_ADDR           =   64'h0000_0000_0C00_0008;
-    localparam PRIORITY_IRQ3_ADDR           =   64'h0000_0000_0C00_000C;
-    localparam PRIORITY_IRQ4_ADDR           =   64'h0000_0000_0C00_0010;
-    localparam PRIORITY_IRQ5_ADDR           =   64'h0000_0000_0C00_0014;
-    localparam PRIORITY_IRQ6_ADDR           =   64'h0000_0000_0C00_0018;
-    localparam PRIORITY_IRQ7_ADDR           =   64'h0000_0000_0C00_001C;
-    localparam PRIORITY_IRQ8_ADDR           =   64'h0000_0000_0C00_0020;
-    localparam IP_ADDR                      =   64'h0000_0000_0C00_1000;
-    localparam ENABLE_IRQ_ADDR              =   64'h0000_0000_0C00_2000;
-    localparam PRIORITY_THRESHOLD_ADDR      =   64'h0000_0000_0C20_0000;
-    localparam CLAIM_COMPLETE_ADDR          =   64'h0000_0000_0C20_0004;
 
     logic                       gw_irq1;
     logic                       gw_irq2;

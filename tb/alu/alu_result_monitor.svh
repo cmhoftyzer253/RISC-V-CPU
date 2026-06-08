@@ -30,7 +30,6 @@ class alu_result_monitor extends uvm_component;
                 res.alu_res_o = alu_vif.result_cb.alu_res_o;
 
                 `uvm_info("RESULT_MONITOR", res.convert2string(), UVM_HIGH)
-                #0;
                 ap.write(res);
             end
         end

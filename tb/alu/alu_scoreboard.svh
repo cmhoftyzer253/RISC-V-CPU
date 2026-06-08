@@ -1,7 +1,8 @@
-class alu_scoreboard extends uvm_subscriber #(alu_result_transaction);
+class alu_scoreboard extends uvm_scoreboard #(alu_result_transaction);
     `uvm_component_utils(alu_scoreboard)
 
-    uvm_tlm_analysis_fifo #(alu_command_transaction) instr_fifo;
+    uvm_tlm_analysis_fifo #(alu_command_transaction) cmd_fifo;
+    uvm_tlm_analysis_fifo #(alu_result_transaction) res_fifo;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
@@ -10,10 +11,11 @@ class alu_scoreboard extends uvm_subscriber #(alu_result_transaction);
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        instr_fifo = new("instr_fifo", this);
+        cmd_fifo = new("cmd_fifo", this);
+        res_fifo = new("res_fifo", this);
     endfunction : build_phase
 
-    function alu_result_transaction predict_result(alu_command_transaction instr);
+    function alu_result_transaction predict_result(alu_command_transaction cmd);
         alu_result_transaction  predicted;
         int                     valid_res_o;
         longint                 alu_res_o;
@@ -21,12 +23,12 @@ class alu_scoreboard extends uvm_subscriber #(alu_result_transaction);
         predicted = alu_result_transaction::type_id::create("predicted");
 
         alu_golden(
-            instr.opr_a_i,
-            instr.opr_b_i,
-            instr.alu_valid_i,
-            instr.alu_func_i,
-            instr.word_op_i,
-            instr.flush_i,
+            cmd.opr_a_i,
+            cmd.opr_b_i,
+            cmd.alu_valid_i,
+            cmd.alu_func_i,
+            cmd.word_op_i,
+            cmd.flush_i,
             valid_res_o,
             alu_res_o
         );
@@ -40,16 +42,17 @@ class alu_scoreboard extends uvm_subscriber #(alu_result_transaction);
 
     function void write(alu_result_transaction t);
         string                      data_str;
-        alu_command_transaction     instr;
+        alu_command_transaction     cmd;
+        alu_result_transaction      res;
         alu_result_transaction      predicted;
 
-        if (!instr_fifo.try_get(instr))
-            `uvm_fatal("SCOREBOARD", "Missing command in scoreboard")
+        cmd_fifo.get(cmd);
+        res_fifo.get(res);
 
-        predicted = predict_result(instr);
+        predicted = predict_result(cmd);
 
         data_str = {
-            instr.convert2string(),
+            cmd.convert2string(),
             " ==> Actual ", t.convert2string(),
             "/Predicted ", predicted.convert2string()
         };

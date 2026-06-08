@@ -22,7 +22,7 @@ class alu_env extends uvm_env;
         
         alu_agent_h.instr_mon_ap.connect(alu_coverage_h.analysis_export);
         alu_agent_h.instr_mon_ap.connect(alu_scoreboard_h.instr_fifo.analysis_export);
-        alu_agent_h.result_ap.connect(alu_scoreboard_h.analysis_export);
+        alu_agent_h.result_ap.connect(alu_scoreboard_h.res_fifo.analysis_export);
     endfunction : connect_phase
 
 endclass : alu_env

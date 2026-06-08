@@ -28,7 +28,7 @@ module alu (
             OP_XOR: alu_res     =   opr_a_i ^ opr_b_i;
             OP_SLTU: alu_res    =   {63'h0, opr_a_i < opr_b_i};               
             OP_SLT: alu_res     =   {63'h0, $signed(opr_a_i) < $signed(opr_b_i)};    
-            OP_CSRRW: alu_res   =   opr_a_i;
+            OP_PASS_A: alu_res  =   opr_a_i;
             default: alu_res    =   64'h0;
         endcase
     end

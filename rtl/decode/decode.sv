@@ -1,7 +1,5 @@
 import cpu_consts::*;
 
-//TODO: Check for allowed field values for each instruction type. Eg funct7 allowed values for R type
-
 module decode (
     input logic [31:0]  instr_i,
     output logic [4:0]  rs1_o,
@@ -21,8 +19,11 @@ module decode (
     output logic [63:0] imm_o,
 
     output logic        exc_valid_o,
-    output logic [4:0]  exc_code_o
+    output exc_cause_t  exc_code_o
 );
+
+    exc_cause_t         exc_opcode;
+    exc_cause_t         exc_funct;
 
     logic [6:0]         funct7;
 
@@ -141,7 +142,7 @@ module decode (
                 imm_o           =   {59'h0, instr_i[19:15]};
 
                 case (funct3_o) 
-                    3'b000: exc_valid_o =   ~((funct12_o == 12'h000) | (funct12_o == 12'h001) | (funct12_o == 12'h302) | (funct12_o == 12'h105)) | (|rs1_o) | (|rd_o);
+                    3'b000: exc_valid_o =   ~((funct12_o == ECALL) | (funct12_o == EBREAK) | (funct12_o == MRET) | (funct12_o == WFI)) | (|rs1_o) | (|rd_o);
                     3'b100: exc_valid_o =   1'b1;
                 endcase
             end
@@ -150,7 +151,7 @@ module decode (
             end
         endcase
 
-        exc_code_o  =   exc_valid_o ? 5'd2 : 5'd0;
+        exc_code_o  =   exc_valid_o ? ILLEGAL_INSTR : 5'd0;
     end
 
 endmodule

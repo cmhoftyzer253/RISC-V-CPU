@@ -1,5 +1,5 @@
+import cpu_consts::*;
 import cpu_defines::*;
-import cpu_utils::*;
 
 module plic (
     input logic                 clk,
@@ -26,7 +26,7 @@ module plic (
     output logic                eip_o,
 
     output logic                exc_valid_o,
-    output logic [4:0]          exc_code_o
+    output exc_cause_t          exc_code_o
 
 );
 
@@ -87,59 +87,59 @@ module plic (
     logic                       claim_irq7;
     logic                       claim_irq8;
 
-    irq_gw u_irq_sw_gw1 (
+    irq_sw_gw u_irq_sw_gw1 (
         .clk        (clk),
         .resetn     (resetn),
-        .val_i      (signal1_i),
+        .signal_i      (signal1_i),
         .gw_irq_o   (gw_irq1)
     );
 
-    irq_gw u_irq_sw_gw2 (
+    irq_sw_gw u_irq_sw_gw2 (
         .clk        (clk),
         .resetn     (resetn),
-        .val_i      (signal2_i),
+        .signal_i      (signal2_i),
         .gw_irq_o   (gw_irq2)
     );
 
-    irq_gw u_irq_sw_gw3 (
+    irq_sw_gw u_irq_sw_gw3 (
         .clk        (clk),
         .resetn     (resetn),
-        .val_i      (signal3_i),
+        .signal_i      (signal3_i),
         .gw_irq_o   (gw_irq3)
     );
 
-    irq_gw u_irq_sw_gw4 (
+    irq_sw_gw u_irq_sw_gw4 (
         .clk        (clk),
         .resetn     (resetn),
-        .val_i      (signal4_i),
+        .signal_i      (signal4_i),
         .gw_irq_o   (gw_irq4)
     );
 
-    irq_gw u_irq_sw_gw5 (
+    irq_sw_gw u_irq_sw_gw5 (
         .clk        (clk),
         .resetn     (resetn),
-        .val_i      (signal5_i),
+        .signal_i      (signal5_i),
         .gw_irq_o   (gw_irq5)
     );
 
-    irq_gw u_irq_sw_gw6 (
+    irq_sw_gw u_irq_sw_gw6 (
         .clk        (clk),
         .resetn     (resetn),
-        .val_i      (signal6_i),
+        .signal_i      (signal6_i),
         .gw_irq_o   (gw_irq6)
     );
 
-    irq_gw u_irq_sw_gw7 (
+    irq_sw_gw u_irq_sw_gw7 (
         .clk        (clk),
         .resetn     (resetn),
-        .val_i      (signal7_i),
+        .signal_i      (signal7_i),
         .gw_irq_o   (gw_irq7)
     );
 
-    irq_gw u_irq_sw_gw8 (
+    irq_sw_gw u_irq_sw_gw8 (
         .clk        (clk),
         .resetn     (resetn),
-        .val_i      (signal8_i),
+        .signal_i      (signal8_i),
         .gw_irq_o   (gw_irq8)
     );
 
@@ -275,10 +275,10 @@ module plic (
         acc_fault       =   acc_fault_size | acc_fault_addr_rd | acc_fault_addr_wr;
 
         exc_valid_o     =   req_valid_i & (unaligned_addr | acc_fault_size | acc_fault_addr_rd | acc_fault_addr_wr); 
-        exc_code_o      =   ({5{unaligned_addr & ~acc_fault & ~req_wr_i}} & 5'd4)   | 
-                            ({5{unaligned_addr & ~acc_fault &  req_wr_i}} & 5'd6)   |
-                            ({5{acc_fault & ~req_wr_i}} & 5'd5)                     |
-                            ({5{acc_fault &  req_wr_i}} & 5'd7);     
+        exc_code_o      =   ({5{unaligned_addr & ~acc_fault & ~req_wr_i}} & LOAD_ADDR_MISALIGNED)       | 
+                            ({5{unaligned_addr & ~acc_fault &  req_wr_i}} & STORE_AMO_ADDR_MISALIGNED)  |
+                            ({5{acc_fault & ~req_wr_i}} & LOAD_ACC_FAULT)                               |
+                            ({5{acc_fault &  req_wr_i}} & STORE_AMO_ACC_FAULT);     
 
         //highest priority arbiter
         //set priorities to 0 if masked

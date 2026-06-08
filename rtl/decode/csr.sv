@@ -1,3 +1,4 @@
+import cpu_consts::*;
 import cpu_defines::*;
 
 module csr (
@@ -46,7 +47,7 @@ module csr (
     output logic            wfi_fetch_flush_o,
 
     output logic            exc_valid_o,
-    output logic [4:0]      exc_code_o
+    output exc_cause_t      exc_code_o
 );  
 
     logic [63:0]            mstatus_q;        
@@ -250,7 +251,7 @@ module csr (
         end
 
         exc_valid_o         =   acc_fault_addr_wr | acc_fault_addr_rd;
-        exc_code_o          =   5'd2;
+        exc_code_o          =   ILLEGAL_INSTR;
     end
 
 endmodule

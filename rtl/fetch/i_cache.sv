@@ -17,7 +17,7 @@ module i_cache #(
     output logic                instr_valid_o,
 
     //AXI interface
-    //read address -> interconnect
+    //read address -> interconnect (AR channel)
     input logic                 arready_i,
     output logic [63:0]         araddr_o,
     output logic [7:0]          arlen_o,
@@ -27,7 +27,7 @@ module i_cache #(
     output logic [2:0]          arprot_o,
     output logic                arvalid_o,
 
-    //read data -> cache
+    //read data -> cache (R channel)
     input logic                 rvalid_i,
     input logic [127:0]         rdata_i,
     input logic [1:0]           rresp_i,
@@ -39,7 +39,7 @@ module i_cache #(
     input logic                 flush_i, 
 
     output logic                exc_valid_o,
-    output logic [4:0]          exc_code_o
+    output exc_cause_t          exc_code_o
 
 );
     i_cache_tag_t         tag_rd_w0;
@@ -418,7 +418,7 @@ module i_cache #(
         instr_valid_o               =   1'b0;
 
         exc_valid_o                 =   1'b0;
-        exc_code_o                  =   5'h00;
+        exc_code_o                  =   5'd0;
 
         araddr_o                    =   64'h0;
         arlen_o                     =   8'h0;
@@ -546,7 +546,7 @@ module i_cache #(
             end
             S_IC_LOAD_DONE: begin
                 exc_valid_o         =   error_ff | id_error;
-                exc_code_o          =   5'b00001;
+                exc_code_o          =   INSTR_ACC_FAULT;
 
                 instr_index         =   instr_mem_addr_ff[12:6];
                 instr_tag           =   instr_mem_addr_ff[63:13];

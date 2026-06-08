@@ -1,3 +1,5 @@
+import cpu_consts::*;
+
 module trap_controller (
     input logic             clk,
     input logic             resetn,
@@ -12,7 +14,7 @@ module trap_controller (
 
     //mem interface
     input logic             exc_valid_i,
-    input logic [4:0]       exc_code_i,
+    input exc_cause_t       exc_code_i,
     input logic [63:0]      mem_pc_i,
 
     //fetch/decode interface
@@ -39,7 +41,7 @@ module trap_controller (
     logic                   trap_active_q;
 
     logic                   irp_grant;
-    logic [4:0]             irp_code;
+    irq_cause_t             irp_code;
 
     always_ff @(posedge clk or negedge resetn) begin
         if (~resetn) begin
@@ -60,7 +62,7 @@ module trap_controller (
         nxt_mcause_o        =   6'b0;
         nxt_pc_o            =   64'h0;
 
-        irp_code            =   5'b0;
+        irp_code            =   5'd0;
 
         irp_grant           =   mstatus_mie_i & ~trap_active_q & if_pc_ready_i & 
                                 ((mie_ext_ire_i & mie_ext_irp_i)        |
@@ -69,13 +71,13 @@ module trap_controller (
                                  (mie_lcof_ire_i & mie_lcof_irp_i));
 
         if (mie_ext_ire_i & mie_ext_irp_i)
-            irp_code        =   5'd11;
+            irp_code        =   M_EXT_IRQ;
         else if (mie_sw_ire_i & mie_sw_irp_i)
-            irp_code        =   5'd3;
+            irp_code        =   M_SW_IRQ;
         else if (mie_timer_ire_i & mie_timer_irp_i)
-            irp_code        =   5'd7;
+            irp_code        =   M_TIMER_IRQ;
         else if (mie_lcof_ire_i & mie_lcof_irp_i)
-            irp_code        =   5'd13;
+            irp_code        =   M_LCOF_IRQ;
 
         if (exc_valid_i) begin
             trap_en_o       =   1'b1;

@@ -1,3 +1,5 @@
+import cpu_consts::*;
+
 module memory (
     input logic                 clk,
     input logic                 resetn,
@@ -20,15 +22,15 @@ module memory (
     output logic [63:0]         dc_wr_data_o,
     output logic [7:0]          dc_mask_o,
 
-    input logic                 req_resp_valid_i,
-    input logic [63:0]          req_rd_data_i,
-    output logic                req_resp_ready_o,
+    input logic                 dc_resp_valid_i,
+    input logic [63:0]          dc_rd_data_i,
+    output logic                mem_rd_ready_o,
 
     input logic                 exc_valid_i,
-    input logic [4:0]           exc_code_i,
+    input exc_cause_t           exc_code_i,
 
     output logic                exc_valid_o,
-    output logic [4:0]          exc_code_o
+    output exc_cause_t          exc_code_o
 );
 
     logic [2:0]                 req_addr_ff;
@@ -37,11 +39,9 @@ module memory (
     
     logic                       req_handshake;
 
-    logic                       oob_addr;
-    logic                       oob;
     logic                       unaligned_addr;
     logic                       exc_valid_mem;
-    logic [4:0]                 exc_code_mem;
+    exc_cause_t                 exc_code_mem;
 
     logic [63:0]                store_data;
     logic [7:0]                 store_mask;
@@ -75,10 +75,10 @@ module memory (
                                          (req_byte_en_i == DOUBLE_WORD) ? req_addr_i[2:0] : 1'b0);
 
         exc_valid_mem               =   unaligned_addr;
-        exc_code_mem                =   ({5{oob &  req_wr_i}} & 5'd7)                   |
-                                        ({5{oob & ~req_wr_i}} & 5'd5)                   |
-                                        ({5{unaligned_addr & ~oob &  req_wr_i}} & 5'd6) |
-                                        ({5{unaligned_addr & ~oob & ~req_wr_i}} & 5'd4);
+        exc_code_mem                =   ({5{ req_wr_i}} & STORE_AMO_ACC_FAULT)                            |
+                                        ({5{~req_wr_i}} & LOAD_ACC_FAULT)                                 |
+                                        ({5{unaligned_addr &  req_wr_i}} & STORE_AMO_ADDR_MISALIGNED)     |
+                                        ({5{unaligned_addr & ~req_wr_i}} & LOAD_ADDR_MISALIGNED);
 
         exc_valid_o                 =   exc_valid_i | exc_valid_mem;
         exc_code_o                  =   exc_valid_i ? exc_code_i : exc_code_mem;
@@ -104,18 +104,18 @@ module memory (
                 store_mask[4]       =   (req_addr_i[2:0] == 3'b100);
                 store_mask[5]       =   (req_addr_i[2:0] == 3'b101);
                 store_mask[6]       =   (req_addr_i[2:0] == 3'b110);
-                store_mask[7]       =   (req_addr_i[2:0] == 3'b101);
+                store_mask[7]       =   (req_addr_i[2:0] == 3'b111);
             end
             HALF_WORD: begin
                 store_data[15:0]    =   ({16{req_addr_i[2:1] == 2'b00}} & req_wr_data_i[15:0]);
-                store_data[31:16]   =   ({16{req_addr_i[2:0] == 2'b01}} & req_wr_data_i[15:0]);
-                store_data[47:32]   =   ({16{req_addr_i[2:0] == 2'b10}} & req_wr_data_i[15:0]);
-                store_data[63:48]   =   ({16{req_addr_i[2:0] == 2'b01}} & req_wr_data_i[15:0]);
+                store_data[31:16]   =   ({16{req_addr_i[2:1] == 2'b01}} & req_wr_data_i[15:0]);
+                store_data[47:32]   =   ({16{req_addr_i[2:1] == 2'b10}} & req_wr_data_i[15:0]);
+                store_data[63:48]   =   ({16{req_addr_i[2:1] == 2'b01}} & req_wr_data_i[15:0]);
 
                 store_mask[1:0]     =   {2{req_addr_i[2:1] == 2'b00}};
-                store_mask[3:2]     =   {2{req_addr_i[4:3] == 2'b01}};
-                store_mask[5:4]     =   {2{req_addr_i[4:3] == 2'b10}};
-                store_mask[7:6]     =   {2{req_addr_i[4:3] == 2'b11}};
+                store_mask[3:2]     =   {2{req_addr_i[2:1] == 2'b01}};
+                store_mask[5:4]     =   {2{req_addr_i[2:1] == 2'b10}};
+                store_mask[7:6]     =   {2{req_addr_i[2:1] == 2'b11}};
             end
             WORD: begin
                 store_data[31:0]    =   ({32{~req_addr_i[2]}} & req_wr_data_i[31:0]);
@@ -137,32 +137,32 @@ module memory (
         //load align
         case (req_byte_en_ff)
             BYTE: begin
-                load_data[7:0]      =   ({8{req_addr_ff[2:0] == 3'b000}} & req_rd_data_i[7:0])      | 
-                                        ({8{req_addr_ff[2:0] == 3'b001}} & req_rd_data_i[15:8])     | 
-                                        ({8{req_addr_ff[2:0] == 3'b010}} & req_rd_data_i[23:16])    |
-                                        ({8{req_addr_ff[2:0] == 3'b011}} & req_rd_data_i[31:24])    |
-                                        ({8{req_addr_ff[2:0] == 3'b100}} & req_rd_data_i[39:32])    |
-                                        ({8{req_addr_ff[2:0] == 3'b101}} & req_rd_data_i[47:40])    |
-                                        ({8{req_addr_ff[2:0] == 3'b110}} & req_rd_data_i[55:48])    |
-                                        ({8{req_addr_ff[2:0] == 3'b111}} & req_rd_data_i[63:56]);
+                load_data[7:0]      =   ({8{req_addr_ff[2:0] == 3'b000}} & dc_rd_data_i[7:0])      | 
+                                        ({8{req_addr_ff[2:0] == 3'b001}} & dc_rd_data_i[15:8])     | 
+                                        ({8{req_addr_ff[2:0] == 3'b010}} & dc_rd_data_i[23:16])    |
+                                        ({8{req_addr_ff[2:0] == 3'b011}} & dc_rd_data_i[31:24])    |
+                                        ({8{req_addr_ff[2:0] == 3'b100}} & dc_rd_data_i[39:32])    |
+                                        ({8{req_addr_ff[2:0] == 3'b101}} & dc_rd_data_i[47:40])    |
+                                        ({8{req_addr_ff[2:0] == 3'b110}} & dc_rd_data_i[55:48])    |
+                                        ({8{req_addr_ff[2:0] == 3'b111}} & dc_rd_data_i[63:56]);
 
                 load_data[63:8]     =   {56{~req_zero_extnd_ff & load_data[7]}};
             end 
             HALF_WORD: begin
-                load_data[15:0]     =   ({16{req_addr_ff[2:1] == 2'b00}} & req_rd_data_i[15:0])     | 
-                                        ({16{req_addr_ff[2:1] == 2'b01}} & req_rd_data_i[31:16])    |
-                                        ({16{req_addr_ff[2:1] == 2'b10}} & req_rd_data_i[47:32])    | 
-                                        ({16{req_addr_ff[2:1] == 2'b11}} & req_rd_data_i[63:48]);
+                load_data[15:0]     =   ({16{req_addr_ff[2:1] == 2'b00}} & dc_rd_data_i[15:0])     | 
+                                        ({16{req_addr_ff[2:1] == 2'b01}} & dc_rd_data_i[31:16])    |
+                                        ({16{req_addr_ff[2:1] == 2'b10}} & dc_rd_data_i[47:32])    | 
+                                        ({16{req_addr_ff[2:1] == 2'b11}} & dc_rd_data_i[63:48]);
 
                 load_data[63:16]    =   {48{~req_zero_extnd_ff & load_data[15]}};
             end
             WORD: begin
-                load_data[31:0]     =   ({32{~req_addr_ff[2]}} & req_rd_data_i[31:0])               |
-                                        ({32{ req_addr_ff[2]}} & req_rd_data_i[63:32]);
+                load_data[31:0]     =   ({32{~req_addr_ff[2]}} & dc_rd_data_i[31:0])               |
+                                        ({32{ req_addr_ff[2]}} & dc_rd_data_i[63:32]);
 
                 load_data[63:32]    =   {32{~req_zero_extnd_ff & load_data[31]}};
             end
-            DOUBLE_WORD: load_data  =   req_rd_data_i;
+            DOUBLE_WORD: load_data  =   dc_rd_data_i;
             default: load_data      =   64'h0;
         endcase
 
@@ -184,10 +184,10 @@ module memory (
 
         req_ready_o                 =   dc_ready_i;
 
-        dc_resp_valid_o             =   req_resp_valid_i;
-        dc_red_data_o               =   load_data;
+        data_mem_resp_valid_o       =   dc_resp_valid_i;
+        data_mem_rd_data_o          =   load_data;
 
-        req_rd_ready_o              =   1'b1;
+        mem_rd_ready_o              =   1'b1;
 
     end
 

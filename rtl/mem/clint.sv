@@ -1,4 +1,4 @@
-import cpu_modules::*;
+import cpu_consts::*;
 import cpu_defines::*;
 
 module clint (
@@ -18,7 +18,7 @@ module clint (
     output logic                mtip_irp_o,
 
     output logic                exc_valid_o,
-    output logic [4:0]          exc_code_o,
+    output exc_cause_t          exc_code_o,
 
     output logic [63:0]         mtime_o
 );
@@ -149,10 +149,10 @@ module clint (
         acc_fault               =   acc_fault_size | acc_fault_addr_rd | acc_fault_addr_wr;
 
         exc_valid_o             =   req_valid_i & (unaligned_addr | acc_fault_size | acc_fault_addr_rd | acc_fault_addr_wr);
-        exc_code_o              =   ({5{unaligned_addr & ~acc_fault & ~req_wr_i}} & 5'd4)   | 
-                                    ({5{unaligned_addr & ~acc_fault &  req_wr_i}} & 5'd6)   | 
-                                    ({5{acc_fault & ~req_wr_i}} & 5'd5)                     |
-                                    ({5{acc_fault &  req_wr_i}} & 5'd7);
+        exc_code_o              =   ({5{unaligned_addr & ~acc_fault & ~req_wr_i}} & LOAD_ADDR_MISALIGNED)       | 
+                                    ({5{unaligned_addr & ~acc_fault &  req_wr_i}} & STORE_AMO_ADDR_MISALIGNED)  | 
+                                    ({5{acc_fault & ~req_wr_i}} & LOAD_ACC_FAULT)                               |
+                                    ({5{acc_fault &  req_wr_i}} & STORE_AMO_ACC_FAULT);
     end
 
 endmodule

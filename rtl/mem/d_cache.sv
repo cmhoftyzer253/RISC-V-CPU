@@ -20,7 +20,7 @@ module d_cache #(
     output logic [63:0]         dc_rd_data_o,
 
     //AXI Interface to DDR3 main memory
-    // load request
+    // load request (AR channel)
     input logic                 arready_i,
     output logic [63:0]         araddr_o,               //Byte address for read request  
     output logic [7:0]          arlen_o,                //burst length minus 1 (keep at 0 = 1 beat)
@@ -30,7 +30,7 @@ module d_cache #(
     output logic [2:0]          arprot_o,               //
     output logic                arvalid_o,              //read address is valid
 
-    // load response
+    // load response (R channel)
     input logic                 rvalid_i,               //asserted when rdata is valid
     input logic [127:0]         rdata_i,                //data from memory
     input logic [1:0]           rresp_i,                //response code (00 = OKAY, otherwise error)
@@ -38,7 +38,7 @@ module d_cache #(
     input logic [ID_W-1:0]      rid_i,
     output logic                rready_o,               //assert when ready to accept rdata
 
-    // store request
+    // store request (AW & W channel)
     input logic                 awready_i,
     input logic                 wready_i,
     output logic [63:0]         awaddr_o,               //Byte address for write request
@@ -52,14 +52,14 @@ module d_cache #(
     output logic                wvalid_o,               //asserted when wdata valid
     output logic                wlast_o,                //last beat of burst (single beat - always 1 when wvalid = 1)
 
-    // store response
+    // store response (B channel)
     input logic [1:0]           bresp_i,                //response code (00 = OKAY, otherwise error)
     input logic                 bvalid_i,               //write response is avilable
     input logic [ID_W-1:0]      bid_i,
     output logic                bready_o,               //assert when ready to accept response
 
     output logic                exc_valid_o,
-    output logic [4:0]          exc_code_o
+    output exc_cause_t          exc_code_o
 );
 
     logic req_handshake;
@@ -586,7 +586,7 @@ module d_cache #(
         bready_o                    =   1'b1;
 
         exc_valid_o                 =   1'b0;
-        exc_code_o                  =   5'b0;
+        exc_code_o                  =   5'd0;
 
         req_handshake               =   1'b0;
 
@@ -755,7 +755,7 @@ module d_cache #(
 
                 if (bvalid_i & ((bresp_i != 2'b00) | (bid_i != '0))) begin
                     exc_valid_o     =   1'b1;
-                    exc_code_o      =   5'd7;
+                    exc_code_o      =   STORE_AMO_ACC_FAULT;
 
                     dc_resp_valid_o =   1'b1;
                 end
@@ -795,7 +795,7 @@ module d_cache #(
             end
             S_DC_LOAD_DONE: begin
                 exc_valid_o         =   error_ff | id_error;
-                exc_code_o          =   dc_wr_ff ? 5'd7 : 5'd5;
+                exc_code_o          =   dc_wr_ff ? STORE_AMO_ACC_FAULT : LOAD_ACC_FAULT;
 
                 dc_rd_data_o        =   data_hold;
                 dc_resp_valid_o     =   1'b1;
@@ -808,10 +808,10 @@ module d_cache #(
                 store_data[15:8]    =   dc_mask_ff[1] ? dc_wr_data_ff[15:8] : data_hold[15:8];
                 store_data[23:16]   =   dc_mask_ff[2] ? dc_wr_data_ff[23:16] : data_hold[23:16];
                 store_data[31:24]   =   dc_mask_ff[3] ? dc_wr_data_ff[31:24] : data_hold[31:24];
-                store_data[39:32]   =   dc_mask_ff[4] ? dc_data_ff[39:32] : data_hold[39:32];
-                store_data[47:40]   =   dc_mask_ff[5] ? dc_data_ff[47:40] : data_hold[47:40];
-                store_data[55:48]   =   dc_mask_ff[6] ? dc_data_ff[55:48] : data_hold[55:48];
-                store_data[63:56]   =   dc_mask_ff[7] ? dc_data_ff[63:56] : data_hold[63:56];
+                store_data[39:32]   =   dc_mask_ff[4] ? dc_wr_data_ff[39:32] : data_hold[39:32];
+                store_data[47:40]   =   dc_mask_ff[5] ? dc_wr_data_ff[47:40] : data_hold[47:40];
+                store_data[55:48]   =   dc_mask_ff[6] ? dc_wr_data_ff[55:48] : data_hold[55:48];
+                store_data[63:56]   =   dc_mask_ff[7] ? dc_wr_data_ff[63:56] : data_hold[63:56];
 
 
                 case (way_fill_q) 

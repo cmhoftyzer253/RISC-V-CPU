@@ -261,22 +261,22 @@ package cpu_consts;
 
     //exception causes
     typedef enum logic [4:0] {
-        INSTR_ADDR_MISALIGNED       =   5'd0;
-        INSTR_ACC_FAULT             =   5'd1;
-        ILLEGAL_INSTR               =   5'd2;
-        EBREAK                      =   5'd3;
-        LOAD_ADDR_MISALIGNED        =   5'd4;
-        LOAD_ACC_FAULT              =   5'd5;
-        STORE_AMO_ADDR_MISALIGNED   =   5'd6;
-        STORE_AMO_ACC_FAULT         =   5'd7;
-        M_ECALL                     =   5'd11;
+        INSTR_ADDR_MISALIGNED       =   5'd0,
+        INSTR_ACC_FAULT             =   5'd1,
+        ILLEGAL_INSTR               =   5'd2,
+        EBREAK_INSTR                =   5'd3,
+        LOAD_ADDR_MISALIGNED        =   5'd4,
+        LOAD_ACC_FAULT              =   5'd5,
+        STORE_AMO_ADDR_MISALIGNED   =   5'd6,
+        STORE_AMO_ACC_FAULT         =   5'd7,
+        M_ECALL_INSTR               =   5'd11
     } exc_cause_t;
 
     typedef enum logic [4:0] {
-        M_SW_IRQ      =   5'd3;
-        M_TIMER_IRQ   =   5'd7;
-        M_EXT_IRQ     =   5'd11;
-        M_LCOVF_IRQ   =   5'd13;
+        M_SW_IRQ      =   5'd3,
+        M_TIMER_IRQ   =   5'd7,
+        M_EXT_IRQ     =   5'd11,
+        M_LCOF_IRQ    =   5'd13
     } irq_cause_t;
 
 endpackage

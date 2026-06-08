@@ -1,4 +1,5 @@
 import cpu_consts::*;
+import cpu_defines::*;
 import cpu_utils::*;
 
 module core (
@@ -79,7 +80,7 @@ module core (
     logic                   if_fetch_ready;
 
     logic                   if_exc_valid;
-    logic [4:0]             if_exc_code;
+    exc_cause_t             if_exc_code;
 
     logic                   if_req;
     logic [63:0]            if_req_addr;
@@ -89,7 +90,7 @@ module core (
     logic                   ic_instr_valid;
     logic [31:0]            ic_instr;
     logic                   ic_exc_valid;
-    logic [4:0]             ic_exc_code;
+    exc_cause_t             ic_exc_code;
 
     logic                   id_valid_q;
     logic                   id_instr_valid;
@@ -97,7 +98,7 @@ module core (
     logic [63:0]            id_pc_q;
     logic [63:0]            id_pc_incr_q;
     logic                   id_exc_valid_q;
-    logic [4:0]             id_exc_code_q;
+    exc_cause_t             id_exc_code_q;
 
     logic [4:0]             id_rs1;
     logic [4:0]             id_rs2;
@@ -117,7 +118,7 @@ module core (
     logic [63:0]            id_imm;
 
     logic                   id_u_exc_valid;
-    logic [4:0]             id_u_exc_code;
+    exc_cause_t             id_u_exc_code;
 
     logic                   ctrl_pc_sel;
     alu_opr_a_sel_t         ctrl_opa_sel;
@@ -140,7 +141,7 @@ module core (
     logic                   ctrl_wfi;
     
     logic                   ctrl_exc_valid;
-    logic [4:0]             ctrl_exc_code;
+    exc_cause_t             ctrl_exc_code;
 
     logic                   wfi_active;
     logic                   wfi_stall;
@@ -167,7 +168,7 @@ module core (
     logic [63:0]            csr_mepc;
 
     logic                   csr_exc_valid;
-    logic [4:0]             csr_exc_code;
+    exc_cause_t             csr_exc_code;
 
     logic                   flush_decode;
 
@@ -196,17 +197,17 @@ module core (
     logic [2:0]             csr_exc_priority;
 
     logic [2:0]             id_exc_valid_vec;
-    logic [8:0]             id_exc_priority_vec;
-    logic [14:0]            id_exc_code_vec;
+    logic [2:0]             id_exc_priority_vec [3];
+    exc_cause_t             id_exc_code_vec [3];
 
     logic [2:0]             id_max_exc_priority;
 
     logic                   id_exc_valid;
-    logic [4:0]             id_exc_code;
+    exc_cause_t             id_exc_code;
 
     logic                   exu_valid_q;
     logic                   exu_exc_valid_q;
-    logic [4:0]             exu_exc_code_q;
+    exc_cause_t             exu_exc_code_q;
 
     logic                   exu_b_type_q;
     logic [2:0]             exu_funct3_q;
@@ -257,7 +258,7 @@ module core (
 
     logic                   mem_valid_q;
     logic                   mem_exc_valid_q;
-    logic [4:0]             mem_exc_code_q;
+    exc_cause_t             mem_exc_code_q;
 
     logic [63:0]            mem_rs2_data_q;
     logic [63:0]            mem_instr_imm_q;
@@ -295,10 +296,10 @@ module core (
     logic                   mem_rd_ready;
 
     logic                   dc_exc_valid;
-    logic [4:0]             dc_exc_code;
+    exc_cause_t             dc_exc_code;
 
     logic                   mem_u_exc_valid;
-    logic [4:0]             mem_u_exc_code;
+    exc_cause_t             mem_u_exc_code;
 
     logic                   mem_addr;
     logic                   clint_addr;
@@ -314,7 +315,7 @@ module core (
     logic                   clint_resp_valid;
 
     logic                   clint_exc_valid;
-    logic [4:0]             clint_exc_code;
+    exc_cause_t             clint_exc_code;
 
     logic                   clint_msip_irp;
     logic                   clint_mtip_irp;
@@ -325,7 +326,7 @@ module core (
     logic                   plic_resp_valid;
 
     logic                   plic_exc_valid;
-    logic [4:0]             plic_exc_code;
+    exc_cause_t             plic_exc_code;
 
     logic                   plic_eip;
 
@@ -337,10 +338,10 @@ module core (
     logic                   tc_flush;
 
     logic                   tc_exc_valid;
-    logic [4:0]             tc_exc_code;
+    exc_cause_t             tc_exc_code;
 
     logic                   mem_oob_exc_valid;
-    logic [4:0]             mem_oob_exc_code;
+    exc_cause_t             mem_oob_exc_code;
 
     logic [2:0]             oob_exc_priority;
     logic [2:0]             mem_u_exc_priority;
@@ -348,12 +349,12 @@ module core (
     logic [2:0]             plic_exc_priority;
 
     logic [3:0]             mem_exc_valid_vec;
-    logic [11:0]            mem_exc_priority_vec;
-    logic [19:0]            mem_exc_code_vec;
+    logic [3:0]             mem_exc_priority_vec [4];
+    exc_cause_t             mem_exc_code_vec [4];
     
     logic                   mem_exc_valid;
     logic [2:0]             mem_max_exc_priority;
-    logic [4:0]             mem_exc_code;
+    exc_cause_t             mem_exc_code;
 
     logic                   nxt_wb_valid;
 
@@ -589,7 +590,7 @@ module core (
         id_valid_q              =   id_instr_valid & ~flush_fetch;
 
         id_exc_valid_q          =   if_exc_valid & ~flush_fetch;
-        id_exc_code_q           =   if_exc_code & ~flush_fetch;
+        id_exc_code_q           =   if_exc_code;
 
         flush_decode            =   tc_flush | exu_branch_taken | exu_jump_instr;
 
@@ -598,8 +599,8 @@ module core (
         wfi_active              =   id_valid_q & ctrl_wfi;
         wfi_stall               =   wfi_active & ~wfi_end;
 
-        rd_exu_rs1_bypass_sel   =   (id_rs1 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == ALU_BYPASS) & id_valid_q & exu_valid_q;
-        rd_exu_rs2_bypass_sel   =   (id_rs2 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == ALU_BYPASS) & id_valid_q & exu_valid_q;
+        rd_exu_rs1_bypass_sel   =   (id_rs1 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == EXU_BYPASS) & id_valid_q & exu_valid_q;
+        rd_exu_rs2_bypass_sel   =   (id_rs2 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == EXU_BYPASS) & id_valid_q & exu_valid_q;
         rd_wb_rs1_bypass_sel    =   (id_rs1 == wb_rd_q)  & |wb_rd_q  & id_valid_q & wb_valid;
         rd_wb_rs2_bypass_sel    =   (id_rs2 == wb_rd_q)  & |wb_rd_q  & id_valid_q & wb_valid;
         
@@ -610,7 +611,7 @@ module core (
         if (rd_exu_rs1_bypass_sel) begin
             id_rs1_data         =   exu_res;
         end else if (rd_wb_rs1_bypass_sel) begin
-            id_rs1_data         =   (wb_bypass_avail_q == ALU_BYPASS) ? wb_alu_res_q : wb_load_data;
+            id_rs1_data         =   wb_wr_data;
         end else begin
             id_rs1_data         =   id_rs1_rd_data;
         end
@@ -618,7 +619,7 @@ module core (
         if (rd_exu_rs2_bypass_sel) begin
             id_rs2_data         =   exu_res;
         end else if (rd_wb_rs2_bypass_sel) begin
-            id_rs2_data         =   (wb_bypass_avail_q == ALU_BYPASS) ? wb_alu_res_q : wb_load_data;
+            id_rs2_data         =   wb_wr_data;
         end else begin
             id_rs2_data         =   id_rs2_rd_data;
         end
@@ -637,22 +638,22 @@ module core (
                                     (((id_rs1 == mem_rd_q) | (id_rs2 == mem_rd_q)) & (mem_bypass_avail_q == WB_BYPASS) & |mem_rd_q & id_valid_q & mem_valid_q);
         
 
-        id_u_exc_priority     =   exc_priority_encode(id_u_exc_code);
+        id_u_exc_priority       =   exc_priority_encode(id_u_exc_code);
         ctrl_exc_priority       =   exc_priority_encode(ctrl_exc_code);
         csr_exc_priority        =   exc_priority_encode(csr_exc_code);
 
         id_exc_valid_vec        =   {id_u_exc_valid, ctrl_exc_valid, csr_exc_valid};
-        id_exc_priority_vec     =   {id_u_exc_priority, ctrl_exc_priority, csr_exc_priority};
-        id_exc_code_vec         =   {id_u_exc_code, ctrl_exc_code, csr_exc_code};
+        id_exc_priority_vec     =   '{id_u_exc_priority, ctrl_exc_priority, csr_exc_priority};
+        id_exc_code_vec         =   '{id_u_exc_code, ctrl_exc_code, csr_exc_code};
 
         id_exc_valid            =   id_valid_q & |id_exc_valid_vec;
 
         id_max_exc_priority     =   3'd7;
         id_exc_code             =   5'd0;
         for (int i=0; i<3; i++) begin
-            if (id_exc_valid_vec[i] & (id_exc_priority_vec[i*3 +: 3] < id_max_exc_priority)) begin
-                id_max_exc_priority     =   id_exc_priority_vec[i*3 +: 3];
-                id_exc_code             =   id_exc_code_vec[i*5 +: 5];
+            if (id_exc_valid_vec[i] & (id_exc_priority_vec[i] < id_max_exc_priority)) begin
+                id_max_exc_priority     =   id_exc_priority_vec[i];
+                id_exc_code             =   id_exc_code_vec[i];
             end
         end
     end
@@ -685,10 +686,10 @@ module core (
             exu_opr_a_sel_q     <=  RS1_OPERAND_A;
             exu_opr_b_sel_q     <=  RS2_OPERAND_B;
             exu_alu_func_q      <=  OP_ADD;
-            exu_rd_src_q        <=  ALU_SRC;
+            exu_rd_src_q        <=  EXU_SRC;
             exu_data_req_q      <=  1'b0;
             exu_data_byte_q     <=  BYTE;
-            exu_bypass_avail_q  <=  ALU_BYPASS;
+            exu_bypass_avail_q  <=  EXU_BYPASS;
             exu_data_wr_q       <=  1'b0;
             exu_zero_extnd_q    <=  1'b0;
             exu_rd_wr_en_q      <=  1'b0;
@@ -812,10 +813,10 @@ module core (
             mem_csr_wr_en_q     <=  1'b0;
             mem_pc_q            <=  64'h0;
             mem_pc_incr_q       <=  64'h0;
-            mem_rd_src_q        <=  ALU_SRC;
+            mem_rd_src_q        <=  EXU_SRC;
             mem_data_req_q      <=  1'b0;
             mem_data_byte_q     <=  BYTE;
-            mem_bypass_avail_q  <=  ALU_BYPASS;
+            mem_bypass_avail_q  <=  EXU_BYPASS;
             mem_data_wr_q       <=  1'b0;
             mem_zero_extnd_q    <=  1'b0;
             mem_rf_wr_en_q      <=  1'b0;
@@ -998,9 +999,9 @@ module core (
     );
 
     always_comb begin
-        mem_addr                =   (mem_alu_res_q >= 64'h0000_0000_8000_0000) & (mem_alu_res_q <= 64'h0000_0000_9FFF_FFFF);
-        clint_addr              =   (mem_alu_res_q >= 64'h0000_0000_0200_0000) & (mem_alu_res_q <= 64'h0000_0000_0200_FFFF);
-        plic_addr               =   (mem_alu_res_q >= 64'h0000_0000_0C00_0000) & (mem_alu_res_q <= 64'h0000_0000_0FFF_FFFF);
+        mem_addr                =   (mem_alu_res_q >= DRAM_ADDR_LOW) & (mem_alu_res_q <= DRAM_ADDR_HIGH);
+        clint_addr              =   (mem_alu_res_q >= CLINT_ADDR_LOW) & (mem_alu_res_q <= CLINT_ADDR_HIGH);
+        plic_addr               =   (mem_alu_res_q >= PLIC_ADDR_LOW) & (mem_alu_res_q <= PLIC_ADDR_HIGH);
 
         mem_req                 =   mem_valid_q & ~mem_exc_valid_q & mem_data_req_q & mem_addr;
         clint_req               =   mem_valid_q & ~mem_exc_valid_q & mem_data_req_q & clint_addr;
@@ -1010,7 +1011,7 @@ module core (
                                     ({64{plic_req}} & plic_rd_data);
 
         mem_oob_exc_valid       =   mem_valid_q & mem_data_req_q & ~(mem_addr | clint_addr | plic_addr);
-        mem_oob_exc_code        =   mem_data_wr_q ? 5'd7 : 5'd5;
+        mem_oob_exc_code        =   mem_data_wr_q ? STORE_AMO_ACC_FAULT : LOAD_ACC_FAULT;
 
         oob_exc_priority        =   3'd6;
         mem_u_exc_priority      =   exc_priority_encode(mem_u_exc_code);
@@ -1018,17 +1019,17 @@ module core (
         plic_exc_priority       =   exc_priority_encode(plic_exc_code);
 
         mem_exc_valid_vec       =   {mem_oob_exc_valid, mem_u_exc_valid, clint_exc_valid, plic_exc_valid};
-        mem_exc_priority_vec    =   {oob_exc_priority, mem_u_exc_priority, clint_exc_priority, plic_exc_priority};
-        mem_exc_code_vec        =   {mem_oob_exc_code, mem_u_exc_code, clint_exc_code, plic_exc_code};
+        mem_exc_priority_vec    =   '{oob_exc_priority, mem_u_exc_priority, clint_exc_priority, plic_exc_priority};
+        mem_exc_code_vec        =   '{mem_oob_exc_code, mem_u_exc_code, clint_exc_code, plic_exc_code};
 
         mem_exc_valid           =   mem_valid_q & |mem_exc_valid_vec;
 
         mem_max_exc_priority    =   3'd7;
         mem_exc_code            =   5'd0;
         for (int i=0; i<4; i++) begin
-            if (mem_exc_valid_vec[i] & (mem_exc_priority_vec[i*3 +: 3] < mem_max_exc_priority)) begin
-                mem_max_exc_priority    =   mem_exc_priority_vec[i*3 +: 3];
-                mem_exc_code            =   mem_exc_code_vec[i*5 +: 5];
+            if (mem_exc_valid_vec[i] & (mem_exc_priority_vec[i] < mem_max_exc_priority)) begin
+                mem_max_exc_priority    =   mem_exc_priority_vec[i];
+                mem_exc_code            =   mem_exc_code_vec[i];
             end
         end
 
@@ -1057,10 +1058,10 @@ module core (
             wb_csr_instr_q      <=  1'b0;
             wb_csr_addr_q       <=  12'h0;
             wb_csr_wr_en_q      <=  1'b0;
-            wb_rd_src_q         <=  ALU_SRC;
+            wb_rd_src_q         <=  EXU_SRC;
             wb_pc_incr_q        <=  64'h0;
             wb_rf_wr_en_q       <=  1'b0;
-            wb_bypass_avail_q   <=  ALU_BYPASS;
+            wb_bypass_avail_q   <=  EXU_BYPASS;
             wb_mem_req_q        <=  1'b0;
         end else begin
             wb_alu_res_q        <=  mem_alu_res_q;
@@ -1091,7 +1092,7 @@ module core (
         wb_wr_data                  =   wb_data_mem_resp_valid ? wb_mem_rd_data : wb_mem_rd_data_q;
 
         case (wb_rd_src_q)
-            ALU_SRC: wb_wr_data     =   wb_alu_res_q;
+            EXU_SRC: wb_wr_data     =   wb_alu_res_q;
             MEM_SRC: wb_wr_data     =   wb_wr_data;
             IMM_SRC: wb_wr_data     =   wb_instr_imm_q;
             PC_SRC: wb_wr_data      =   wb_pc_incr_q;

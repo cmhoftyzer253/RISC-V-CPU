@@ -1,4 +1,5 @@
 import cpu_defines::*;
+import cpu_consts::*;
 
 module fetch (
     input logic             clk,
@@ -10,15 +11,15 @@ module fetch (
     input logic             flush_i,
 
     output logic            exc_valid_o,
-    output logic [4:0]      exc_code_o,
+    output exc_cause_t      exc_code_o,
 
     //instruction memory response interface
     input logic             instr_valid_i,
     input logic [31:0]      instr_i,
     output logic            instr_ready_o,
 
-    input logic [4:0]       exc_valid_i,
-    input logic             exc_code_i,
+    input logic             exc_valid_i,
+    input exc_cause_t       exc_code_i,
 
     //instruction memory request interface
     input logic             instr_mem_ready_i,
@@ -33,7 +34,7 @@ module fetch (
     output logic [31:0]     fetch_instr_o
 );
 
-    logic [4:0]             exc_code_ff;
+    exc_cause_t             exc_code_ff;
 
     logic                   BROM_instr_ff;
     logic [31:0]            BROM_hold_instr;
@@ -47,7 +48,7 @@ module fetch (
     logic                   unaligned_addr;
 
     logic                   exc_valid_fetch;
-    logic [4:0]             exc_code_fetch;
+    exc_cause_t             exc_code_fetch;
 
     logic                   BROM_en;
     logic [10:0]            BROM_addr;
@@ -65,7 +66,7 @@ module fetch (
 
     always_ff @(posedge clk or negedge resetn) begin
         if (~resetn) begin
-            exc_code_ff                     <= 5'b0;
+            exc_code_ff                     <= 5'd0;
 
             BROM_instr_ff                   <= 1'b0;
             BROM_hold_instr                 <= 32'h0;
@@ -105,7 +106,7 @@ module fetch (
         flush_o                     =   flush_i;
 
         exc_valid_o                 =   1'b0;
-        exc_code_o                  =   5'b0;
+        exc_code_o                  =   5'd0;
 
         instr_ready_o               =   1'b0;
         instr_mem_req_o             =   1'b0;
@@ -126,7 +127,7 @@ module fetch (
         unaligned_addr              =   1'b0;
 
         exc_valid_fetch             =   1'b0;
-        exc_code_fetch              =   5'b0;
+        exc_code_fetch              =   5'd0;
 
         case (state)
             S_FETCH_RUN: begin
@@ -140,7 +141,7 @@ module fetch (
                 unaligned_addr      =   |pc_i[1:0];
 
                 exc_valid_fetch     =   pc_ready_o & ~flush_i & (oob_addr | unaligned_addr);
-                exc_code_fetch      =   unaligned_addr ? 5'd0 : 5'd1;
+                exc_code_fetch      =   unaligned_addr ? INSTR_ADDR_MISALIGNED : INSTR_ACC_FAULT;
 
                 BROM_instr_valid    =   pc_ready_o & BROM_instr & ~exc_valid_fetch & ~flush_i;
 
@@ -182,4 +183,4 @@ module fetch (
         endcase
     end
 
-endmodule;
+endmodule

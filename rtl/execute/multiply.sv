@@ -8,10 +8,10 @@ module multiply (
     input logic [63:0]  opr_b_i,
 
     input logic         mul_valid_i,
-    input logic [3:0]   mul_func_i,
+    input md_op_t       mul_func_i,
     input logic         word_op_i,
     output logic        mul_ready_o,
-
+    
     input logic         flush_i,
 
     input logic         mul_res_ready_i,

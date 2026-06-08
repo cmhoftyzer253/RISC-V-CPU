@@ -38,25 +38,25 @@ module control (
     output logic                wfi_o,
 
     output logic                exc_valid_o,
-    output logic [4:0]          exc_code_o
+    output exc_cause_t          exc_code_o
 );
 
-    logic [3:0] r_type_code;
-    logic [3:0] i_type_code;
+    logic [3:0]     r_type_code;
+    logic [3:0]     i_type_code;
 
-    logic [6:0] instr_funct7;
+    logic [6:0]     instr_funct7;
 
-    control_t   r_type_controls;
-    control_t   i_type_controls;
-    control_t   s_type_controls;
-    control_t   b_type_controls;
-    control_t   u_type_controls;
-    control_t   j_type_controls;
-    control_t   system_type_controls;
-    control_t   controls;   
+    control_t       r_type_controls;
+    control_t       i_type_controls;
+    control_t       s_type_controls;
+    control_t       b_type_controls;
+    control_t       u_type_controls;
+    control_t       j_type_controls;
+    control_t       system_type_controls;
+    control_t       controls;   
 
-    logic       exc_valid_system;
-    logic [4:0] exc_code_system;   
+    logic           exc_valid_system;
+    exc_cause_t     exc_code_system;   
 
     assign instr_funct7             =   instr_funct12_i[11:5];
 
@@ -116,7 +116,7 @@ module control (
     always_comb begin
         i_type_controls             = '0;
         i_type_controls.rf_wr_en    = 1'b1;
-        i_type_controls.op2_sel     = IMM_OPERAND_B;
+        i_type_controls.opb_sel     = IMM_OPERAND_B;
         i_type_controls.alu_instr   = 1'b1;  
 
         //JALR 
@@ -175,7 +175,7 @@ module control (
         s_type_controls                 = '0;
         s_type_controls.data_req        = 1'b1;
         s_type_controls.data_wr         = 1'b1;
-        s_type_controls.op2_sel         = IMM_OPERAND_B;
+        s_type_controls.opb_sel         = IMM_OPERAND_B;
         s_type_controls.exu_func_sel    = OP_ADD;
         s_type_controls.alu_instr       = 1'b1;       
         case (instr_funct3_i)
@@ -199,12 +199,13 @@ module control (
     always_comb begin
         u_type_controls             = '0;
         u_type_controls.rf_wr_en    = 1'b1;
+        u_type_controls.alu_instr   = 1'b1;
         case (instr_opcode_i)
-            AUIPC   : {u_type_controls.opb_sel, 
-                        u_type_controls.opa_sel, 
-                        u_type_controls.exu_func_sel,
-                        u_type_controls.alu_instr}      = {IMM_OPERAND_B, PC_OPERAND_A, OP_ADD, 1'b1};
-            LUI     : u_type_controls.rd_src            = IMM_SRC;
+            AUIPC   : {u_type_controls.opa_sel,
+                        u_type_controls.opb_sel,  
+                        u_type_controls.exu_func_sel}   = {PC_OPERAND_A, IMM_OPERAND_B, OP_ADD};
+            LUI     : {u_type_controls.opa_sel,
+                        u_type_controls.exu_func_sel}   = {IMM_OPERAND_A, OP_PASS_A};
         endcase
     end
 
@@ -233,13 +234,13 @@ module control (
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
                      system_type_controls.alu_instr,
-                     system_type_controls.csr_rw} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_CSRRW, 1'b1, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.csr_rw} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_PASS_A, 1'b1, 1'b1, 1'b1, 1'b1};
             CSRRS: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel,
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
-                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_CSRRW, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_PASS_A, 1'b1, 1'b1, 1'b1};
             CSRRC: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel,
@@ -269,11 +270,11 @@ module control (
                 case (instr_funct12_i)
                     ECALL: begin
                         exc_valid_system            = 1'b1;
-                        exc_code_system             = 5'd11;                 
+                        exc_code_system             = M_ECALL_INSTR;                 
                     end
                     EBREAK: begin
                         exc_valid_system            = 1'b1;
-                        exc_code_system             = 5'd3;
+                        exc_code_system             = EBREAK_INSTR;
                     end
                     MRET: begin
                         system_type_controls.mret   = 1'b1;                 

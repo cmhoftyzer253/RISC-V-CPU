@@ -32,6 +32,6 @@ package multiply_tb_pkg;
     `include "multiply_command_sequence.svh"
     `include "multiply_ready_sequence.svh"
     `include "multiply_virtual_sequence.svh"
-    `include "multiply_base_test.svh"
+    `include "multiply_random_test.svh"
 
 endpackage : multiply_tb_pkg

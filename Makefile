@@ -11,10 +11,16 @@
 SHELL 		:= 	C:/PROGRA~1/Git/usr/bin/bash.exe
 .SHELLFLAGS := 	-c
 
-XVLOG 	?= 	xvlog 
-XELAB 	?= 	xelab 
-XSIM 	?= 	xsim 
-XSC 	?= 	xsc  
+ifeq ($(OS),Windows_NT)
+	EXT	:=	.bat
+else
+	EXT := 	
+endif
+
+XVLOG 	?= 	xvlog$(EXT)
+XELAB 	?= 	xelab$(EXT)
+XSIM 	?= 	xsim$(EXT) 
+XSC 	?= 	xsc$(EXT)
 
 MODULE 	?= 	alu
 

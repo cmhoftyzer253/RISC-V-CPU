@@ -1,5 +1,5 @@
 class multiply_random_test extends uvm_test;
-    `uvm_component_utils(multiply_base_test)
+    `uvm_component_utils(multiply_random_test)
 
     multiply_env env;
 

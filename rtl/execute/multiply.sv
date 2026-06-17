@@ -25,7 +25,7 @@ module multiply (
     logic [31:0]        b_low_q;
 
     logic               negate_res;
-    logic [3:0]         mul_func;
+    md_op_t             mul_func;
     logic               word_op;
 
     logic [63:0]        p0_q;
@@ -197,8 +197,8 @@ module multiply (
 
         case (state)
             S_MUL_IDLE: begin
-                a_signed_in     =   (mul_func_i == MUL | mul_func_i == MULH | mul_func_i == MULHSU);
-                b_signed_in     =   (mul_func_i == MUL | mul_func_i == MULH);
+                a_signed_in     =   (mul_func_i == OP_MUL | mul_func_i == OP_MULH | mul_func_i == OP_MULHSU);
+                b_signed_in     =   (mul_func_i == OP_MUL | mul_func_i == OP_MULH);
 
                 negate_res_in   =   (~word_op_i & ((opr_a_i[63] & a_signed_in) ^ (opr_b_i[63] & b_signed_in))) | 
                                     ( word_op_i &  (opr_a_i[31] ^ opr_b_i[31]));
@@ -254,10 +254,10 @@ module multiply (
                 final_sum       =   negate_res ? ~full_sum + 128'b1 : full_sum;
 
                 case (mul_func)
-                    MUL:     mul_res_o      =   final_sum[63:0];
-                    MULH,
-                    MULHU, 
-                    MULHSU:  mul_res_o      =   final_sum[127:64];
+                    OP_MUL:     mul_res_o   =   final_sum[63:0];
+                    OP_MULH,
+                    OP_MULHU, 
+                    OP_MULHSU:  mul_res_o   =   final_sum[127:64];
                     default: mul_res_o      =   64'h0;
                 endcase
                 

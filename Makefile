@@ -15,6 +15,11 @@ XSC 	?= xsc
 
 MODULE 	?= alu
 
+XSIM_OPTS := -testplusarg "{ UVM_TESTNAME=$(TEST) }" \
+             -testplusarg "{ UVM_VERBOSITY=UVM_HIGH }" \
+             -tclbatch ... \
+             -wdb ...
+
 RTL_DIR 	:= rtl 
 TB_DIR 		:= tb/$(MODULE)
 SIM_DIR 	:= sim/$(MODULE)

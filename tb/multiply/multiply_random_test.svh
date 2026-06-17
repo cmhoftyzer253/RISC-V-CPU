@@ -1,4 +1,4 @@
-class multiply_base_test extends uvm_test;
+class multiply_random_test extends uvm_test;
     `uvm_component_utils(multiply_base_test)
 
     multiply_env env;
@@ -23,4 +23,4 @@ class multiply_base_test extends uvm_test;
         phase.drop_objection(this);
     endtask : run_phase
 
-endclass : multiply_base_test
+endclass : multiply_random_test

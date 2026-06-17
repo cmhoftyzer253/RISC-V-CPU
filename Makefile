@@ -8,17 +8,14 @@
 # make waves_alu 						open alu wdb file in xsim
 # make clean
 
-XVLOG 	?= xvlog 
-XELAB 	?= xelab 
-XSIM 	?= xsim 
-XSC 	?= xsc  
+SHELL 	=	/usr/bin/bash
 
-MODULE 	?= alu
+XVLOG 	?= 	xvlog 
+XELAB 	?= 	xelab 
+XSIM 	?= 	xsim 
+XSC 	?= 	xsc  
 
-XSIM_OPTS := -testplusarg "{ UVM_TESTNAME=$(TEST) }" \
-             -testplusarg "{ UVM_VERBOSITY=UVM_HIGH }" \
-             -tclbatch ... \
-             -wdb ...
+MODULE 	?= 	alu
 
 RTL_DIR 	:= rtl 
 TB_DIR 		:= tb/$(MODULE)
@@ -40,6 +37,7 @@ endif
 XELAB_OPTS := 	-L uvm $(DPI_OPT) -debug typical
 
 XSIM_OPTS 	:= 	-testplusarg "{ UVM_TESTNAME=$(TEST) }" \
+				-testplusarg "{ UVM_VERBOSITY=UVM_HIGH}" \
                 -tclbatch $(CURDIR)/$(TCL_DIR)/xsim_run.tcl \
                 -wdb $(CURDIR)/$(SIM_DIR)/waves.wdb
 

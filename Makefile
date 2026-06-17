@@ -8,7 +8,7 @@
 # make waves_alu 						open alu wdb file in xsim
 # make clean
 
-SHELL 	=	bash
+SHELL 	:=	bash
 
 XVLOG 	?= 	xvlog 
 XELAB 	?= 	xelab 

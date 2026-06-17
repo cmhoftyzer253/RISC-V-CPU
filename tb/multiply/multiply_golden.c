@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <multiply_golden.h>
+#include "multiply_golden.h"
 
 void multiply_golden (
     uint64_t opr_a_i, uint64_t opr_b_i, uint32_t mul_func_i, uint32_t word_op_i,

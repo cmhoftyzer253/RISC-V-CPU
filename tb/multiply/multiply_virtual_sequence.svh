@@ -26,7 +26,7 @@ class multiply_virtual_sequence extends uvm_sequence;
             end
         join_any
 
-        disable_fork;
+        disable fork;
     endtask : body
 
 endclass : multiply_virtual_sequence

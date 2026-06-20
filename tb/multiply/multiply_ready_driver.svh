@@ -3,7 +3,7 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
 
     multiply_result_agent_config    agent_config;
     protected bit                   item_active;
-    protected int unsigned          pending_hanshakes;
+    protected int unsigned          pending_handshakes;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
@@ -22,7 +22,7 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
         forever begin
             wait (multiply_vif.resetn == 1'b1);
 
-            pending = 0;
+            pending_handshakes = 0;
 
             fork
                 track_handshakes();

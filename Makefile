@@ -66,7 +66,7 @@ test: $(DPI_DEP)
 		$(SNAPSHOT)
 
 $(DPI_LIB): $(DPI_SRC)
-	cd $(TB_DIR) && MSYSTEM= $(XSC) $(notdir $(DPI_SRC))
+	cd $(TB_DIR) && $(XSC) $(notdir $(DPI_SRC))
 
 waves:
 	$(XSIM) -gui $(SIM_DIR)/waves.wdb &

@@ -1,5 +1,6 @@
-log_wave -r / 
+log_wave -r /
+log_wave -r /multiply_tb_top/*
 
-run all
+run 7ms
 
 quit

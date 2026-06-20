@@ -74,7 +74,7 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
         forever begin
             @(multiply_vif.ready_cb);
             if (multiply_vif.ready_cb.mul_valid_i == 1'b1 && multiply_vif.ready_cb.mul_ready_o == 1'b1)
-                pending_hanshakes++;
+                pending_handshakes++;
         end
     endtask : track_handshakes
 

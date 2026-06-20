@@ -24,7 +24,7 @@ interface multiply_if (
         default output #1ns;
         output  opr_a_i;
         output  opr_b_i;
-        output  mul_valid_i;
+        inout  mul_valid_i;
         output  mul_func_i;
         output  word_op_i;
         output  flush_i;
@@ -37,7 +37,7 @@ interface multiply_if (
         default input #1step output #1ns;
         input   mul_valid_i;
         input   mul_ready_o;
-        output  mul_res_ready_i;
+        inout  mul_res_ready_i;
         input   mul_res_valid_o;
     endclocking : ready_cb
 

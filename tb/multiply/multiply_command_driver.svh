@@ -55,11 +55,11 @@ class multiply_command_driver extends uvm_driver #(multiply_command_transaction)
             multiply_vif.drv_cb.word_op_i       <=  cmd.word_op_i;
             multiply_vif.drv_cb.flush_i         <=  cmd.flush_i; 
 
-            @(multiply_vif.drv_cb);
-            while (!((multiply_vif.drv_cb.mul_res_valid_o == 1'b1 && multiply_vif.drv_cb.mul_res_ready_i == 1'b1) || multiply_vif.flush_i))
+            do begin
                 @(multiply_vif.drv_cb);
+            end while (!(multiply_vif.drv_cb.mul_valid_i == 1'b1 && multiply_vif.drv_cb.mul_ready_o == 1'b1));
 
-            multiply_vif.drv_cb.mul_valid_i        <=  1'b0;
+            multiply_vif.drv_cb.mul_valid_i     <=  1'b0;
             seq_item_port.item_done();
             cmd_active = 1'b0;
         end

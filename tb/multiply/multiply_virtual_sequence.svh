@@ -18,10 +18,15 @@ class multiply_virtual_sequence extends uvm_sequence;
         cmd_sequence.num_tests      =   num_tests;
 
         fork
-            ready_sequence.start(p_sequencer.ready_sequencer);
-        join_none
+            begin
+                ready_sequence.start(p_sequencer.ready_sequencer);
+            end
+            begin
+                cmd_sequence.start(p_sequencer.cmd_sequencer);
+            end
+        join_any
 
-        cmd_sequence.start(p_sequencer.cmd_sequencer);
+        disable_fork;
     endtask : body
 
 endclass : multiply_virtual_sequence

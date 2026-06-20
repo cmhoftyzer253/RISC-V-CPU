@@ -21,7 +21,7 @@ class multiply_virtual_sequence extends uvm_sequence;
         fork
             cmd_sequence.start(p_sequencer.cmd_sequencer);
             ready_sequence.start(p_sequencer.ready_sequencer);
-        join_none
+        join
 
     endtask : body
 

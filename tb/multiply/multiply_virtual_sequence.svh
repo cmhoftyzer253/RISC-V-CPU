@@ -11,7 +11,6 @@ class multiply_virtual_sequence extends uvm_sequence;
     task body();
         multiply_command_sequence   cmd_sequence;
         multiply_ready_sequence     ready_sequence;
-        process                     ready_proc;
 
         cmd_sequence = multiply_command_sequence::type_id::create("cmd_sequence");
         ready_sequence = multiply_ready_sequence::type_id::create("ready_sequence");
@@ -19,14 +18,10 @@ class multiply_virtual_sequence extends uvm_sequence;
         cmd_sequence.num_tests      =   num_tests;
 
         fork
-            ready_proc = process::self();
             ready_sequence.start(p_sequencer.ready_sequencer);
         join_none
 
         cmd_sequence.start(p_sequencer.cmd_sequencer);
-
-        if (ready_proc != null)
-            ready_proc.kill();
     endtask : body
 
 endclass : multiply_virtual_sequence

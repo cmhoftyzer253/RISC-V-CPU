@@ -3,6 +3,7 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
 
     multiply_result_agent_config    agent_config;
     protected bit                   item_active;
+    protected int unsigned          pending_hanshakes;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
@@ -21,7 +22,10 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
         forever begin
             wait (multiply_vif.resetn == 1'b1);
 
+            pending = 0;
+
             fork
+                track_handshakes();
                 drive_ready();
                 reset_watch();
             join_any
@@ -44,25 +48,35 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
             seq_item_port.get_next_item(item);
             item_active = 1'b1;
 
-            @(multiply_vif.ready_cb);
-            while (!(multiply_vif.ready_cb.mul_valid_i == 1'b1 && multiply_vif.ready_cb.mul_ready_o == 1'b1))
+            while (pending_handshakes == 0)
                 @(multiply_vif.ready_cb);
 
             repeat (item.ready_delay)
                 @(multiply_vif.ready_cb);
 
-            multiply_vif.ready_cb.mul_res_ready_i   <=  1'b1;
+            multiply_vif.ready_cb.mul_res_ready_i <= 1'b1;
 
             @(multiply_vif.ready_cb);
             while (!(multiply_vif.ready_cb.mul_res_valid_o == 1'b1))
                 @(multiply_vif.ready_cb);
 
-            multiply_vif.ready_cb.mul_res_ready_i   <=  1'b0;
+            multiply_vif.ready_cb.mul_res_ready_i <= 1'b0;
 
+            pending_handshakes--;
             seq_item_port.item_done();
             item_active = 1'b0;
         end
     endtask : drive_ready
+
+    protected task track_handshakes();
+        virtual multiply_if multiply_vif = agent_config.get_vif();
+
+        forever begin
+            @(multiply_vif.ready_cb);
+            if (multiply_vif.ready_cb.mul_valid_i == 1'b1 && multiply_vif.ready_cb.mul_ready_o == 1'b1)
+                pending_hanshakes++;
+        end
+    endtask : track_handshakes
 
     protected task reset_watch();
         virtual multiply_if multiply_vif = agent_config.get_vif();

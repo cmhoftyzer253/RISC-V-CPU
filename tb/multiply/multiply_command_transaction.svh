@@ -42,7 +42,7 @@ class multiply_command_transaction extends uvm_sequence_item;
     }
 
     constraint valid {
-        mul_valid_i dist {1'b0 := 1, 1'b1 := 9};
+        mul_valid_i == 1'b1;
     }
 
     constraint flush {

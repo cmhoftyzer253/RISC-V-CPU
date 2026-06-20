@@ -11,6 +11,8 @@
 SHELL 		:= 	C:/PROGRA~1/Git/usr/bin/bash.exe
 .SHELLFLAGS := 	-c
 
+export PATH := /c/Xilinx/Vivado/2024.2/bin:$(PATH)
+
 ifeq ($(OS),Windows_NT)
 	EXT	:=	.bat
 else

@@ -18,7 +18,7 @@ void divide_golden (
     int64_t opr_b64 = (int64_t)opr_b_i;
 
     switch (div_func_i) {
-        case OP_DIV:
+        case DIV:
             if (word_op_i) {
                 if (opr_b32 == 0) {
                     div_res32 = -1;
@@ -41,7 +41,7 @@ void divide_golden (
                 *div_res_o = (uint64_t)div_res64;
             }
             break;
-        case OP_DIVU:
+        case DIVU:
             if (word_op_i) {
                 if (opr_ub32 == 0) {
                     div_ures32 = UINT32_MAX;
@@ -60,7 +60,7 @@ void divide_golden (
                 *div_res_o = div_ures64;
             }
             break;
-        case OP_REM:
+        case REM:
             if (word_op_i) {
                 if (opr_b32 == 0) {
                     div_res32 = opr_a32;
@@ -83,7 +83,7 @@ void divide_golden (
                 *div_res_o = (uint64_t)div_res64;
             }
             break;
-        case OP_REMU:
+        case REMU:
             if (word_op_i) {
                 if (opr_ub32 == 0) {
                     div_ures32 = opr_ua32;

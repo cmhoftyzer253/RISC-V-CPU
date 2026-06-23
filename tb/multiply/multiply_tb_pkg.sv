@@ -43,6 +43,8 @@ package multiply_tb_pkg;
     `include "multiply_flush_agent.svh"
     `include "multiply_reset_agent.svh"
 
+    `include "multiply_scoreboard.svh"
+
     `include "multiply_virtual_sequencer.svh"
     `include "multiply_env.svh"
     

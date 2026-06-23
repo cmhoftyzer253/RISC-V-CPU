@@ -7,6 +7,7 @@ class multiply_env extends uvm_env;
     multiply_result_agent           multiply_result_agent_h;
     multiply_flush_agent            multiply_flush_agent_h;
     multiply_reset_agent            multiply_reset_agent_h;
+    multiply_scoreboard             multiply_scoreboard_h;
 
     multiply_command_agent_config   cmd_config;
     multiply_result_agent_config    res_config;
@@ -46,10 +47,16 @@ class multiply_env extends uvm_env;
         multiply_result_agent_h         =   multiply_result_agent::type_id::create("multiply_result_agent_h", this);
         multiply_flush_agent_h          =   multiply_flush_agent::type_id::create("multiply_flush_agent_h", this);
         multiply_reset_agent_h          =   multiply_reset_agent::type_id::create("multiply_reset_agent_h", this);
+        multiply_scoreboard_h           =   multiply_scoreboard::type_id::create("multiply_scoreboard_h", this);
     endfunction : build_phase
 
     function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
+
+        multiply_command_agent_h.multiply_command_monitor_h.ap.connect(multiply_scoreboard_h.cmd_fifo.analysis_export);
+        multiply_result_agent_h.multiply_result_monitor_h.ap.connect(multiply_scoreboard_h.res_fifo.analysis_export);
+        multiply_flush_agent_h.multiply_flush_monitor_h.ap.connect(multiply_scoreboard_h.flush_fifo.analysis_export);
+        multiply_reset_agent_h.multiply_reset_monitor_h.ap.connect(multiply_scoreboard_h.reset_fifo.analysis_export);
 
         multiply_virtual_sequencer_h.cmd_sequencer      =   multiply_command_agent_h.multiply_command_sequencer_h;
         multiply_virtual_sequencer_h.ready_sequencer    =   multiply_result_agent_h.multiply_ready_sequencer_h;

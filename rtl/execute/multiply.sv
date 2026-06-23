@@ -83,7 +83,7 @@ module multiply (
             b_low_q                     <= 32'h0;
 
             negate_res                  <= 1'b0;
-            mul_func                    <= OP_MUL;
+            mul_func                    <= MUL;
             word_op                     <= 1'b0;
 
             p0_q                        <= 64'h0;

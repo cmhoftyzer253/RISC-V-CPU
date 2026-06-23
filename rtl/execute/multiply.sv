@@ -8,7 +8,7 @@ module multiply (
     input logic [63:0]  opr_b_i,
 
     input logic         mul_valid_i,
-    input md_op_t       mul_func_i,
+    input r_type_m_t    mul_func_i,
     input logic         word_op_i,
     output logic        mul_ready_o,
     
@@ -25,7 +25,7 @@ module multiply (
     logic [31:0]        b_low_q;
 
     logic               negate_res;
-    md_op_t             mul_func;
+    r_type_m_t          mul_func;
     logic               word_op;
 
     logic [63:0]        p0_q;

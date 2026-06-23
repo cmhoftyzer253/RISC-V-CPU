@@ -36,7 +36,7 @@ class multiply_command_transaction extends uvm_sequence_item;
     }
 
     constraint mul_func_legal {
-        mul_func_i inside {OP_MUL, OP_MULH, OP_MULHSU, OP_MULHU};
+        mul_func_i inside {MUL, MULH, MULHSU, MULHU};
     }
 
     constraint valid {
@@ -44,7 +44,7 @@ class multiply_command_transaction extends uvm_sequence_item;
     }
 
     constraint word_op_legal {
-        word_op_i == 1'b1 -> mul_func_i == OP_MUL;
+        word_op_i == 1'b1 -> mul_func_i == MUL;
     }
 
     constraint valid_delay_dist {

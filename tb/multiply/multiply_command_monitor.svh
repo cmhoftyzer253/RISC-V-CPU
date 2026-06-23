@@ -28,7 +28,7 @@ class multiply_command_monitor extends uvm_component;
         forever begin
             @(multiply_vif.mon_cb);
 
-            if (multiply_vif.mon_cb.mul_valid_i && multiply_vif.mon_cb.mul_ready_o) begin
+            if (multiply_vif.mon_cb.mul_valid_i && multiply_vif.mon_cb.mul_ready_o && !multiply_vif.mon_cb.flush_i) begin
                 cmd = multiply_command_transaction::type_id::create("cmd");
 
                 cmd.opr_a_i         =   multiply_vif.mon_cb.opr_a_i;

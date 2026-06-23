@@ -10,7 +10,7 @@ interface multiply_if (
     logic [63:0]    opr_b_i;
 
     logic           mul_valid_i;
-    md_op_t         mul_func_i;
+    r_type_m_t      mul_func_i;
     logic           word_op_i;
     logic           mul_ready_o;
 
@@ -41,6 +41,17 @@ interface multiply_if (
         input   mul_res_valid_o;
     endclocking : ready_cb
 
+    clocking flush_cb @(posedge clk);
+        default output #1ns;
+        output  flush_i;
+    endclocking : flush_cb
+
+    clocking reset_cb @(posedge clk);
+        default output #1ns;
+        output  resetn;
+
+    endclocking : reset_cb
+
     clocking mon_cb @(posedge clk);
         default input #1step;
         input   opr_a_i;
@@ -59,10 +70,18 @@ interface multiply_if (
         input   mul_res_valid_o;
     endclocking : res_cb
 
+    clocking flush_mon_cb @(posedge clk);
+        default input #1step;
+        input   flush_i;
+    endclocking : flush_mon_cb
+
     modport DRV         (clocking drv_cb,       input clk);
     modport READY       (clocking ready_cb,     input clk);
+    modport FLUSH       (clocking flush_cb,     input clk);
+    modport reset       (clocking reset_cb,     input clk);
     modport MON         (clocking mon_cb,       input clk);
     modport RESULT_MON  (clocking res_cb,       input clk);
+    modport FLUSH_MON   (clocking flush_mon_cb, input clk);
 
     modport DUT (
         input   resetn,

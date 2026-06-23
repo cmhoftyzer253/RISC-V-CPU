@@ -2,7 +2,7 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
     `uvm_component_utils(multiply_ready_driver)
 
     multiply_result_agent_config    agent_config;
-    protected bit                   item_active;
+    protected bit                   ready_active;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
@@ -27,9 +27,9 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
             join_any
             disable fork;
 
-            if (item_active) begin
+            if (ready_active) begin
                 seq_item_port.item_done();
-                item_active = 1'b0;
+                ready_active = 1'b0;
             end
 
             multiply_vif.mul_res_ready_i <= 1'b0;
@@ -42,7 +42,7 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
 
         forever begin
             seq_item_port.get_next_item(ready);
-            item_active = 1'b1;
+            ready_active = 1'b1;
 
             repeat (ready.ready_delay)
                 @(multiply_vif.ready_cb);
@@ -56,7 +56,7 @@ class multiply_ready_driver extends uvm_driver #(multiply_ready_transaction);
             multiply_vif.ready_cb.mul_res_ready_i <= 1'b0;
 
             seq_item_port.item_done();
-            item_active = 1'b0;
+            ready_active = 1'b0;
         end
     endtask : drive_ready
 

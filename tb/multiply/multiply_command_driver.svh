@@ -33,7 +33,6 @@ class multiply_command_driver extends uvm_driver #(multiply_command_transaction)
             end
 
             multiply_vif.mul_valid_i     <=  1'b0;
-            multiply_vif.flush_i         <=  1'b0;
         end
     endtask : run_phase
 
@@ -52,8 +51,7 @@ class multiply_command_driver extends uvm_driver #(multiply_command_transaction)
             multiply_vif.drv_cb.opr_b_i         <=  cmd.opr_b_i;
             multiply_vif.drv_cb.mul_valid_i     <=  cmd.mul_valid_i;
             multiply_vif.drv_cb.mul_func_i      <=  cmd.mul_func_i;
-            multiply_vif.drv_cb.word_op_i       <=  cmd.word_op_i;
-            multiply_vif.drv_cb.flush_i         <=  cmd.flush_i; 
+            multiply_vif.drv_cb.word_op_i       <=  cmd.word_op_i; 
 
             do begin
                 @(multiply_vif.drv_cb);

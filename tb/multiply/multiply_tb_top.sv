@@ -29,12 +29,6 @@ module multiply_tb_top;
     end
 
     initial begin
-        multiply_vif.resetn = 1'b0;
-        repeat (5) @(posedge clk);
-        multiply_vif.resetn = 1'b1;
-    end
-
-    initial begin
         uvm_config_db #(virtual multiply_if)::set(null, "*", "multiply_vif", multiply_vif);
         run_test();
     end

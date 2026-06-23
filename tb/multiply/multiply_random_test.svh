@@ -15,7 +15,6 @@ class multiply_random_test extends uvm_test;
 
     task run_phase(uvm_phase phase);
         multiply_virtual_sequence virtual_sequence;
-
         virtual_sequence = multiply_virtual_sequence::type_id::create("virtual_sequence");
 
         phase.raise_objection(this);

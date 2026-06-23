@@ -36,7 +36,6 @@ class multiply_command_monitor extends uvm_component;
                 cmd.mul_valid_i     =   multiply_vif.mon_cb.mul_valid_i;
                 cmd.mul_func_i      =   multiply_vif.mon_cb.mul_func_i;
                 cmd.word_op_i       =   multiply_vif.mon_cb.word_op_i;
-                cmd.flush_i         =   multiply_vif.mon_cb.flush_i;
 
                 `uvm_info("COMMAND_MONITOR", cmd.convert2string(), UVM_HIGH)
                 ap.write(cmd);

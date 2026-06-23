@@ -65,7 +65,7 @@ class multiply_scoreboard extends uvm_scoreboard;
                         if (!predicted.compare(res))
                             `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
                         else 
-                            `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_HIGH)
+                            `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_LOW)
                     end
                 end
                 begin

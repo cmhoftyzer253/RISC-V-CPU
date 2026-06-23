@@ -34,6 +34,7 @@ TCL_DIR 	:= scripts
 TOP_MOD		:= $(MODULE)_tb_top
 SNAPSHOT	:= $(MODULE)_tb_top_snap
 TEST		?= $(MODULE)_random_test
+VERBOSITY	?= UVM_LOW
 
 DPI_SRC 	:= $(TB_DIR)/$(MODULE)_golden.c 
 DPI_LIB		:= $(TB_DIR)/xsim.dir/xsc/dpi.so 
@@ -46,7 +47,7 @@ endif
 XELAB_OPTS := 	-L uvm $(DPI_OPT) -debug typical
 
 XSIM_OPTS 	:= 	-testplusarg "{ UVM_TESTNAME=$(TEST) }" \
-				-testplusarg "{ UVM_VERBOSITY=UVM_HIGH}" \
+				-testplusarg "{ UVM_VERBOSITY=$(VERBOSITY)}" \
                 -tclbatch $(CURDIR)/$(TCL_DIR)/xsim_run.tcl \
                 -wdb $(CURDIR)/$(SIM_DIR)/waves.wdb
 

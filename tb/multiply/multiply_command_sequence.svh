@@ -1,7 +1,7 @@
 class multiply_command_sequence extends uvm_sequence #(multiply_command_transaction);
     `uvm_object_utils(multiply_command_sequence)
 
-    int unsigned num_tests = 50;
+    int unsigned num_tests = 1000;
 
     function new(string name = "multiply_command_sequence");
         super.new(name);

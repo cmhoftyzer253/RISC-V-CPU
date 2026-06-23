@@ -26,11 +26,11 @@ class multiply_scoreboard extends uvm_scoreboard;
         predicted = multiply_result_transaction::type_id::create("predicted");
 
         multiply_golden(
-            cmd.opr_a_i;
-            cmd.opr_b_i;
-            cmd.mul_func_i;
-            cmd.word_op_i;
-            mul_res_o;
+            cmd.opr_a_i,
+            cmd.opr_b_i,
+            cmd.mul_func_i,
+            cmd.word_op_i,
+            mul_res_o
         );
 
         predicted.mul_res_o         =   mul_res_o;

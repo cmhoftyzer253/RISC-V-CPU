@@ -16,8 +16,8 @@ class multiply_ready_transaction extends uvm_sequence_item;
     }
 
     function bit do_compare(uvm_object rhs, uvm_comparer comparer);
-        multiply_ready_transaction RHS;
-        bit same;
+        multiply_ready_transaction  RHS;
+        bit                         same;
 
         if (rhs == null)
             `uvm_fatal(get_type_name(), "Tried to do comparison to null pointer")
@@ -25,7 +25,7 @@ class multiply_ready_transaction extends uvm_sequence_item;
         if (!$cast(RHS, rhs))
             `uvm_fatal(get_type_name(), "Failed to cast in do_compare")
 
-        same    =   super.do_compare()                  &&
+        same    =   super.do_compare(rhs, comparer)     &&
                     (RHS.ready_delay == ready_delay);
 
         return same;

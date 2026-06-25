@@ -48,6 +48,9 @@ class rf_scoreboard extends uvm_scoreboard;
         rf_result_transaction   predicted;
         rf_reset_transaction    reset;
 
+        longint                 rs1_data_reset;
+        longint                 rs2_data_reset;
+
         forever begin
             fork
                 begin
@@ -77,7 +80,7 @@ class rf_scoreboard extends uvm_scoreboard;
 
             //pass resetn = 1'b0 to golden model to clear registers
             rf_golden(
-                0, 0, 0, 0, 0, 0, 0, 0
+                0, 0, 0, rs1_data_reset, rs2_data_reset, 0, 0, 0
             );
 
             cmd_fifo.flush();

@@ -1,4 +1,4 @@
-class rf_reset_transaction extends uvm_transaction;
+class rf_reset_transaction extends uvm_sequence_item;
     `uvm_object_utils(rf_reset_transaction)
 
     function new(string name = "rf_reset_transaction");
@@ -23,6 +23,8 @@ class rf_reset_transaction extends uvm_transaction;
         same    =   super.do_compare(rhs, comparer)         &&
                     (RHS.reset_delay == reset_delay)        &&
                     (RHS.reset_duration == reset_duration);
+
+        return same;
     endfunction : do_compare
 
     function void do_copy(uvm_object rhs);

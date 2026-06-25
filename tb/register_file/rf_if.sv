@@ -2,7 +2,7 @@ interface rf_if(
     input logic     clk
 );
 
-    logic           resetn,
+    logic           resetn;
 
     logic [4:0]     rs1_addr_i;
     logic [4:0]     rs2_addr_i;

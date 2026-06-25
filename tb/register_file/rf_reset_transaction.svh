@@ -25,7 +25,7 @@ class rf_reset_transaction extends uvm_transaction;
                     (RHS.reset_duration == reset_duration);
     endfunction : do_compare
 
-    function void do_copy(umv_object rhs);
+    function void do_copy(uvm_object rhs);
         rf_reset_transaction RHS;
 
         if (rhs == null)

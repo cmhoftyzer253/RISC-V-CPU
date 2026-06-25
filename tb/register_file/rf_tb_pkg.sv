@@ -6,20 +6,20 @@ package rf_tb_pkg;
 
     import "DPI-C" function void rf_golden(
         input int                   resetn, 
-        input int                   rs1_addr_i;
-        input int                   rs2_addr_i;
-        output longint unsigned     rs1_data_o;
-        output longint unsigned     rs2_data_o;
-        input int                   rd_addr_i;
-        input int                   wr_en_i;
-        input longint unsigned      wr_data_i; 
+        input int                   rs1_addr_i,
+        input int                   rs2_addr_i,
+        output longint unsigned     rs1_data_o,
+        output longint unsigned     rs2_data_o,
+        input int                   rd_addr_i,
+        input int                   wr_en_i,
+        input longint unsigned      wr_data_i
     );
 
     `include "rf_command_transaction.svh"
     `include "rf_result_transaction.svh"
     `include "rf_reset_transaction.svh"
 
-    typedef uvm_sequencer #(rf_command_transaction) rf_command_sequencer;
+    typedef uvm_sequencer #(rf_command_transaction) rf_sequencer;
     typedef uvm_sequencer #(rf_reset_transaction) rf_reset_sequencer;
 
     `include "rf_agent_config.svh"

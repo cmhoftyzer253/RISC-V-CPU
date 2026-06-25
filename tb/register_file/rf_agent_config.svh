@@ -1,5 +1,5 @@
 class rf_agent_config extends uvm_object;
-    `uvm_object_utils(rf_command_agent_config)
+    `uvm_object_utils(rf_agent_config)
 
     protected virtual rf_if             rf_vif;
     protected uvm_active_passive_enum   is_active;

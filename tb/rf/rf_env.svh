@@ -28,8 +28,8 @@ class rf_env extends uvm_env;
         rf_config.set_vif(rf_vif);
         reset_config.set_vif(rf_vif);
 
-        uvm_config_db #(rf_agent_config)::set(this, "rf_agent_config_h*", "rf_agent_config", rf_config);
-        uvm_config_db #(rf_reset_agent_config)::set(this, "rf_reset_agent_config_h*", "rf_reset_agent_config", reset_config);
+        uvm_config_db #(rf_agent_config)::set(this, "rf_agent_h*", "rf_agent_config", rf_config);
+        uvm_config_db #(rf_reset_agent_config)::set(this, "rf_reset_agent_h*", "rf_reset_agent_config", reset_config);
 
         rf_virtual_sequencer_h = rf_virtual_sequencer::type_id::create("rf_virtual_sequencer_h", this);
 
@@ -41,10 +41,9 @@ class rf_env extends uvm_env;
     function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
 
-        rf_agent_h.cmd_mon_ap.connect(rf_scoreboard_h.cmd_fifo.analysis_export);
-        rf_agent_h.res_ap.connect(rf_scoreboard_h.res_fifo.analysis_export);
-
-        rf_reset_agent_h.reset_mon_ap.connect(rf_scoreboard_h.reset_fifo.analysis_export);
+        rf_agent_h.cmd_mon_ap.connect(rf_scoreboard_h.cmd_export);
+        rf_agent_h.res_ap.connect(rf_scoreboard_h.res_export);
+        rf_reset_agent_h.reset_mon_ap.connect(rf_scoreboard_h.reset_export);
 
         rf_virtual_sequencer_h.cmd_sequencer    =   rf_agent_h.rf_sequencer_h;
         rf_virtual_sequencer_h.reset_sequencer  =   rf_reset_agent_h.rf_reset_sequencer_h;

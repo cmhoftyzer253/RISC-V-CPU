@@ -1,7 +1,7 @@
 class rf_command_monitor extends uvm_component;
     `uvm_component_utils(rf_command_monitor)
 
-    rf_command_agent_config                         agent_config;
+    rf_agent_config                                 agent_config;
     uvm_analysis_port #(rf_command_transaction)     ap;
 
     function new(string name, uvm_component parent);

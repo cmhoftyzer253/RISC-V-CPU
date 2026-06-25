@@ -1,6 +1,11 @@
 class rf_scoreboard extends uvm_scoreboard;
     `uvm_component_utils(rf_scoreboard)
 
+    uvm_analysis_export #(rf_command_transaction)       cmd_export;
+    uvm_analysis_export #(rf_result_transaction)        res_export;
+    uvm_analysis_export #(rf_reset_transaction)         reset_export;
+
+
     uvm_tlm_analysis_fifo #(rf_command_transaction)     cmd_fifo;
     uvm_tlm_analysis_fifo #(rf_result_transaction)      res_fifo;
     uvm_tlm_analysis_fifo #(rf_reset_transaction)       reset_fifo;
@@ -12,10 +17,22 @@ class rf_scoreboard extends uvm_scoreboard;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        cmd_fifo    =   new("cmd_fifo", this);
-        res_fifo    =   new("res_fifo", this);
-        reset_fifo  =   new("reset_fifo", this);
+        cmd_export      =   new("cmd_export", this);
+        res_export      =   new("res_export", this);
+        reset_export    =   new("reset_export", this);
+
+        cmd_fifo        =   new("cmd_fifo", this);
+        res_fifo        =   new("res_fifo", this);
+        reset_fifo      =   new("reset_fifo", this);
     endfunction : build_phase
+
+    function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
+
+        cmd_export.connect(cmd_fifo.analysis_export);
+        res_export.connect(res_fifo.analysis_export);
+        reset_export.connect(reset_fifo.analysis_export);
+    endfunction : connect_phase
 
     function rf_result_transaction predict_result(rf_command_transaction cmd);
         rf_result_transaction   predicted;

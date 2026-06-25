@@ -7,18 +7,18 @@ class rf_virtual_sequence extends uvm_sequence;
     endfunction : new
 
     task body();
-        rf_command_sequence cmd_sequence;
-        rf_reset_sequence reset_sequence;
+        rf_command_sequence     cmd_sequence;
+        rf_reset_sequence       reset_sequence;
 
         cmd_sequence = rf_command_sequence::type_id::create("cmd_sequence");
         reset_sequence = rf_reset_sequence::type_id::create("reset_sequence");
 
         fork
             begin
-                cmd_sequence.start(p_sequencer.cmd_sequence);
+                cmd_sequence.start(p_sequencer.cmd_sequencer);
             end
             begin
-                reset_sequence.start(p_sequencer.reset_sequence);
+                reset_sequence.start(p_sequencer.reset_sequencer);
             end
         join_any
         

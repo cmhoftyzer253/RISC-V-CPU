@@ -1,0 +1,6 @@
+#define BEQ 0x0
+#define BNE 0x1
+#define BLT 0x4
+#define BGE 0x5
+#define BLTU 0x6
+#define BGEU 0x7

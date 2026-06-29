@@ -2,17 +2,19 @@ class alu_agent_config extends uvm_object;
     `uvm_object_utils(alu_agent_config)
 
     protected virtual alu_if              alu_vif;
-    protected uvm_active_passive_enum     is_active = UVM_ACTIVE;
+    protected uvm_active_passive_enum     is_active;
 
     function new(string name = "alu_agent_config");
         super.new(name);
+
+        is_active = UVM_ACTIVE;
     endfunction : new
 
-    function void set_alu_vif(virtual alu_if vif);
+    function void set_vif(virtual alu_if vif);
         alu_vif = vif;
     endfunction : set_alu_vif
 
-    function virtual alu_if get_alu_vif();
+    function virtual alu_if get_vif();
         return alu_vif;
     endfunction : get_alu_vif
 

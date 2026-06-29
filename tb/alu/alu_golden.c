@@ -1,17 +1,20 @@
 #include <stdint.h>
+#include <alu_golden.h>
 
 void alu_golden (
     int64_t opr_a_i, int64_t opr_b_i, uint32_t alu_valid_i, uint32_t alu_func_i, uint32_t word_op_i, uint32_t flush_i,
     uint32_t *valid_res_o, int64_t *alu_res_o) {
 
-    uint64_t uopr_a = (uint64_t)opr_a_i;
-    uint64_t uopr_b = (uint64_t)opr_b_i;
+    uint64_t opr_ua = (uint64_t)opr_a_i;
+    uint64_t opr_ub = (uint64_t)opr_b_i;
+    int64_t opr_a = opr_a_i;
+    int64_t opr_b = opr_b_i;
 
     uint64_t res;
     uint32_t res32;
 
-    uint64_t shift64 = uopr_b & 0x3F;
-    uint32_t shift32 = uopr_b & 0x1F;
+    uint64_t shift64 = opr_ub & 0x3F;
+    uint32_t shift32 = opr_ub & 0x1F;
 
     // 0: Addition
     // 1: Subtraction
@@ -26,39 +29,39 @@ void alu_golden (
     // 10: CSSRW (Pass Through)
 
     switch (alu_func_i) {
-        case 0:
+        case OP_ADD:
             if (word_op_i) {
-                res32 = (uint32_t)uopr_a + (uint32_t)uopr_b;
+                res32 = (uint32_t)opr_ua + (uint32_t)opr_ub;
                 res = (uint64_t)(int64_t)(int32_t)res32;
             } else {
-                res = uopr_a + uopr_b;
+                res = opr_ua + opr_ub;
             }
             break;
-        case 1:
+        case OP_SUB:
             if (word_op_i) {  
-                res32 = (uint32_t)uopr_a - (uint32_t)uopr_b;
+                res32 = (uint32_t)opr_ua - (uint32_t)opr_ub;
                 res = (uint64_t)(int64_t)(int32_t)res32;
             } else {
-                res = uopr_a - uopr_b;
+                res = opr_ua - opr_ub;
             }
             break;
-        case 2:
+        case OP_SLL:
             if (word_op_i) {
-                res32 = (uint32_t)uopr_a << shift32;
+                res32 = (uint32_t)opr_ua << shift32;
                 res = (uint64_t)(int64_t)(int32_t)res32;
             } else {
-                res = uopr_a << shift64;
+                res = opr_ua << shift64;
             }
             break;
-        case 3:
+        case OP_SRL:
             if (word_op_i) {
-                res32 = (uint32_t)uopr_a >> shift32;
+                res32 = (uint32_t)opr_ua >> shift32;
                 res = (uint64_t)(int64_t)(int32_t)res32;
             } else {
-                res = uopr_a >> shift64;
+                res = opr_ua >> shift64;
             }
             break;
-        case 4:
+        case OP_SRA:
             if (word_op_i) {
                 res32 = (int32_t)opr_a_i >> shift32;
                 res = (uint64_t)(int64_t)(int32_t)res32;
@@ -66,12 +69,12 @@ void alu_golden (
                 res = (uint64_t)(opr_a_i >> shift64);
             }
             break;
-        case 5:  res = uopr_a | uopr_b; break;  
-        case 6:  res = uopr_a & uopr_b; break;
-        case 7:  res = uopr_a ^ uopr_b; break;
-        case 8:  res = (uopr_a < uopr_b) ? 1 : 0; break;
-        case 9:  res = (opr_a_i < opr_b_i) ? 1 : 0; break;
-        case 10: res = (uint64_t)opr_a_i; break;
+        case OP_OR: res = opr_ua | opr_ub; break;  
+        case OP_AND: res = opr_ua & opr_ub; break;
+        case OP_XOR: res = opr_ua ^ opr_ub; break;
+        case OP_SLTU: res = (opr_ua < opr_ub) ? 1 : 0; break;
+        case OP_SLT: res = (opr_a < opr_b) ? 1 : 0; break;
+        case OP_PASS_A: res = (uint64_t)opr_a; break;
         default: res = 0; break;
     }
 

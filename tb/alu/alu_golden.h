@@ -1,0 +1,11 @@
+#define OP_ADD 0x0
+#define OP_SUB 0x1
+#define OP_SLL 0x2
+#define OP_SRL 0x3
+#define OP_SRA 0x4
+#define OP_OR 0x5
+#define OP_AND 0x6
+#define OP_XOR 0x7
+#define OP_SLTU 0x8
+#define OP_SLT 0x9
+#define OP_PASS_A 0xA

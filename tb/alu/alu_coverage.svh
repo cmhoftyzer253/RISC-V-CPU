@@ -3,7 +3,6 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
 
     logic [63:0]    opr_a_i;
     logic [63:0]    opr_b_i;
-    logic           alu_valid_i;
     alu_op_t        alu_func_i;
     logic           word_op_i;
     logic           flush_i;
@@ -17,11 +16,6 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
         word_op : coverpoint word_op_i {
             bins double_word = {1'b0};
             bins single_word = {1'b1};
-        }
-
-        alu_valid : coverpoint alu_valid_i {
-            bins invalid_op = {1'b0};
-            bins valid_op = {1'b1};
         }
 
         flush : coverpoint flush_i {
@@ -64,7 +58,7 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
             bins all_ones = {64'hFFFF_FFFF_FFFF_FFFF};
 
             wildcard bins shift_31 = {{59{1'b?}}, 5'b11111};
-            wildcard bins shift_32 = {{58{1'b?}}, 6'b100000}; 
+            wildcard bins shift_32 = {{58{1'b?}}, 6'b100000};
             wildcard bins shift_63 = {{58{1'b?}}, 6'b111111};
             bins shift_mask = {[64'h40 : 64'hFFFF_FFFF_FFFF_FFFF]};
 
@@ -97,7 +91,7 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
 
             bins word_shift_31 = binsof(alu_funcs.shift_ops) && binsof(opr_b.shift_31) && binsof(word_op.single_word);
             bins word_shift_32 = binsof(alu_funcs.shift_ops) && binsof(opr_b.shift_32) && binsof(word_op.single_word);
-            
+
             bins double_word_shift_32 = binsof(alu_funcs.shift_ops) && binsof(opr_b.shift_32) && binsof(word_op.double_word);
             bins double_word_shift_63 = binsof(alu_funcs.shift_ops) && binsof(opr_b.shift_63) && binsof(word_op.double_word);
             bins double_word_shift_mask = binsof(alu_funcs.shift_ops) && binsof(opr_b.shift_mask) && binsof(word_op.double_word);
@@ -131,34 +125,29 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
             bins ops[] = {OP_ADD, OP_SUB, OP_SLL, OP_SRL, OP_SRA, OP_OR, OP_AND, OP_XOR, OP_SLTU, OP_SLT, OP_PASS_A};
         }
 
-        alu_valid : coverpoint alu_valid_i {
-            bins invalid_op = {1'b0};
-            bins valid_op = {1'b1};
-        }
-
         alu_flush : coverpoint flush_i {
             bins flush_inactive = {1'b0};
             bins flush_active = {1'b1};
         }
 
-        control_cross : cross all_alu_funcs, alu_valid, alu_flush;
+        control_cross : cross all_alu_funcs, alu_flush;
 
     endgroup
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
-        basic_cov = new();
-        boundary_cov = new();
-        control_cov = new();
+
+        basic_cov       =   new();
+        boundary_cov    =   new();
+        control_cov     =   new();
     endfunction : new
 
-    function void write(alu_command_transaction t);
-        opr_a_i         =   t.opr_a_i;
-        opr_b_i         =   t.opr_b_i;
-        alu_valid_i     =   t.alu_valid_i;
-        alu_func_i      =   t.alu_func_i;
-        word_op_i       =   t.word_op_i;
-        flush_i         =   t.flush_i;
+    function void write(alu_command_transaction cmd);
+        opr_a_i         =   cmd.opr_a_i;
+        opr_b_i         =   cmd.opr_b_i;
+        alu_func_i      =   cmd.alu_func_i;
+        word_op_i       =   cmd.word_op_i;
+        flush_i         =   cmd.flush_i;
 
         basic_cov.sample();
         boundary_cov.sample();

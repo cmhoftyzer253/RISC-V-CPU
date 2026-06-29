@@ -1,8 +1,11 @@
 class alu_scoreboard extends uvm_scoreboard;
     `uvm_component_utils(alu_scoreboard)
 
-    uvm_tlm_analysis_fifo #(alu_command_transaction) cmd_fifo;
-    uvm_tlm_analysis_fifo #(alu_result_transaction) res_fifo;
+    uvm_analysis_export #(alu_command_transaction)      cmd_export;
+    uvm_analysis_export #(alu_result_transaction)       res_export;
+
+    uvm_tlm_analysis_fifo #(alu_command_transaction)    cmd_fifo;
+    uvm_tlm_analysis_fifo #(alu_result_transaction)     res_fifo;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
@@ -11,9 +14,19 @@ class alu_scoreboard extends uvm_scoreboard;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        cmd_fifo = new("cmd_fifo", this);
-        res_fifo = new("res_fifo", this);
+        cmd_export  =   new("cmd_export", this);
+        res_export  =   new("res_export", this);
+
+        cmd_fifo    =   new("cmd_fifo", this);
+        res_fifo    =   new("res_fifo", this);
     endfunction : build_phase
+
+    function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
+
+        cmd_export.connect(cmd_fifo.analysis_export);
+        res_export.connect(res_fifo.analysis_export);
+    endfunction : connect_phase
 
     function alu_result_transaction predict_result(alu_command_transaction cmd);
         alu_result_transaction  predicted;
@@ -37,7 +50,6 @@ class alu_scoreboard extends uvm_scoreboard;
         predicted.alu_res_o     =   alu_res_o;
 
         return predicted;
-
     endfunction : predict_result
 
     task run_phase(uvm_phase phase);
@@ -46,21 +58,23 @@ class alu_scoreboard extends uvm_scoreboard;
         alu_result_transaction      res;
         alu_result_transaction      predicted;
 
-        cmd_fifo.get(cmd);
-        res_fifo.get(res);
+        forever begin
+            cmd_fifo.get(cmd);
+            res_fifo.get(res);
 
-        predicted = predict_result(cmd);
+            predicted = predict_result(cmd);
 
-        data_str = {
-            cmd.convert2string(),
-            " ==> Actual ", res.convert2string(),
-            "/Predicted ", predicted.convert2string()
-        };
+            data_str = {
+                cmd.convert2string(),
+                " ==> Actual ", res.convert2string(),
+                "/Predicted ", predicted.convert2string()
+            };
 
-        if (!predicted.compare(res))
-            `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
-        else
-            `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_HIGH)
+            if (!predicted.compare(res))
+                `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
+            else
+                `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_HIGH)
+        end
     endtask : run_phase
 
 endclass : alu_scoreboard

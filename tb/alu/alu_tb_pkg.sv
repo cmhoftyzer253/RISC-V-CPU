@@ -20,13 +20,13 @@ package alu_tb_pkg;
 
     typedef uvm_sequencer #(alu_command_transaction) alu_sequencer;
 
+    `include "alu_agent_config.svh"
     `include "alu_random_sequence.svh"
     `include "alu_driver.svh"
     `include "alu_command_monitor.svh"
     `include "alu_result_monitor.svh"
     `include "alu_coverage.svh"
     `include "alu_scoreboard.svh"
-    `include "alu_agent_config.svh"
     `include "alu_agent.svh"
     `include "alu_env.svh"
     `include "alu_base_test.svh"

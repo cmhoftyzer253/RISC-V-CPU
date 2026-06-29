@@ -26,7 +26,7 @@ class alu_result_transaction extends uvm_transaction;
     endfunction : do_compare
 
     function void do_copy(uvm_object rhs);
-        alu_result_transaction RHS;
+        alu_result_transaction  RHS;
 
         if (rhs == null)
             `uvm_fatal(get_type_name(), "Tried to copy null transaction")

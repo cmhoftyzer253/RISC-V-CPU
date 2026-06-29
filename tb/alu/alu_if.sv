@@ -34,15 +34,15 @@ interface alu_if (
         output flush_i;
     endclocking : drv_cb
 
-    clocking result_cb @(posedge clk);
+    clocking res_cb @(posedge clk);
         default input #1step;
         input valid_res_o;
         input alu_res_o;
-    endclocking : result_cb
+    endclocking : res_cb
 
     modport MON (clocking mon_cb, input clk);
     modport DRV (clocking drv_cb, input clk);
-    modport RESULT_MON (clocking result_cb, input clk);
+    modport RES (clocking res_cb, input clk);
 
     modport DUT (
         input   opr_a_i,

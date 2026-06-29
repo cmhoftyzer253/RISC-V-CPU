@@ -1,7 +1,7 @@
 class alu_command_monitor extends uvm_component;
     `uvm_component_utils(alu_command_monitor)
 
-    virtual alu_if                                  alu_vif;
+    alu_agent_config                                agent_config;
     uvm_analysis_port #(alu_command_transaction)    ap;
 
     function new(string name, uvm_component parent);
@@ -11,30 +11,34 @@ class alu_command_monitor extends uvm_component;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        if (!uvm_config_db #(virtual alu_if)::get(this, "", "alu_vif", alu_vif))
-            `uvm_fatal("COMMAND_MONITOR", "Failed to get alu_vif")
-
         ap = new("ap", this);
     endfunction : build_phase
 
+    function void end_of_elaboration_phase(uvm_phase phase);
+        super.end_of_elaboration_phase(phase);
+
+        if (agent_config == null)
+            `uvm_fatal("COMMAND_MONITOR", "agent_config is null")
+    endfunction : end_of_elaboration_phase
+
     task run_phase(uvm_phase phase);
-        alu_command_transaction instr;
+        alu_command_transaction cmd;
+        virtual alu_if alu_vif = agent_config.get_vif();
+
         forever begin
             @(alu_vif.mon_cb);
 
-            if (alu_vif.mon_cb.alu_valid_i) begin
-                instr = alu_command_transaction::type_id::create("instr");
+            cmd = alu_command_transaction::type_id::create("cmd");
 
-                instr.opr_a_i       =   alu_vif.mon_cb.opr_a_i;
-                instr.opr_b_i       =   alu_vif.mon_cb.opr_b_i;
-                instr.alu_valid_i   =   alu_vif.mon_cb.alu_valid_i;
-                instr.alu_func_i    =   alu_vif.mon_cb.alu_func_i;
-                instr.word_op_i     =   alu_vif.mon_cb.word_op_i;
-                instr.flush_i       =   alu_vif.mon_cb.flush_i;
+            cmd.opr_a_i       =   alu_vif.mon_cb.opr_a_i;
+            cmd.opr_b_i       =   alu_vif.mon_cb.opr_b_i;
+            cmd.alu_valid_i   =   alu_vif.mon_cb.alu_valid_i;
+            cmd.alu_func_i    =   alu_vif.mon_cb.alu_func_i;
+            cmd.word_op_i     =   alu_vif.mon_cb.word_op_i;
+            cmd.flush_i       =   alu_vif.mon_cb.flush_i;
 
-                `uvm_info("COMMAND_MONITOR", instr.convert2string(), UVM_HIGH)
-                ap.write(instr);
-            end
+            `uvm_info("COMMAND_MONITOR", cmd.convert2string(), UVM_HIGH)
+            ap.write(cmd);
         end
     endtask : run_phase
 

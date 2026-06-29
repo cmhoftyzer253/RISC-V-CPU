@@ -10,12 +10,12 @@ class alu_random_sequence extends uvm_sequence #(alu_command_transaction);
     task body();
         alu_command_transaction cmd;
 
-        repeat (num_tests) begin : random_loop
+        repeat (num_tests) begin
             cmd = alu_command_transaction::type_id::create("cmd");
             start_item(cmd);
             assert(cmd.randomize());
             finish_item(cmd);
-        end : random_loop
+        end
     endtask : body
 
 endclass : alu_random_sequence

@@ -156,6 +156,6 @@ class alu_coverage extends uvm_component;
         basic_cov.sample();
         boundary_cov.sample();
         control_cov.sample();
-    endfunction : write
+    endfunction : write_cmd
 
 endclass : alu_coverage

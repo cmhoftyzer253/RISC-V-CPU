@@ -74,10 +74,10 @@ class alu_scoreboard extends uvm_scoreboard;
                 "/Predicted ", predicted.convert2string()
             };
 
-            if (!predicted.compare(res))
+            if (!predicted.compare(res)) begin
                 num_failed++;
                 `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
-            else
+            end else
                 `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_HIGH)
         end
     endtask : run_phase

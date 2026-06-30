@@ -78,7 +78,7 @@ class alu_scoreboard extends uvm_scoreboard;
                 num_failed++;
                 `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
             else
-                `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_LOW)
+                `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_HIGH)
         end
     endtask : run_phase
 

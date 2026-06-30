@@ -61,6 +61,7 @@ class alu_scoreboard extends uvm_scoreboard;
         forever begin
             cmd_fifo.get(cmd);
             res_fifo.get(res);
+            `uvm_info("SCOREBOARD", "got cmd+res pair", UVM_LOW)
 
             predicted = predict_result(cmd);
 

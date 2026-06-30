@@ -27,6 +27,7 @@ class alu_command_monitor extends uvm_component;
 
         forever begin
             @(alu_vif.mon_cb);
+            `uvm_info("COMMAND_MONITOR" "sampled a cycle", UVM_LOW)
 
             cmd = alu_command_transaction::type_id::create("cmd");
 

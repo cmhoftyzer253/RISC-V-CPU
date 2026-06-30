@@ -7,6 +7,9 @@ class alu_scoreboard extends uvm_scoreboard;
     uvm_tlm_analysis_fifo #(alu_command_transaction)    cmd_fifo;
     uvm_tlm_analysis_fifo #(alu_result_transaction)     res_fifo;
 
+    int unsigned num_passed;
+    int unsigned num_failed;
+
     function new(string name, uvm_component parent);
         super.new(name, parent);
     endfunction : new
@@ -61,9 +64,9 @@ class alu_scoreboard extends uvm_scoreboard;
         forever begin
             cmd_fifo.get(cmd);
             res_fifo.get(res);
-            `uvm_info("SCOREBOARD", "got cmd+res pair", UVM_HIGH)
 
             predicted = predict_result(cmd);
+            num_checked++;
 
             data_str = {
                 cmd.convert2string(),
@@ -72,10 +75,18 @@ class alu_scoreboard extends uvm_scoreboard;
             };
 
             if (!predicted.compare(res))
+                num_failed++;
                 `uvm_error("SCOREBOARD", {"FAIL: ", data_str})
             else
                 `uvm_info("SCOREBOARD", {"PASS: ", data_str}, UVM_LOW)
         end
     endtask : run_phase
+
+    function void report_phase(uvm_phase phase);
+        super.report_phase(phase);
+
+        `uvm_info("SCOREBOARD", $sformatf("Checked %0d transactions with %0d mismatches", 
+            num_checked, num_failed), UVM_LOW)
+    endfunction : report_phase
 
 endclass : alu_scoreboard

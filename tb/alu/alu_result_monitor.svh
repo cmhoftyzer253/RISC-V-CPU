@@ -27,14 +27,12 @@ class alu_result_monitor extends uvm_component;
         
         forever begin
             @(alu_vif.res_cb);
-            `uvm_info("RESULT_MONITOR", "sampled a cycle", UVM_HIGH)
             
             res = alu_result_transaction::type_id::create("res");
 
             res.valid_res_o = alu_vif.res_cb.valid_res_o;
             res.alu_res_o = alu_vif.res_cb.alu_res_o;
 
-            `uvm_info("RESULT_MONITOR", res.convert2string(), UVM_HIGH)
             ap.write(res);
         end
     endtask : run_phase

@@ -27,7 +27,6 @@ class alu_command_monitor extends uvm_component;
 
         forever begin
             @(alu_vif.mon_cb);
-            `uvm_info("COMMAND_MONITOR", "sampled a cycle", UVM_HIGH)
 
             cmd = alu_command_transaction::type_id::create("cmd");
 
@@ -38,7 +37,6 @@ class alu_command_monitor extends uvm_component;
             cmd.word_op_i     =   alu_vif.mon_cb.word_op_i;
             cmd.flush_i       =   alu_vif.mon_cb.flush_i;
 
-            `uvm_info("COMMAND_MONITOR", cmd.convert2string(), UVM_HIGH)
             ap.write(cmd);
         end
     endtask : run_phase

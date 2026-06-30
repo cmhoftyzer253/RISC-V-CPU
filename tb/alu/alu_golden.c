@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <alu_golden.h>
+#include "alu_golden.h"
 
 void alu_golden (
     int64_t opr_a_i, int64_t opr_b_i, uint32_t alu_valid_i, uint32_t alu_func_i, uint32_t word_op_i, uint32_t flush_i,

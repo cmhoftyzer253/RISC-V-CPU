@@ -7,7 +7,7 @@ class alu_scoreboard extends uvm_scoreboard;
     uvm_tlm_analysis_fifo #(alu_command_transaction)    cmd_fifo;
     uvm_tlm_analysis_fifo #(alu_result_transaction)     res_fifo;
 
-    int unsigned num_passed;
+    int unsigned num_checked;
     int unsigned num_failed;
 
     function new(string name, uvm_component parent);

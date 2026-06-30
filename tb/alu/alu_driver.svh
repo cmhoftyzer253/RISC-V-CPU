@@ -21,7 +21,7 @@ class alu_driver extends uvm_driver #(alu_command_transaction);
         alu_vif.drv_cb.opr_a_i          <=  '0;
         alu_vif.drv_cb.opr_b_i          <=  '0;
         alu_vif.drv_cb.alu_valid_i      <=  '0;
-        alu_vif.drv_cb.alu_func_i       <=  '0;
+        alu_vif.drv_cb.alu_func_i       <=  OP_ADD;
         alu_vif.drv_cb.word_op_i        <=  '0;
         alu_vif.drv_cb.flush_i          <=  '0;
 

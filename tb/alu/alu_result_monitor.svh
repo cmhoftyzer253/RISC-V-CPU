@@ -27,7 +27,7 @@ class alu_result_monitor extends uvm_component;
         
         forever begin
             @(alu_vif.res_cb);
-            `uvm_info("RESULT_MONITOR", "sampled a cycle", UVM_LOW)
+            `uvm_info("RESULT_MONITOR", "sampled a cycle", UVM_HIGH)
             
             res = alu_result_transaction::type_id::create("res");
 

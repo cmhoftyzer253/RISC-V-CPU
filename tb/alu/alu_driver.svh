@@ -18,13 +18,6 @@ class alu_driver extends uvm_driver #(alu_command_transaction);
     task run_phase(uvm_phase phase);
         virtual alu_if alu_vif = agent_config.get_vif();
 
-        alu_vif.drv_cb.opr_a_i          <=  '0;
-        alu_vif.drv_cb.opr_b_i          <=  '0;
-        alu_vif.drv_cb.alu_valid_i      <=  '0;
-        alu_vif.drv_cb.alu_func_i       <=  OP_ADD;
-        alu_vif.drv_cb.word_op_i        <=  '0;
-        alu_vif.drv_cb.flush_i          <=  '0;
-
         forever begin
             seq_item_port.get_next_item(cmd);
             `uvm_info("DRIVER", "get_next_item from port completed", UVM_HIGH)

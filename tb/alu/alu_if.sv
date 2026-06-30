@@ -4,12 +4,12 @@ interface alu_if (
 
     import cpu_consts::*;
 
-    logic [63:0]    opr_a_i;
-    logic [63:0]    opr_b_i;
-    logic           alu_valid_i;
-    alu_op_t        alu_func_i;
-    logic           word_op_i;
-    logic           flush_i;
+    logic [63:0]    opr_a_i         =   '0;
+    logic [63:0]    opr_b_i         =   '0;
+    logic           alu_valid_i     =   '0;
+    alu_op_t        alu_func_i      =   OP_ADD;
+    logic           word_op_i       =   '0;
+    logic           flush_i         =   '0;
     
     logic           valid_res_o;
     logic [63:0]    alu_res_o;

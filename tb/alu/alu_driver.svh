@@ -20,6 +20,7 @@ class alu_driver extends uvm_driver #(alu_command_transaction);
 
         forever begin
             seq_item_port.get_next_item(cmd);
+            `uvm_info("DRIVER", "get_next_item from port completed", UVM_LOW)
 
             @(alu_vif.drv_cb);
             alu_vif.drv_cb.opr_a_i      <=  cmd.opr_a_i;

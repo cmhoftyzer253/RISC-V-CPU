@@ -12,6 +12,7 @@ class alu_random_test extends alu_base_test;
 
         random_sequence = alu_random_sequence::type_id::create("random_sequence");
         
+        `uvm_info("RANDOM_TEST", "about to raise objection and start sequence", UVM_LOW)
         phase.raise_objection(this);
         random_sequence.start(env.alu_agent_h.alu_sequencer_h);
         phase.drop_objection(this);

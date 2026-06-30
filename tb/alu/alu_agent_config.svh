@@ -12,11 +12,11 @@ class alu_agent_config extends uvm_object;
 
     function void set_vif(virtual alu_if vif);
         alu_vif = vif;
-    endfunction : set_alu_vif
+    endfunction : set_vif
 
     function virtual alu_if get_vif();
         return alu_vif;
-    endfunction : get_alu_vif
+    endfunction : get_vif
 
     function void set_is_active(uvm_active_passive_enum active_passive);
         is_active = active_passive;

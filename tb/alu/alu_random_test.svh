@@ -10,10 +10,10 @@ class alu_random_test extends alu_base_test;
         
         super.run_phase(phase);
 
-        alu_random_sequence = alu_random_sequence::type_id::create("alu_random_sequence");
+        random_sequence = alu_random_sequence::type_id::create("random_sequence");
         
         phase.raise_objection(this);
-        alu_random_sequence_h.start(random_sequence);
+        random_sequence.start(env.alu_agent_h.alu_sequencer_h);
         phase.drop_objection(this);
     endtask : run_phase
 

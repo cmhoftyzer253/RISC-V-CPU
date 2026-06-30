@@ -1,5 +1,5 @@
 log_wave -r /
-log_wave -r /multiply_tb_top/*
+log_wave -r /alu_tb_top/*
 
 run 7ms
 

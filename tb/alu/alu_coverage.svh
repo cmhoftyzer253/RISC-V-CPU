@@ -1,5 +1,9 @@
-class alu_coverage extends uvm_subscriber #(alu_command_transaction);
+`uvm_analysis_imp_decl(_cmd)
+
+class alu_coverage extends uvm_component;
     `uvm_component_utils(alu_coverage)
+
+    uvm_analysis_imp_cmd #(alu_command_transaction, alu_coverage) cmd_export;
 
     logic [63:0]    opr_a_i;
     logic [63:0]    opr_b_i;
@@ -142,7 +146,7 @@ class alu_coverage extends uvm_subscriber #(alu_command_transaction);
         control_cov     =   new();
     endfunction : new
 
-    function void write(alu_command_transaction t);
+    function void write_cmd(alu_command_transaction t);
         opr_a_i         =   t.opr_a_i;
         opr_b_i         =   t.opr_b_i;
         alu_func_i      =   t.alu_func_i;

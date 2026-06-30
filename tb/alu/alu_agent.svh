@@ -9,7 +9,7 @@ class alu_agent extends uvm_agent;
     alu_result_monitor      alu_result_monitor_h;
 
     uvm_analysis_port #(alu_command_transaction)    cmd_mon_ap;
-    uvm_analysis_port #(alu_result_transaction)     result_ap;
+    uvm_analysis_port #(alu_result_transaction)     res_ap;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
@@ -41,7 +41,7 @@ class alu_agent extends uvm_agent;
         alu_result_monitor_h.agent_config   =   alu_agent_config_h;
 
         cmd_mon_ap      =   new("cmd_mon_ap", this);
-        result_ap       =   new("result_ap", this);
+        res_ap          =   new("res_ap", this);
     endfunction : build_phase
 
     function void connect_phase(uvm_phase phase);
@@ -52,7 +52,7 @@ class alu_agent extends uvm_agent;
         end
 
         alu_command_monitor_h.ap.connect(cmd_mon_ap);
-        alu_result_monitor_h.ap.connect(result_ap);
+        alu_result_monitor_h.ap.connect(res_ap);
     endfunction : connect_phase
 
 endclass : alu_agent

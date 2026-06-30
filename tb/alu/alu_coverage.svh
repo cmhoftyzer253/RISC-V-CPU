@@ -141,6 +141,8 @@ class alu_coverage extends uvm_component;
     function new(string name, uvm_component parent);
         super.new(name, parent);
 
+        cmd_export      =   new("cmd_export", this);
+
         basic_cov       =   new();
         boundary_cov    =   new();
         control_cov     =   new();

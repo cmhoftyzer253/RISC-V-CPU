@@ -1,5 +1,5 @@
 #include <control_golden.h>
-#include <stdint.h>
+#include "stdint.h"
 
 void control_golden (
     uint32_t r_type_i, uint32_t i_type_i, uint32_t s_type_i, uint32_t b_type_i, uint32_t u_type_i, uint32_t j_type_i, uint32_t system_type_i,

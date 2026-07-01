@@ -1,3 +1,4 @@
+#include <stdint.h>
 
     #define R_TYPE_0 0x33
     #define R_TYPE_1 0x3B

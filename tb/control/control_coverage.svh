@@ -74,7 +74,6 @@ class control_coverage extends uvm_component;
         }
 
         r_type_0 : cross f3_r_type_0, f7_r_type_0 {
-            option.cross_auto_bin_max = 0;
 
             bins ADD = binsof(f3_r_type_0) intersect {3'b000} && binsof(f7_r_type_0) intersect {7'b000_0000};
             bins SUB = binsof(f3_r_type_0) intersect {3'b000} && binsof(f7_r_type_0) intersect {7'b010_0000};
@@ -108,7 +107,6 @@ class control_coverage extends uvm_component;
         }
 
         r_type_1 : cross f3_r_type_1, f7_r_type_1 {
-            option.cross_auto_bin_max = 0;
 
             bins ADDW = binsof(f3_r_type_1) intersect {3'b000} && binsof(f7_r_type_1) intersect {7'b000_0000};
             bins SUBW = binsof(f3_r_type_1) intersect {3'b000} && binsof(f7_r_type_1) intersect {7'b010_0000};
@@ -144,7 +142,6 @@ class control_coverage extends uvm_component;
         }
 
         i_type_1 : cross f3_i_type_1, f7_i_type_1 {
-            option.cross_auto_bin_max = 0;
 
             bins ADDI = binsof(f3_i_type_1) intersect {3'b000};
             bins SLTI = binsof(f3_i_type_1) intersect {3'b010};
@@ -173,7 +170,6 @@ class control_coverage extends uvm_component;
         }
 
         i_type_3 : cross f3_i_type_3, f7_i_type_3 {
-            option.cross_auto_bin_max = 0;
 
             bins ADDIW = binsof(f3_i_type_3) intersect {3'b000};
             bins SLLIW = binsof(f3_i_type_3) intersect {3'b001} && binsof(f7_i_type_3) intersect {7'b000_0000};
@@ -222,7 +218,6 @@ class control_coverage extends uvm_component;
         }
 
         system_type : cross f3_system_type, f12_system_type {
-            option.cross_auto_bin_max = 0;
 
             bins ECALL = binsof(f3_system_type) intersect {3'b000} && binsof(f12_system_type) intersect {12'h000};
             bins EBREAK = binsof(f3_system_type) intersect {3'b000} && binsof(f12_system_type) intersect {12'h001};

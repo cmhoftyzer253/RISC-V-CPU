@@ -225,7 +225,7 @@ module control (
     always_comb begin
         system_type_controls            =   '0;
         exc_valid_system                =   1'b0;
-        exc_code_system                 =   5'd0;
+        exc_code_system                 =   exc_cause_t'(5'd0);
         
         case (instr_funct3_i)
             CSRRW: {system_type_controls.opa_sel,
@@ -288,7 +288,7 @@ module control (
     end
 
     assign exc_valid_o  =   exc_valid_system & system_type_i;
-    assign exc_code_o   =   system_type_i ? exc_code_system : 5'd0;
+    assign exc_code_o   =   system_type_i ? exc_code_system : exc_cause_t'(5'd0);
 
     assign controls     =   r_type_i ? r_type_controls : 
                             i_type_i ? i_type_controls : 

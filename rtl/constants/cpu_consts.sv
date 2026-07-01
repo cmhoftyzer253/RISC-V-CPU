@@ -169,7 +169,7 @@ package cpu_consts;
         ECALL   =   12'h000,
         EBREAK  =   12'h001,
         MRET    =   12'h302,
-        WFI     =   12'h305
+        WFI     =   12'h105
     } system_type_t;
 
     // control signals

@@ -18,7 +18,7 @@ class control_command_transaction extends uvm_sequence_item;
     rand logic [6:0]    instr_opcode_i;
 
     constraint one_type {
-        $countones({r_type_i, i_type_i, s_type_i, b_type_i, u_type_i, j_type_i, system_type_i}) == 1;
+        (r_type_i + i_type_i + s_type_i + b_type_i + u_type_i + j_type_i + system_type_i) == 1;
     }
 
     constraint opcode_legal {

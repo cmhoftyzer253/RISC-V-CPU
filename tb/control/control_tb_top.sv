@@ -20,6 +20,8 @@ module control_tb_top;
         .instr_funct12_i    (control_vif.instr_funct12_i),
         .instr_opcode_i     (control_vif.instr_opcode_i),
         .pc_sel_o           (control_vif.pc_sel_o),
+        .opa_sel_o          (control_vif.opa_sel_o),
+        .opb_sel_o          (control_vif.opb_sel_o),
         .exu_func_sel_o     (control_vif.exu_func_sel_o),
         .rd_src_o           (control_vif.rd_src_o),
         .csr_en_o           (control_vif.csr_en_o),

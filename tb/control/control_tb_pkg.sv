@@ -4,36 +4,38 @@ package control_tb_pkg;
     import uvm_pkg::*;
     import cpu_consts::*;
 
-    //TODO
     import "DPI-C" function void control_golden(
-        input int unsigned r_type_i;
-        input int unsigned i_type_i;
-        input int unsigned s_type_i;
-        input int unsigned b_type_i;
-        input int unsigned u_type_i;
-        input int unsigned j_type_i;
-        input int unsigned system_type_i;
-        input int unsigned instr_funct3_i;
-        input int unsigned instr_funct12_i;
-        input int unsigned instr_opcode_i;
-        output int unsigned pc_sel_o;
-        output int unsigned opa_sel_o;
-        output int unsigned opb_sel_o;
-        output int unsigned exu_func_sel_o;
-        output int unsigned rd_src_o;
-        output int unsigned csr_en_o;
-        output int unsigned csr_rw_o;
-        output int unsigned data_wr_o;
-        output int unsigned zero_extnd_o;
-        output int unsigned rf_wr_en_o;
-        output int unsigned word_op_o;
-        output int unsigned alu_instr_o;
-        output int unsigned mul_instr_o;
-        output int unsigned div_instr_o;
-        output int unsigned mret_o;
-        output int unsigned wfi_o;
-        output int unsigned exc_valid_o;
-        output int unsigned exc_code_o;
+        input int unsigned r_type_i,
+        input int unsigned i_type_i,
+        input int unsigned s_type_i,
+        input int unsigned b_type_i,
+        input int unsigned u_type_i,
+        input int unsigned j_type_i,
+        input int unsigned system_type_i,
+        input int unsigned instr_funct3_i,
+        input int unsigned instr_funct12_i,
+        input int unsigned instr_opcode_i,
+        output int unsigned pc_sel_o,
+        output int unsigned opa_sel_o,
+        output int unsigned opb_sel_o,
+        output int unsigned exu_func_sel_o,
+        output int unsigned rd_src_o,
+        output int unsigned csr_en_o,
+        output int unsigned csr_rw_o,
+        output int unsigned data_req_o,
+        output int unsigned data_byte_o,
+        output int unsigned bypass_avail_o,
+        output int unsigned data_wr_o,
+        output int unsigned zero_extnd_o,
+        output int unsigned rf_wr_en_o,
+        output int unsigned word_op_o,
+        output int unsigned alu_instr_o,
+        output int unsigned mul_instr_o,
+        output int unsigned div_instr_o,
+        output int unsigned mret_o,
+        output int unsigned wfi_o,
+        output int unsigned exc_valid_o,
+        output int unsigned exc_code_o
     );
 
     `include "control_command_transaction.svh"

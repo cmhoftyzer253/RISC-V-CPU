@@ -320,9 +320,8 @@ void control_golden (
                     break;
             }
         } else {
-            ctrl.opb_sel = IMM_OPERAND_B;
+            ctrl.rd_src = CSR_SRC;
             ctrl.csr_en = 1;
-            ctrl.csr_rw = 1;
             ctrl.rf_wr_en = 1;
             ctrl.alu_instr = 1;
             ctrl.mret = 0;
@@ -331,27 +330,39 @@ void control_golden (
             switch (instr_funct3_i) {
                 case CSRRW:
                     ctrl.opa_sel = RS1_OPERAND_A;
+                    ctrl.opb_sel = RS1_OPERAND_B;
                     ctrl.exu_func_sel = OP_PASS_A;
+                    ctrl.csr_rw = 1;
                     break;
                 case CSRRS:
-                    ctrl.opa_sel = RS1_OPERAND_A;
+                    ctrl.opa_sel = CSR_OPERAND_A;
+                    ctrl.opb_sel = RS1_OPERAND_B;
                     ctrl.exu_func_sel = OP_OR;
+                    ctrl.csr_rw = 0;
                     break;
                 case CSRRC:
-                    ctrl.opa_sel = RS1_OPERAND_A;
+                    ctrl.opa_sel = CSR_OPERAND_A;
+                    ctrl.opb_sel = RS1_OPERAND_B;
                     ctrl.exu_func_sel = OP_AND;
+                    ctrl.csr_rw = 0;
                     break;
                 case CSRRWI:
                     ctrl.opa_sel = IMM_OPERAND_A;
+                    ctrl.opb_sel = IMM_OPERAND_B;
                     ctrl.exu_func_sel = OP_PASS_A;
+                    ctrl.csr_rw = 1;
                     break;
                 case CSRRSI:
-                    ctrl.opa_sel = IMM_OPERAND_A;
+                    ctrl.opa_sel = CSR_OPERAND_A;
+                    ctrl.opb_sel = IMM_OPERAND_B;
                     ctrl.exu_func_sel = OP_OR;
+                    ctrl.csr_rw = 0;
                     break;
                 case CSRRCI:
-                    ctrl.opa_sel = IMM_OPERAND_A;
+                    ctrl.opa_sel = CSR_OPERAND_A;
+                    ctrl.opb_sel = IMM_OPERAND_B;
                     ctrl.exu_func_sel = OP_AND;
+                    ctrl.csr_rw = 0;
                     break;
             }
         }

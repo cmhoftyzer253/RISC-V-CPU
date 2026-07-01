@@ -46,6 +46,7 @@
     #define MEM_SRC 0x1
     #define IMM_SRC 0x2
     #define PC_SRC 0x3
+    #define CSR_SRC 0x4
 
     #define RS1_OPERAND_A 0x0
     #define PC_OPERAND_A 0x1

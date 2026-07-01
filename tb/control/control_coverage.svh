@@ -260,6 +260,6 @@ class control_coverage extends uvm_component;
 
         basic_cov.sample();
         instr_cov.sample();
-    endfunction : write
+    endfunction : write_cmd
 
 endclass : control_coverage

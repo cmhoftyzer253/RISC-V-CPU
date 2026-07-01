@@ -145,8 +145,8 @@ class control_command_transaction extends uvm_sequence_item;
 
     function string convert2string();
         string s;
-        s = $sformatf("r_type_i: %b, i_type_i: %b, s_type_i: %b, b_type_i: %b, u_type_i: %b, j_type_i: %b, system_type_i: %b,
-            instr_funct3_i: %b, instr_funct12_i: %b, instr_opcode_i: %b", r_type_i, i_type_i, s_type_i, b_type_i, u_type_i, j_type_i,
+        s = $sformatf({"r_type_i: %b, i_type_i: %b, s_type_i: %b, b_type_i: %b, u_type_i: %b, j_type_i: %b, system_type_i: %b, ",
+            "instr_funct3_i: %b, instr_funct12_i: %b, instr_opcode_i: %b"}, r_type_i, i_type_i, s_type_i, b_type_i, u_type_i, j_type_i,
             system_type_i, instr_funct3_i, instr_funct12_i, instr_opcode_i);
 
         return s;

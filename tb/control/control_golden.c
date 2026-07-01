@@ -231,7 +231,7 @@ void control_golden (
         ctrl.zero_extnd = 0;
         ctrl.rf_wr_en = 0;
         ctrl.word_op = 0;
-        ctrl.alu_instr = 0;
+        ctrl.alu_instr = 1;
         ctrl.mul_instr = 0;
         ctrl.div_instr = 0;
         ctrl.mret = 0;

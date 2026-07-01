@@ -3,7 +3,7 @@
 class control_coverage extends uvm_component;
     `uvm_component_utils(control_coverage)
 
-    `uvm_analysis_imp_cmd #(control_command_transaction, control_coverage) cmd_export;
+    uvm_analysis_imp_cmd #(control_command_transaction, control_coverage) cmd_export;
 
     logic           r_type_i;
     logic           i_type_i;

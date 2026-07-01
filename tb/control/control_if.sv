@@ -40,7 +40,7 @@ interface control_if (
     logic [4:0]         exc_code_o;
 
     clocking mon_cb @(posedge clk);
-        default input #1step;
+        default input #1ns;
         input r_type_i;
         input i_type_i;
         input s_type_i;
@@ -54,7 +54,7 @@ interface control_if (
     endclocking : mon_cb
 
     clocking drv_cb @(posedge clk);
-        default output #1ns;
+        default output #0;
         output r_type_i;
         output i_type_i;
         output s_type_i;
@@ -68,7 +68,7 @@ interface control_if (
     endclocking : drv_cb
 
     clocking res_cb @(posedge clk);
-        default input #1step;
+        default input #1ns;
         input pc_sel_o;
         input opa_sel_o;
         input opb_sel_o;

@@ -118,7 +118,7 @@
         uint32_t opa_sel        : 2;
         uint32_t opb_sel        : 2;
         uint32_t exu_func_sel   : 4;
-        uint32_t rd_src         : 2;
+        uint32_t rd_src         : 3;
         uint32_t csr_en         : 1;
         uint32_t csr_rw         : 1;
         uint32_t data_req       : 1;

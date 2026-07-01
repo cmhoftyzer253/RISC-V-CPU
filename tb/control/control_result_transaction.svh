@@ -99,11 +99,11 @@ class control_result_transaction extends uvm_sequence_item;
 
     function string convert2string();
         string s;
-        s = $sformatf({"pc_sel_o: %b, opa_sel_o: %b, opb_sel_o: %b, exu_func_sel_o: %b, rd_src_o: %b, csr_en_o: %b, csr_rw_o: %b, ",
-            "data_req_o: %b, data_byte_o: %b, bypass_avail_o: %b, data_wr_o: %b, zero_extnd_o: %b, rf_wr_en_o: %b, word_op_o: %b, ",
+        s = $sformatf({"pc_sel_o: %b, opa_sel_o: %s, opb_sel_o: %s, exu_func_sel_o: %b, rd_src_o: %s, csr_en_o: %b, csr_rw_o: %b, ",
+            "data_req_o: %b, data_byte_o: %s, bypass_avail_o: %s, data_wr_o: %b, zero_extnd_o: %b, rf_wr_en_o: %b, word_op_o: %b, ",
             "alu_instr_o: %b, mul_instr_o: %b, div_instr_o: %b, mret_o: %b, wfi_o: %b, exc_valid_o: %b, exc_code_o: %b"},
             pc_sel_o, opa_sel_o.name(), opb_sel_o.name(), exu_func_sel_o, rd_src_o.name(), csr_en_o, csr_rw_o,
-            data_req_o, data_byte_o.name(), bypass_avail_o.name(), data_wr_o, zero_extnd_o, rf_wr_en_o, word_op_o, alu_instr_o, mul_instr_o, 
+            data_req_o, data_byte_o.name(), bypass_avail_o.name(), data_wr_o, zero_extnd_o, rf_wr_en_o, word_op_o, alu_instr_o, mul_instr_o,
             div_instr_o, mret_o, wfi_o, exc_valid_o, exc_code_o);
 
         return s;

@@ -13,7 +13,7 @@ module control_tb_top;
         .i_type_i           (control_vif.i_type_i),
         .s_type_i           (control_vif.s_type_i),
         .b_type_i           (control_vif.b_type_i),
-        .u_type_i           (control_vif.i_type_i),
+        .u_type_i           (control_vif.u_type_i),
         .j_type_i           (control_vif.j_type_i),
         .system_type_i      (control_vif.system_type_i),
         .instr_funct3_i     (control_vif.instr_funct3_i),

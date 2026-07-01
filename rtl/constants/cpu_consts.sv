@@ -57,11 +57,12 @@ package cpu_consts;
     } bypass_avail_t;
 
     // register file writeback data source
-    typedef enum logic[1:0] {
+    typedef enum logic[2:0] {
         EXU_SRC,
         MEM_SRC,
         IMM_SRC,
-        PC_SRC
+        PC_SRC,
+        CSR_SRC
     } rd_src_t;
 
     typedef enum logic [1:0] {

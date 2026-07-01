@@ -231,41 +231,47 @@ module control (
             CSRRW: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel, 
+                     system_type_controls.rd_src,
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
                      system_type_controls.alu_instr,
-                     system_type_controls.csr_rw} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_PASS_A, 1'b1, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.csr_rw} = {RS1_OPERAND_A, RS1_OPERAND_B, OP_PASS_A, CSR_SRC, 1'b1, 1'b1, 1'b1, 1'b1};
             CSRRS: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel,
+                     system_type_controls.rd_src,
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
-                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_PASS_A, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_OR, CSR_SRC, 1'b1, 1'b1, 1'b1};
             CSRRC: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel,
+                     system_type_controls.rd_src,
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
-                     system_type_controls.alu_instr} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_OR, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_AND, CSR_SRC, 1'b1, 1'b1, 1'b1};
             CSRRWI: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel,
+                     system_type_controls.rd_src,
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
                      system_type_controls.alu_instr,
-                     system_type_controls.csr_rw} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_OR, 1'b1, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.csr_rw} = {IMM_OPERAND_A, IMM_OPERAND_B, OP_PASS_A, CSR_SRC, 1'b1, 1'b1, 1'b1, 1'b1};
             CSRRSI: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel,
                      system_type_controls.exu_func_sel,
+                     system_type_controls.rd_src,
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
-                     system_type_controls.alu_instr} = {CSR_OPERAND_A, RS1_OPERAND_B, OP_AND, 1'b1, 1'b1, 1'b1};
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_OR, CSR_SRC, 1'b1, 1'b1, 1'b1};
             CSRRCI: {system_type_controls.opa_sel,
                      system_type_controls.opb_sel, 
                      system_type_controls.exu_func_sel,
+                     system_type_controls.rd_src,
                      system_type_controls.csr_en,
                      system_type_controls.rf_wr_en,
-                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_AND, 1'b1, 1'b1, 1'b1};  
+                     system_type_controls.alu_instr} = {CSR_OPERAND_A, IMM_OPERAND_B, OP_AND, CSR_SRC, 1'b1, 1'b1, 1'b1};  
             3'b000: begin
                 case (instr_funct12_i)
                     ECALL: begin

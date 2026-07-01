@@ -378,6 +378,7 @@ module core (
 
     logic [11:0]            wb_csr_addr_q;
     logic                   wb_csr_wr_en_q;
+    logic [63:0]            wb_csr_data_q;
     
     rd_src_t                wb_rd_src_q;
 
@@ -766,7 +767,7 @@ module core (
     branch_control u_branch_control (
         .opr_a_i            (exu_opr_a),
         .opr_b_i            (exu_opr_b),
-        .is_b_type_i        (exu_b_type_q),
+        .b_type_i        (exu_b_type_q),
         .instr_funct3_i     (exu_funct3_q),
         .branch_taken_o     (branch_taken)
     );
@@ -782,7 +783,7 @@ module core (
 
         case (exu_opr_b_sel_q)
             RS2_OPERAND_B: exu_opr_b    =   exu_rs2_data_q;
-            IMM_OPERAND_B: exu_opr_b    =   exu_instr_imm_q;
+            IMM_OPERAND_B: exu_opr_b    =   (exu_csr_instr_q & (exu_alu_func_q == OP_AND)) ? ~exu_instr_imm_q : exu_instr_imm_q;
             RS1_OPERAND_B: exu_opr_b    =   (exu_csr_instr_q & (exu_alu_func_q == OP_AND)) ? ~exu_rs1_data_q : exu_rs1_data_q;
         endcase
 
@@ -1070,6 +1071,7 @@ module core (
             wb_rd_q             <=  mem_rd_q;
             wb_csr_instr_q      <=  mem_csr_instr_q;
             wb_csr_addr_q       <=  mem_csr_addr_q;
+            wb_csr_data_q       <=  mem_csr_data_q;
             wb_csr_wr_en_q      <=  mem_csr_wr_en_q;
             wb_rd_src_q         <=  mem_rd_src_q;
             wb_pc_incr_q        <=  mem_pc_incr_q;
@@ -1096,6 +1098,7 @@ module core (
             MEM_SRC: wb_wr_data     =   wb_wr_data;
             IMM_SRC: wb_wr_data     =   wb_instr_imm_q;
             PC_SRC: wb_wr_data      =   wb_pc_incr_q;
+            CSR_SRC: wb_wr_data     =   wb_csr_data_q;
             default: wb_wr_data     =   64'h0;
         endcase
     end

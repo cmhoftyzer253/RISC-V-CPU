@@ -110,7 +110,7 @@
     #define ECALL 0x0
     #define EBREAK 0x1
     #define MRET 0x302
-    #define WFI 0x305
+    #define WFI 0x105
 
     typedef struct {
         uint32_t pc_sel         : 1;

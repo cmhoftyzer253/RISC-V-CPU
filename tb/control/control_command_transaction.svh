@@ -108,6 +108,12 @@ class control_command_transaction extends uvm_sequence_item;
             instr_funct12_i inside {12'h000, 12'h001, 12'h302, 12'h105};
     }
 
+    constraint funct12_defined {
+        solve instr_type before instr_funct12_i;
+        if (!r_type_i && !(system_type_i && instr_funct3_i == 3'd0))
+            instr_funct12_i inside {[0:4095]};
+    }
+
     function bit do_compare(uvm_object rhs, uvm_comparer comparer);
         control_command_transaction     RHS;
         bit                             same;

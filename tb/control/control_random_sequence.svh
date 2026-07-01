@@ -13,8 +13,7 @@ class control_random_sequence extends uvm_sequence #(control_command_transaction
         repeat (num_tests) begin
             cmd = control_command_transaction::type_id::create("cmd");
             start_item(cmd);
-            if (!cmd.randomize())
-                `uvm_fatal("RANDOM_SEQUENCE", "Randomize failed")
+            assert(cmd.randomize())
             finish_item(cmd);
         end
     endtask : body

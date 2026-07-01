@@ -36,6 +36,9 @@ class control_driver extends uvm_driver #(control_command_transaction);
             control_vif.drv_cb.instr_opcode_i   <=  cmd.instr_opcode_i;
 
             seq_item_port.item_done();
+
+            @(control_vif.drv_cb);
+            `uvm_info("DRV", $sformatf("readback r=%b u=%b", control_vif.r_type_i, control_vif.u_type_i), UVM_LOW)
         end
     endtask : run_phase
 

@@ -37,6 +37,7 @@ class control_result_monitor extends uvm_component;
             res.rd_src_o        =   control_vif.res_cb.rd_src_o;
             res.csr_en_o        =   control_vif.res_cb.csr_en_o;
             res.csr_rw_o        =   control_vif.res_cb.csr_rw_o;
+            res.data_req_o      =   control_vif.res_cb.data_req_o;
             res.data_byte_o     =   control_vif.res_cb.data_byte_o;
             res.bypass_avail_o  =   control_vif.res_cb.bypass_avail_o;
             res.data_wr_o       =   control_vif.res_cb.data_wr_o;

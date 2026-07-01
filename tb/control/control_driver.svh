@@ -21,8 +21,6 @@ class control_driver extends uvm_driver #(control_command_transaction);
         forever begin
             seq_item_port.get_next_item(cmd);
 
-            `uvm_info("DRV", $sformatf("cmd.r=%b cmd.u=%b", cmd.r_type_i, cmd.u_type_i), UVM_LOW)
-
             @(control_vif.drv_cb);
             control_vif.drv_cb.r_type_i         <=  cmd.r_type_i;
             control_vif.drv_cb.i_type_i         <=  cmd.i_type_i;
@@ -38,7 +36,6 @@ class control_driver extends uvm_driver #(control_command_transaction);
             seq_item_port.item_done();
 
             @(control_vif.drv_cb);
-            `uvm_info("DRV", $sformatf("readback r=%b u=%b", control_vif.r_type_i, control_vif.u_type_i), UVM_LOW)
         end
     endtask : run_phase
 

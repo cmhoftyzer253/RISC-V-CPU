@@ -5,6 +5,12 @@ class control_command_transaction extends uvm_sequence_item;
         super.new(name);
     endfunction : new
 
+    typedef enum {
+        R_TYPE, I_TYPE, S_TYPE, B_TYPE, U_TYPE, J_TYPE, SYSTEM_TYPE
+    } instr_type_e;
+
+    rand instr_type_e   instr_type;
+
     rand logic          r_type_i;
     rand logic          i_type_i;
     rand logic          s_type_i;
@@ -18,7 +24,13 @@ class control_command_transaction extends uvm_sequence_item;
     rand logic [6:0]    instr_opcode_i;
 
     constraint one_type {
-        (r_type_i + i_type_i + s_type_i + b_type_i + u_type_i + j_type_i + system_type_i) == 1;
+        r_type_i        ==  (instr_type == R_TYPE);
+        i_type_i        ==  (instr_type == I_TYPE);
+        s_type_i        ==  (instr_type == S_TYPE);
+        b_type_i        ==  (instr_type == B_TYPE);
+        u_type_i        ==  (instr_type == U_TYPE);
+        j_type_i        ==  (instr_type == J_TYPE);
+        system_type_i   ==  (instr_type == SYSTEM_TYPE);
     }
 
     constraint opcode_legal {

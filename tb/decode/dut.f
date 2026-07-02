@@ -1,2 +1,2 @@
 ../../rtl/constants/cpu_consts.sv
-../../rtl/execute/decode.sv
+../../rtl/decode/decode.sv

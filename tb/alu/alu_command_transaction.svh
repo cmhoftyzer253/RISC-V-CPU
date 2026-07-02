@@ -68,7 +68,8 @@ class alu_command_transaction extends uvm_sequence_item;
     endfunction : do_compare
         
     function void do_copy(uvm_object rhs);
-        alu_command_transaction RHS;
+        alu_command_transaction     RHS;
+
         if (rhs == null)
             `uvm_fatal(get_type_name(), "Tried to copy null transaction")
         

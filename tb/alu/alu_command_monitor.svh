@@ -37,6 +37,7 @@ class alu_command_monitor extends uvm_component;
             cmd.word_op_i     =   alu_vif.mon_cb.word_op_i;
             cmd.flush_i       =   alu_vif.mon_cb.flush_i;
 
+            `uvm_info("COMMAND_MONITOR", cmd.convert2string(), UVM_HIGH)
             ap.write(cmd);
         end
     endtask : run_phase

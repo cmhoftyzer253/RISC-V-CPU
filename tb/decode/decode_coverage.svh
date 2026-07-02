@@ -31,10 +31,10 @@ class decode_coverage extends uvm_component;
         funct3 : coverpoint instr_i[14:12] iff (instr_i[6:0] inside {R_TYPE_0, R_TYPE_1});
 
         funct7 : coverpoint instr_i[31:25] iff (instr_i[6:0] inside {R_TYPE_0, R_TYPE_1}) {
-            bins zero           =   {7'b000_0000};
-            bins bit5           =   {7'b010_0000};
-            bins m_instr        =   {7'b000_0001};
-            bins rest           =   default;
+            bins zero    = {7'b000_0000};
+            bins bit5    = {7'b010_0000};
+            bins m_instr = {7'b000_0001};
+            bins rest    = {[0:127]} with (!(item inside {7'b000_0000, 7'b010_0000, 7'b000_0001}));
         }
 
         legal_r_type : cross opcode, funct3, funct7 {
@@ -78,26 +78,26 @@ class decode_coverage extends uvm_component;
         }
 
         exc_r_type : cross opcode, funct3, funct7 {
-            bins r_type_0_funct7_exc        =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.bit5) && !binsof(funct7.m_instr);
-            bins r_type_1_funct7_exc        =   binsof(opcode.op_32b) && !binsof(funct7.zero) && !binsof(funct7.bit5) && !binsof(funct7.m_instr);
+            bins r_type_0_funct7_exc     = binsof(opcode.op_64b) && binsof(funct7.rest);
+            bins r_type_1_funct7_exc     = binsof(opcode.op_32b) && binsof(funct7.rest);
 
-            bins ADD_SUB_MUL_funct7_exc     =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.bit5) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b000};
-            bins SLL_MULH_exc               =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b001};
-            bins SLT_MULHSU_exc             =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b010};
-            bins SLTU_MULHU_exc             =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b011};
-            bins XOR_DIV_exc                =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b100}; 
-            bins SRL_SRA_DIVU_exc           =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.bit5) && !binsof(funct7.m_instr) &&  binsof(funct3) intersect {3'b101};
-            bins OR_REM_exc                 =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b110};
-            bins AND_REMU_exc               =   binsof(opcode.op_64b) && !binsof(funct7.zero) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b111};
+            bins ADD_SUB_MUL_funct7_exc  = binsof(opcode.op_64b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b000};
+            bins SLL_MULH_exc            = binsof(opcode.op_64b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b001};
+            bins SLT_MULHSU_exc          = binsof(opcode.op_64b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b010};
+            bins SLTU_MULHU_exc          = binsof(opcode.op_64b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b011};
+            bins XOR_DIV_exc             = binsof(opcode.op_64b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b100};
+            bins SRL_SRA_DIVU_exc        = binsof(opcode.op_64b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b101};
+            bins OR_REM_exc              = binsof(opcode.op_64b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b110};
+            bins AND_REMU_exc            = binsof(opcode.op_64b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b111};
 
-            bins ADDW_SUBW_MULW_exc         =   binsof(opcode.op_32b) && !binsof(funct7.zero) && !binsof(funct7.bit5) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b000};
-            bins SLLW_exc                   =   binsof(opcode.op_32b) && !binsof(funct7.zero) && binsof(funct3) intersect {3'b001};
-            bins DIVW_exc                   =   binsof(opcode.op_32b) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b100};
-            bins SRLW_SRAW_DIVUW_exc        =   binsof(opcode.op_32b) && !binsof(funct7.zero) && !binsof(funct7.bit5) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b101};
-            bins REMW_exc                   =   binsof(opcode.op_32b) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b110};
-            bins REMUW_exc                  =   binsof(opcode.op_32b) && !binsof(funct7.m_instr) && binsof(funct3) intersect {3'b111};
+            bins ADDW_SUBW_MULW_exc      = binsof(opcode.op_32b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b000};
+            bins SLLW_exc                = binsof(opcode.op_32b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b001};
+            bins DIVW_exc                = binsof(opcode.op_32b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b100};
+            bins SRLW_SRAW_DIVUW_exc     = binsof(opcode.op_32b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b101};
+            bins REMW_exc                = binsof(opcode.op_32b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b110};
+            bins REMUW_exc               = binsof(opcode.op_32b) && binsof(funct7.rest) && binsof(funct3) intersect {3'b111};
 
-            bins R_TYPE_1_funct3_exc        =   binsof(opcode.op_32b) && binsof(funct3) intersect {3'b010, 3'b011};
+            bins R_TYPE_1_funct3_exc     = binsof(opcode.op_32b) && binsof(funct3) intersect {3'b010, 3'b011};
         }
     endgroup
 
@@ -112,17 +112,16 @@ class decode_coverage extends uvm_component;
         funct3 : coverpoint instr_i[14:12] iff (instr_i[6:0] inside {I_TYPE_0, I_TYPE_1, I_TYPE_2, I_TYPE_3});
 
         funct7 : coverpoint instr_i[31:25] iff (instr_i[6:0] inside {I_TYPE_3}) {
-            bins zero   =   {7'b000_0000};
-            bins bit5   =   {7'b010_0000};
-            bins rest   =   default;
+            bins zero = {7'b000_0000};
+            bins bit5 = {7'b010_0000};
+            bins rest = {[0:127]} with (!(item inside {7'b000_0000, 7'b010_0000}));
         }
 
         funct6 : coverpoint instr_i[31:26] iff (instr_i[6:0] inside {I_TYPE_1}) {
-            bins zero   =   {6'b00_0000};
-            bins bit4   =   {6'b01_0000};
-            bins rest   =   default;
+            bins zero = {6'b00_0000};
+            bins bit4 = {6'b01_0000};
+            bins rest = {[0:63]} with (!(item inside {6'b00_0000, 6'b01_0000}));
         }
-
 
         legal_i_type : cross opcode, funct3 {
             bins LB     =   binsof(opcode.I_TYPE_0) && binsof(funct3) intersect {3'b000};
@@ -161,11 +160,11 @@ class decode_coverage extends uvm_component;
         }
 
         exc_shift_imm : cross opcode, funct3, funct6, funct7 {
-            bins SLLI_funct6_exc            =   binsof(opcode.I_TYPE_1) && !binsof(funct6.zero) && binsof(funct3) intersect {3'b001};
-            bins SRXI_funct6_exc            =   binsof(opcode.I_TYPE_1) && !binsof(funct6.zero) && !binsof(funct6.bit4) && binsof(funct3) intersect {3'b101};
+            bins SLLI_funct6_exc   = binsof(opcode.I_TYPE_1) && binsof(funct6.rest) && binsof(funct3) intersect {3'b001};
+            bins SRXI_funct6_exc   = binsof(opcode.I_TYPE_1) && binsof(funct6.rest) && binsof(funct3) intersect {3'b101};
 
-            bins SLLIW_funct7_exc           =   binsof(opcode.I_TYPE_3) && !binsof(funct7.zero) && binsof(funct3) intersect {3'b001};
-            bins SRXIW_funct7_exc           =   binsof(opcode.I_TYPE_3) && !binsof(funct7.zero) && !binsof(funct7.bit5) && binsof(funct3) intersect {3'b101};
+            bins SLLIW_funct7_exc  = binsof(opcode.I_TYPE_3) && binsof(funct7.rest) && binsof(funct3) intersect {3'b001};
+            bins SRXIW_funct7_exc  = binsof(opcode.I_TYPE_3) && binsof(funct7.rest) && binsof(funct3) intersect {3'b101};
         }
     endgroup
 

@@ -8,7 +8,7 @@ class decode_b_type_command_transaction extends decode_command_transaction;
     rand logic [2:0]    funct3;
     rand logic [4:0]    rs1;
     rand logic [4:0]    rs2;
-    rand logic [11:0]   imm;
+    rand logic [12:0]   imm;
 
     constraint c_opcode {opcode == B_TYPE;}
 

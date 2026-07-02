@@ -4,6 +4,7 @@ class decode_result_transaction extends uvm_transaction;
     logic [4:0]     rs1_o;
     logic [4:0]     rs2_o;
     logic [4:0]     rd_o;
+    logic [4:0]     op_o;
     logic [2:0]     funct3_o;
     logic [11:0]    funct12_o;
     logic [11:0]    csr_addr_o;
@@ -36,6 +37,7 @@ class decode_result_transaction extends uvm_transaction;
                     (rs1_o == RHS.rs1_o)                    &&
                     (rs2_o == RHS.rs2_o)                    && 
                     (rd_o == RHS.rd_o)                      &&
+                    (op_o == RHS.op_o)                      &&
                     (funct3_o == RHS.funct3_o)              &&
                     (funct12_o == RHS.funct12_o)            &&
                     (csr_addr_o == RHS.csr_addr_o)          &&
@@ -66,6 +68,7 @@ class decode_result_transaction extends uvm_transaction;
         rs1_o           =   RHS.rs1_o;
         rs2_o           =   RHS.rs2_o;
         rd_o            =   RHS.rd_o;
+        op_o            =   RHS.op_o;
         funct3_o        =   RHS.funct3_o;
         funct12_o       =   RHS.funct12_o;
         csr_addr_o      =   RHS.csr_addr_o;
@@ -83,8 +86,8 @@ class decode_result_transaction extends uvm_transaction;
 
     function string convert2string();
         string s;
-        s = $sformatf("rs1_o: %b, rs2_o: %b, rd_o: %b, funct3_o: %b, funct12_o: %b, csr_addr_o: %h, r_type_o: %b, i_type_o: %b, s_type_o: %b, b_type_o: %b, u_type_o: %b, j_type_o: %b, system_type_o: %b, imm_o: %b, exc_valid_o: %b, exc_code_o: %b",
-            rs1_o, rs2_o, rd_o, funct3_o, funct12_o, csr_addr_o, r_type_o, i_type_o, s_type_o, b_type_o, u_type_o, j_type_o, system_type_o, imm_o, exc_valid_o, exc_code_o);
+        s = $sformatf("rs1_o: %b, rs2_o: %b, rd_o: %b, op_o: %b, funct3_o: %b, funct12_o: %b, csr_addr_o: %h, r_type_o: %b, i_type_o: %b, s_type_o: %b, b_type_o: %b, u_type_o: %b, j_type_o: %b, system_type_o: %b, imm_o: %b, exc_valid_o: %b, exc_code_o: %b",
+            rs1_o, rs2_o, rd_o, op_o, funct3_o, funct12_o, csr_addr_o, r_type_o, i_type_o, s_type_o, b_type_o, u_type_o, j_type_o, system_type_o, imm_o, exc_valid_o, exc_code_o);
 
         return s;
     endfunction : convert2string

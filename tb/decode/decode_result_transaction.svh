@@ -53,7 +53,7 @@ class decode_result_transaction extends uvm_transaction;
         return same;
     endfunction : do_compare
 
-    function void do_copy();
+    function void do_copy(uvm_object rhs);
         decode_result_transaction RHS;
 
         if (rhs == null)

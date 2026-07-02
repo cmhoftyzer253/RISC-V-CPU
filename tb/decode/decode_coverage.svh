@@ -224,7 +224,7 @@ class decode_coverage extends uvm_component;
             bins EBREAK             =   {12'h001};
             bins MRET               =   {12'h302};
             bins WFI                =   {12'h105};
-            bins funct12_exc        =   default;
+            bins funct12_exc        =   {[12'h000 : 12'hFFF]} with (!(item inside {12'h000, 12'h001, 12'h302, 12'105}));
         }
 
         priv_instr : cross funct3, funct12 {

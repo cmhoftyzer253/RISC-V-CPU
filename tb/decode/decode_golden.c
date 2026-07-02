@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include <decode_golden.h>
+#include "decode_golden.h"
 
 void decode_golden (
     uint32_t instr_i, 

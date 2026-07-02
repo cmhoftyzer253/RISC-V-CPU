@@ -25,7 +25,7 @@ class decode_command_transaction extends uvm_sequence_item;
     endfunction : do_compare
 
     virtual function void do_copy(uvm_object rhs);
-        decode_type_command_transaction RHS;
+        decode_command_transaction RHS;
 
         if (rhs == null)
             `uvm_fatal(get_type_name(), "Tried to do copy null transaction")

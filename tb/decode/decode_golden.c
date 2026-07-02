@@ -9,13 +9,6 @@ void decode_golden (
     uint64_t *imm_o, uint32_t *exc_valid_o, uint32_t *exc_code_o
 ) {
 
-    uint32_t exc_opcode = 0;
-    uint32_t exc_funct;
-
-    uint32_t exc_funct_rtype_0;
-    uint32_t exc_funct_rtype_1;
-    uint32_t exc_funct_rtype;
-
     uint32_t r_type_0 = ((instr_i & 0x7F) == R_TYPE_0);
     uint32_t r_type_1 = ((instr_i & 0x7F) == R_TYPE_1);
     uint32_t r_type = r_type_0 | r_type_1;
@@ -69,6 +62,19 @@ void decode_golden (
     bool legal_itype_1 = false;
     bool legal_itype_3 = false;
     bool legal_systemtype = false;
+
+    int32_t s_imm_11_5;
+    uint32_t s_imm_4_0;
+
+    int32_t b_imm_12;
+    uint32_t b_imm_11;
+    uint32_t b_imm_10_5;
+    uint32_t b_imm_4_1;
+
+    int32_t j_imm_20;
+    uint32_t j_imm_10_1;
+    uint32_t j_imm_11;
+    uint32_t j_imm_19_12;
 
     switch (opcode) {
         case R_TYPE_0:
@@ -148,10 +154,10 @@ void decode_golden (
         case S_TYPE:
             *rd_o = 0;
 
-            int32_t imm_11_5 = (((int32_t)instr_i) >> 20) & ~0x1F; 
-            uint32_t imm_4_0 = ((instr_i & 0xF80) >> 7);
+            s_imm_11_5 = (((int32_t)instr_i) >> 20) & ~0x1F; 
+            s_imm_4_0 = ((instr_i & 0xF80) >> 7);
 
-            *imm_o = (uint64_t)(int64_t)(imm_11_5 | (int32_t)imm_4_0);
+            *imm_o = (uint64_t)(int64_t)(s_imm_11_5 | (int32_t)s_imm_4_0);
 
             *exc_valid_o = (funct3 > 0b011);
             break;
@@ -159,12 +165,12 @@ void decode_golden (
         case B_TYPE:
             *rd_o = 0;
 
-            int32_t imm_12 = (((int32_t)instr_i) >> 19) & ~0xFFF;
-            uint32_t imm_11 = (instr_i & 0x80) << 4;
-            uint32_t imm_10_5 = (instr_i & 0x7E000000) >> 20;
-            uint32_t imm_4_1 = (instr_i & 0xF00) >> 7;
+            b_imm_12 = (((int32_t)instr_i) >> 19) & ~0xFFF;
+            b_imm_11 = (instr_i & 0x80) << 4;
+            b_imm_10_5 = (instr_i & 0x7E000000) >> 20;
+            b_imm_4_1 = (instr_i & 0xF00) >> 7;
 
-            *imm_o = (uint64_t)(int64_t)(imm_12 | (int32_t)imm_11 | (int32_t)imm_10_5 | (int32_t)imm_4_1);    
+            *imm_o = (uint64_t)(int64_t)(b_imm_12 | (int32_t)b_imm_11 | (int32_t)b_imm_10_5 | (int32_t)b_imm_4_1);    
 
             *exc_valid_o = (funct3 == 0b010) || (funct3 == 0b011); 
             break;
@@ -182,12 +188,12 @@ void decode_golden (
             *rs1_o = 0;
             *rs2_o = 0;
 
-            int32_t imm_20 = (((int32_t)instr_i) >> 11) & ~0xFFFFF;
-            uint32_t imm_10_1 = (instr_i & 0x7FE00000) >> 20;
-            uint32_t imm_11 = (instr_i & 0x100000) >> 9;
-            uint32_t imm_19_12 = (instr_i & 0xFF000);
+            j_imm_20 = (((int32_t)instr_i) >> 11) & ~0xFFFFF;
+            j_imm_10_1 = (instr_i & 0x7FE00000) >> 20;
+            j_imm_11 = (instr_i & 0x100000) >> 9;
+            j_imm_19_12 = (instr_i & 0xFF000);
 
-            *imm_o = (uint64_t)(int64_t)(imm_20 | (int32_t)imm_19_12 | (int32_t)imm_11 | (int32_t)imm_10_1);
+            *imm_o = (uint64_t)(int64_t)(j_imm_20 | (int32_t)j_imm_19_12 | (int32_t)j_imm_11 | (int32_t)j_imm_10_1);
 
             *exc_valid_o = 0;
             break;

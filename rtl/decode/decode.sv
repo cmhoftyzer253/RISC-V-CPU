@@ -30,8 +30,8 @@ module decode (
     always_comb begin
         exc_valid_o     =   1'b0;
 
-        exc_opcode      =   1'b0;
-        exc_funct       =   1'b0;
+        exc_opcode      =   exc_cause_t'(5'd0);
+        exc_funct       =   exc_cause_t'(5'd0);
 
         rs1_o           =   instr_i[19:15];
         rs2_o           =   instr_i[24:20];
@@ -151,7 +151,7 @@ module decode (
             end
         endcase
 
-        exc_code_o  =   exc_valid_o ? ILLEGAL_INSTR : 5'd0;
+        exc_code_o  =   exc_valid_o ? ILLEGAL_INSTR : exc_cause_t'(5'd0);
     end
 
 endmodule

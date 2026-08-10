@@ -1,567 +1,550 @@
-import cpu_consts::*;
+import cpu_defines::*;
+import cpu_types::*;
 
-module i_cache #(
-    parameter int ID_W = 1
-)(
-    //cpu clock, reset
-    input logic clk,
-    input logic resetn,
+module i_cache(
+    input logic             clk,
+    input logic             resetn,
 
-    //fetch interface
-    input logic                 instr_mem_req_i,
-    input logic [63:0]          instr_mem_addr_i,
-    output logic                instr_mem_ready_o,
+    input logic             resetn_q_i,
 
-    input logic                 instr_ready_i,
-    output logic [31:0]         instr_o,
-    output logic                instr_valid_o,
+    output logic            ic_ready_o,                              
+    input logic [63:0]      pc_i,
 
-    //AXI interface
-    //read address -> interconnect (AR channel)
-    input logic                 arready_i,
-    output logic [63:0]         araddr_o,
-    output logic [7:0]          arlen_o,
-    output logic [2:0]          arsize_o,
-    output logic [1:0]          arburst_o,
-    output logic [ID_W-1:0]     arid_o,
-    output logic [2:0]          arprot_o,
-    output logic                arvalid_o,
+    input logic             ifu_ready_i,
+    output logic            instr_valid_o,
+    output logic [31:0]     instr_o,
 
-    //read data -> cache (R channel)
-    input logic                 rvalid_i,
-    input logic [127:0]         rdata_i,
-    input logic [1:0]           rresp_i,
-    input logic                 rlast_i,
-    input logic [ID_W-1:0]      rid_i,
-    output logic                rready_o,
+    output logic [63:0]     pcF_o,
 
-    //CPU control signals
-    input logic                 flush_i, 
+    input logic             arready_i,
+    output logic [63:0]     araddr_o,
+    output logic [7:0]      arlen_o,
+    output logic [2:0]      arsize_o,
+    output logic [1:0]      arburst_o,
+    output logic            arlock_o,
+    output logic [3:0]      arid_o,
+    output logic [3:0]      arcache_o,
+    output logic [2:0]      arprot_o,
+    output logic [3:0]      arqos_o,
+    output logic            arvalid_o,
 
-    output logic                exc_valid_o,
-    output exc_cause_t          exc_code_o
+    input logic [3:0]       rid_i,
+    input logic [63:0]      rdata_i,
+    input logic [1:0]       rresp_i,
+    input logic             rlast_i,
+    input logic             rvalid_i,
+    output logic            rready_o,
 
+    input logic             flush_i,
+    input logic             stop_fillline_i,
+
+    input logic             invalidate_i,
+    output logic            invalidate_done_o,
+
+    output logic            exc_valid_o,
+    output logic [4:0]      exc_code_o
 );
-    i_cache_tag_t         tag_rd_w0;
-    i_cache_tag_t         tag_rd_w1;
-    i_cache_tag_t         tag_rd_w2;
-    i_cache_tag_t         tag_rd_w3;
 
-    logic [31:0]        data_rd_w0;
-    logic [31:0]        data_rd_w1;
-    logic [31:0]        data_rd_w2;
-    logic [31:0]        data_rd_w3;
+    logic [51:0]    tag;
+    logic [51:0]    tag_q;
+    logic [5:0]     index;
+    logic [5:0]     index_q;
+    logic [3:0]     offset;
+    logic [8:0]     data_index;
+    logic           data_sel;
 
-    logic [50:0]        tag_ff;
-    logic [50:0]        instr_tag;
+    logic [7:0]     hit_1h;
+    logic           hit_raw;
+    logic           hit;
+    logic           miss;
 
-    logic [6:0]         instr_index;
-    logic [3:0]         instr_offset;
-    logic [10:0]        data_index;
-    logic [6:0]         data_line;
+    logic           flush;
+    logic           invalidate;
 
-    logic               instr_hit;
-    logic               cache_miss;
-    logic               fetch_stall;
-    logic               valid_instr;
+    logic [6:0]     PLRU_rd_set;
+    logic [6:0]     nxt_PLRU_set;
+    logic [2:0]     way_fill_PLRU;
+    logic [2:0]     way_fill_invalid;
+    logic           way_fill_replace;
+    logic [2:0]     nxt_way_fill;
 
-    logic [1:0]         way_fill_q;
-    logic [1:0]         nxt_way_fill;
+    logic [31:0]    instr_hold;
+    logic [2:0]     beat_cnt;
+    logic [2:0]     way_fill_q;
 
-    logic               way_fill_replace;
+    logic           flush_ff;
+    logic           invalidate_ff;
+    logic           exc_ff;
 
-    logic [1:0]         way_fill_invalid;
-    logic [1:0]         way_fill_PLRU;
+    logic [6:0]     PLRU_tree [63:0];
 
-    logic [31:0]        instr_hold;
-    logic               flush_ff;
-    logic               error_ff;
-    logic               id_error;
+    logic [63:0]    pc_q;
 
-    logic               valid_instr_ff;
-    logic [63:0]        instr_mem_addr_ff;
+    ic_state_t      state;
 
-    logic [2:0]         PLRU_tree_q;
-    logic [2:0]         nxt_PLRU_tree;
+    logic [51:0]    tag_rd_w0;
+    logic [51:0]    tag_rd_w1;
+    logic [51:0]    tag_rd_w2;
+    logic [51:0]    tag_rd_w3;
+    logic [51:0]    tag_rd_w4;
+    logic [51:0]    tag_rd_w5;
+    logic [51:0]    tag_rd_w6;
+    logic [51:0]    tag_rd_w7;
+    
+    logic [63:0]    data_rd_w0;
+    logic [63:0]    data_rd_w1;
+    logic [63:0]    data_rd_w2;
+    logic [63:0]    data_rd_w3;
+    logic [63:0]    data_rd_w4;
+    logic [63:0]    data_rd_w5;
+    logic [63:0]    data_rd_w6;
+    logic [63:0]    data_rd_w7;
 
-    logic [3:0]         hit_1h;
+    logic [63:0]    valid_w0;
+    logic [63:0]    valid_w1;
+    logic [63:0]    valid_w2;
+    logic [63:0]    valid_w3;
+    logic [63:0]    valid_w4;
+    logic [63:0]    valid_w5;
+    logic [63:0]    valid_w6;
+    logic [63:0]    valid_w7;
 
-    i_cache_state_t     state;
+    logic [51:0]    tags_w0 [63:0];
+    logic [51:0]    tags_w1 [63:0];
+    logic [51:0]    tags_w2 [63:0];
+    logic [51:0]    tags_w3 [63:0];
+    logic [51:0]    tags_w4 [63:0];
+    logic [51:0]    tags_w5 [63:0];
+    logic [51:0]    tags_w6 [63:0];
+    logic [51:0]    tags_w7 [63:0];
 
-    //I-$ tags
-    i_cache_tag_t tags_w0 [127:0];
-    i_cache_tag_t tags_w1 [127:0];
-    i_cache_tag_t tags_w2 [127:0];
-    i_cache_tag_t tags_w3 [127:0];
-
-    //I-$ data
-    (* ram_style = "block" *) logic [31:0] data_w0 [2047:0];
-    (* ram_style = "block" *) logic [31:0] data_w1 [2047:0];
-    (* ram_style = "block" *) logic [31:0] data_w2 [2047:0];
-    (* ram_style = "block" *) logic [31:0] data_w3 [2047:0];
+    (* ram_style = "block" *) logic [63:0] data_w0 [511:0];
+    (* ram_style = "block" *) logic [63:0] data_w1 [511:0];
+    (* ram_style = "block" *) logic [63:0] data_w2 [511:0];
+    (* ram_style = "block" *) logic [63:0] data_w3 [511:0];
+    (* ram_style = "block" *) logic [63:0] data_w4 [511:0];
+    (* ram_style = "block" *) logic [63:0] data_w5 [511:0];
+    (* ram_style = "block" *) logic [63:0] data_w6 [511:0];
+    (* ram_style = "block" *) logic [63:0] data_w7 [511:0];
 
     always_ff @(posedge clk or negedge resetn) begin
         if (~resetn) begin
-            PLRU_tree_q         <= 3'b0;
+            flush_ff        <=  1'b0;
+            invalidate_ff   <=  1'b0;
+            exc_ff          <=  1'b0;
 
-            tag_rd_w0           <= '0;
-            tag_rd_w1           <= '0;
-            tag_rd_w2           <= '0;
-            tag_rd_w3           <= '0;
+            beat_cnt        <=  3'd0;
+            way_fill_q      <=  3'b0;
+            instr_hold      <=  32'h0;
 
-            data_rd_w0          <= 32'h0;
-            data_rd_w1          <= 32'h0;
-            data_rd_w2          <= 32'h0;
-            data_rd_w3          <= 32'h0;
+            pc_q            <=  64'h0;
 
-            valid_instr_ff      <= 1'b0;
+            valid_w0        <=  64'h0;
+            valid_w1        <=  64'h0;
+            valid_w2        <=  64'h0;
+            valid_w3        <=  64'h0;
+            valid_w4        <=  64'h0;
+            valid_w5        <=  64'h0;
+            valid_w6        <=  64'h0;
+            valid_w7        <=  64'h0;
 
-            instr_mem_addr_ff   <= 64'h0;
+            tag_rd_w0       <=  52'h0;
+            tag_rd_w1       <=  52'h0;
+            tag_rd_w2       <=  52'h0;
+            tag_rd_w3       <=  52'h0;
+            tag_rd_w4       <=  52'h0;
+            tag_rd_w5       <=  52'h0;
+            tag_rd_w6       <=  52'h0;
+            tag_rd_w7       <=  52'h0;
 
-            way_fill_q          <= 2'b0;
+            data_rd_w0      <=  64'h0;
+            data_rd_w1      <=  64'h0;
+            data_rd_w2      <=  64'h0;
+            data_rd_w3      <=  64'h0;
+            data_rd_w4      <=  64'h0;
+            data_rd_w5      <=  64'h0;
+            data_rd_w6      <=  64'h0;
+            data_rd_w7      <=  64'h0;
 
-            instr_hold          <= 32'h0;
-
-            flush_ff             <= 1'b0;
-            error_ff            <= 1'b0;
-            id_error            <= 1'b0;
-
-            for(int i=0; i<128; i++) begin
-                tags_w0[i].valid    <= 1'b0;
-                tags_w1[i].valid    <= 1'b0;
-                tags_w2[i].valid    <= 1'b0;
-                tags_w3[i].valid    <= 1'b0;
-
-                tags_w0[i].tag      <= 51'h0;
-                tags_w1[i].tag      <= 51'h0;
-                tags_w2[i].tag      <= 51'h0;
-                tags_w3[i].tag      <= 51'h0;
-            end
-
-            state               <= S_IC_RUN;
+            state           <=  IC_RUN;
         end else begin
-            case (state)
-                S_IC_RUN: begin
-                    if (valid_instr & ~fetch_stall & ~cache_miss) begin
-                        tag_rd_w0           <= tags_w0[instr_index];
-                        tag_rd_w1           <= tags_w1[instr_index];
-                        tag_rd_w2           <= tags_w2[instr_index];
-                        tag_rd_w3           <= tags_w3[instr_index];
+            case (state) 
+                IC_RUN: begin
+                    if (!(miss && !stop_fillline_i) && ifu_ready_i) begin
 
-                        data_rd_w0          <= data_w0[data_index];
-                        data_rd_w1          <= data_w1[data_index];
-                        data_rd_w2          <= data_w2[data_index];
-                        data_rd_w3          <= data_w3[data_index];
+                        if (hit) 
+                            PLRU_tree[index_q]  <=  nxt_PLRU_set;
 
-                        valid_instr_ff      <= valid_instr;
+                        tag_rd_w0   <=  tags_w0[index];
+                        tag_rd_w1   <=  tags_w1[index];
+                        tag_rd_w2   <=  tags_w2[index];
+                        tag_rd_w3   <=  tags_w3[index];
+                        tag_rd_w4   <=  tags_w4[index];
+                        tag_rd_w5   <=  tags_w5[index];
+                        tag_rd_w6   <=  tags_w6[index];
+                        tag_rd_w7   <=  tags_w7[index];
 
-                        instr_mem_addr_ff   <= instr_mem_addr_i;
-                    end else if (cache_miss) begin
-                        way_fill_q          <= nxt_way_fill;
+                        data_rd_w0  <=  data_w0[data_index];
+                        data_rd_w1  <=  data_w1[data_index];
+                        data_rd_w2  <=  data_w2[data_index];
+                        data_rd_w3  <=  data_w3[data_index];
+                        data_rd_w4  <=  data_w4[data_index];
+                        data_rd_w5  <=  data_w5[data_index];
+                        data_rd_w6  <=  data_w6[data_index];
+                        data_rd_w7  <=  data_w7[data_index];
 
-                        flush_ff             <= 1'b0;
+                        pc_q        <=  pc_i;
+                    end else if (miss && !stop_fillline_i) begin
+                        way_fill_q  <=  nxt_way_fill;
 
-                        instr_hold          <= 32'h0;
-
-                        state               <= S_IC_LOAD_REQUEST;
-                    end
-
-                    if (instr_valid_o & instr_ready_i) begin
-                        PLRU_tree_q         <= nxt_PLRU_tree;
-                    end
-                end
-                S_IC_LOAD_REQUEST: begin
-                    flush_ff                 <= flush_ff | flush_i;
-
-                    if (arready_i) begin
-                        state               <= S_IC_LOAD_WAIT;
-                    end
-                end
-                S_IC_LOAD_WAIT: begin
-                    flush_ff                 <= flush_ff | flush_i;
-
-                    if (rvalid_i) begin
-                        case(instr_offset)
-                            4'b0000: instr_hold             <= rdata_i[31:0];
-                            4'b0001: instr_hold             <= rdata_i[63:32];
-                            4'b0010: instr_hold             <= rdata_i[95:64];
-                            4'b0011: instr_hold             <= rdata_i[127:96];
-                            default: instr_hold             <= instr_hold;
+                        case (nxt_way_fill)
+                            3'b000: valid_w0[index_q]   <=  1'b0;
+                            3'b001: valid_w1[index_q]   <=  1'b0;
+                            3'b010: valid_w2[index_q]   <=  1'b0;
+                            3'b011: valid_w3[index_q]   <=  1'b0;
+                            3'b100: valid_w4[index_q]   <=  1'b0;
+                            3'b101: valid_w5[index_q]   <=  1'b0;
+                            3'b110: valid_w6[index_q]   <=  1'b0;
+                            3'b111: valid_w7[index_q]   <=  1'b0;
                         endcase
 
-                        if (way_fill_q == 2'b00) begin
-                            data_w0[{data_line, 4'b0000}]   <= rdata_i[31:0];
-                            data_w0[{data_line, 4'b0001}]   <= rdata_i[63:32];
-                            data_w0[{data_line, 4'b0010}]   <= rdata_i[95:64];
-                            data_w0[{data_line, 4'b0011}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b01) begin
-                            data_w1[{data_line, 4'b0000}]   <= rdata_i[31:0];
-                            data_w1[{data_line, 4'b0001}]   <= rdata_i[63:32];
-                            data_w1[{data_line, 4'b0010}]   <= rdata_i[95:64];
-                            data_w1[{data_line, 4'b0011}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b10) begin
-                            data_w2[{data_line, 4'b0000}]   <= rdata_i[31:0];
-                            data_w2[{data_line, 4'b0001}]   <= rdata_i[63:32];
-                            data_w2[{data_line, 4'b0010}]   <= rdata_i[95:64];
-                            data_w2[{data_line, 4'b0011}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b11) begin
-                            data_w3[{data_line, 4'b0000}]   <= rdata_i[31:0];
-                            data_w3[{data_line, 4'b0001}]   <= rdata_i[63:32];
-                            data_w3[{data_line, 4'b0010}]   <= rdata_i[95:64];
-                            data_w3[{data_line, 4'b0011}]   <= rdata_i[127:96];
+                        state       <=  IC_REFILL_REQ;
+                    end
+
+                    if (invalidate_i) begin
+                        valid_w0    <=  64'h0;
+                        valid_w1    <=  64'h0;
+                        valid_w2    <=  64'h0;
+                        valid_w3    <=  64'h0;
+                        valid_w4    <=  64'h0;
+                        valid_w5    <=  64'h0;
+                        valid_w6    <=  64'h0;
+                        valid_w7    <=  64'h0;
+                    end
+                end
+                IC_REFILL_REQ: begin
+                    flush_ff        <=  flush_ff || flush_i;
+                    invalidate_ff   <=  invalidate_ff || invalidate_i;
+
+                    if (arready_i)
+                        state       <=  IC_REFILL;
+                end
+                IC_REFILL: begin
+                    flush_ff        <=  flush_ff || flush_i;
+                    invalidate_ff   <=  invalidate_ff || invalidate_i;
+
+                    if (rvalid_i) begin
+                        if (offset[3:1] == beat_cnt)
+                            instr_hold  <=  offset[0] ? rdata_i[63:32] : rdata_i[31:0];
+
+                        case (way_fill_q)
+                            3'b000: data_w0[{index_q, beat_cnt}]    <=  rdata_i;
+                            3'b001: data_w1[{index_q, beat_cnt}]    <=  rdata_i;
+                            3'b010: data_w2[{index_q, beat_cnt}]    <=  rdata_i;
+                            3'b011: data_w3[{index_q, beat_cnt}]    <=  rdata_i;
+                            3'b100: data_w4[{index_q, beat_cnt}]    <=  rdata_i;
+                            3'b101: data_w5[{index_q, beat_cnt}]    <=  rdata_i;
+                            3'b110: data_w6[{index_q, beat_cnt}]    <=  rdata_i;
+                            3'b111: data_w7[{index_q, beat_cnt}]    <=  rdata_i;
+                        endcase
+
+                        exc_ff <= exc_ff || (rresp_i != 2'b00) || (rid_i != ID_IFU) || (rlast_i ^ (beat_cnt == 3'd7));
+
+                        if (rlast_i) begin
+                            beat_cnt    <=  3'd0;
+
+                            case (way_fill_q)
+                                3'b000: tags_w0[index_q]    <= tag_q;
+                                3'b001: tags_w1[index_q]    <= tag_q;
+                                3'b010: tags_w2[index_q]    <= tag_q;
+                                3'b011: tags_w3[index_q]    <= tag_q;
+                                3'b100: tags_w4[index_q]    <= tag_q;
+                                3'b101: tags_w5[index_q]    <= tag_q;
+                                3'b110: tags_w6[index_q]    <= tag_q;
+                                3'b111: tags_w7[index_q]    <= tag_q;
+                            endcase
+
+                            state       <=  IC_REFILL_DONE;
+                        end else begin
+                            beat_cnt    <=  beat_cnt + 3'd1;
                         end
-
-                        error_ff            <= (rresp_i != 2'b00);
-                        id_error            <= (rid_i != '0);
-
-                        state               <= S_IC_LOAD_1;
                     end
                 end
-                S_IC_LOAD_1: begin
-                    flush_ff                 <= flush_ff | flush_i;
+                IC_REFILL_DONE: begin
+                    if (invalidate) begin
+                        valid_w0        <=  64'h0;
+                        valid_w1        <=  64'h0;
+                        valid_w2        <=  64'h0;
+                        valid_w3        <=  64'h0;
+                        valid_w4        <=  64'h0;
+                        valid_w5        <=  64'h0;
+                        valid_w6        <=  64'h0;
+                        valid_w7        <=  64'h0;
 
-                    if (rvalid_i) begin
-                        case (instr_offset) 
-                            4'b0100: instr_hold             <= rdata_i[31:0];
-                            4'b0101: instr_hold             <= rdata_i[63:32];
-                            4'b0110: instr_hold             <= rdata_i[95:64];
-                            4'b0111: instr_hold             <= rdata_i[127:96];
-                            default: instr_hold             <= instr_hold;
+                        instr_hold      <=  32'h0;
+
+                        invalidate_ff   <=  1'b0;
+                        flush_ff        <=  1'b0;
+                        exc_ff          <=  1'b0;
+
+                        state           <=  IC_RUN;
+                    end else if (flush) begin
+                        instr_hold      <=  32'h0;
+
+                        case (way_fill_q)
+                            3'b000: valid_w0[index_q]   <=  !exc_ff;
+                            3'b001: valid_w1[index_q]   <=  !exc_ff;
+                            3'b010: valid_w2[index_q]   <=  !exc_ff;
+                            3'b011: valid_w3[index_q]   <=  !exc_ff;
+                            3'b100: valid_w4[index_q]   <=  !exc_ff;
+                            3'b101: valid_w5[index_q]   <=  !exc_ff;
+                            3'b110: valid_w6[index_q]   <=  !exc_ff;
+                            3'b111: valid_w7[index_q]   <=  !exc_ff;
                         endcase
+                        
+                        if (!exc_ff)
+                            PLRU_tree[index_q]          <= nxt_PLRU_set;
 
-                        if (way_fill_q == 2'b00) begin
-                            data_w0[{data_line, 4'b0100}]   <= rdata_i[31:0];
-                            data_w0[{data_line, 4'b0101}]   <= rdata_i[63:32];
-                            data_w0[{data_line, 4'b0110}]   <= rdata_i[95:64];
-                            data_w0[{data_line, 4'b0111}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b01) begin
-                            data_w1[{data_line, 4'b0100}]   <= rdata_i[31:0];
-                            data_w1[{data_line, 4'b0101}]   <= rdata_i[63:32];
-                            data_w1[{data_line, 4'b0110}]   <= rdata_i[95:64];
-                            data_w1[{data_line, 4'b0111}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b10) begin
-                            data_w2[{data_line, 4'b0100}]   <= rdata_i[31:0];
-                            data_w2[{data_line, 4'b0101}]   <= rdata_i[63:32];
-                            data_w2[{data_line, 4'b0110}]   <= rdata_i[95:64];
-                            data_w2[{data_line, 4'b0111}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b11) begin
-                            data_w3[{data_line, 4'b0100}]   <= rdata_i[31:0];
-                            data_w3[{data_line, 4'b0101}]   <= rdata_i[63:32];
-                            data_w3[{data_line, 4'b0110}]   <= rdata_i[95:64];
-                            data_w3[{data_line, 4'b0111}]   <= rdata_i[127:96];
-                        end 
+                        invalidate_ff   <=  1'b0;
+                        flush_ff        <=  1'b0;
+                        exc_ff          <=  1'b0;
 
-                        error_ff            <= error_ff | (rresp_i != 2'b00);
-                        id_error            <= id_error | (rid_i != '0);
-
-                        state               <= S_IC_LOAD_2;
-                    end
-                end
-                S_IC_LOAD_2: begin
-                    flush_ff                 <= flush_ff | flush_i;
-
-                    if (rvalid_i) begin
-                        case(instr_offset)
-                            4'b1000: instr_hold             <= rdata_i[31:0];
-                            4'b1001: instr_hold             <= rdata_i[63:32];
-                            4'b1010: instr_hold             <= rdata_i[95:64];
-                            4'b1011: instr_hold             <= rdata_i[127:96];
-                            default: instr_hold             <= instr_hold;
-                        endcase
-
-                        if (way_fill_q == 2'b00) begin
-                            data_w0[{data_line, 4'b1000}]   <= rdata_i[31:0];
-                            data_w0[{data_line, 4'b1001}]   <= rdata_i[63:32];
-                            data_w0[{data_line, 4'b1010}]   <= rdata_i[95:64];
-                            data_w0[{data_line, 4'b1011}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b01) begin
-                            data_w1[{data_line, 4'b1000}]   <= rdata_i[31:0];
-                            data_w1[{data_line, 4'b1001}]   <= rdata_i[63:32];
-                            data_w1[{data_line, 4'b1010}]   <= rdata_i[95:64];
-                            data_w1[{data_line, 4'b1011}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b10) begin
-                            data_w2[{data_line, 4'b1000}]   <= rdata_i[31:0];
-                            data_w2[{data_line, 4'b1001}]   <= rdata_i[63:32];
-                            data_w2[{data_line, 4'b1010}]   <= rdata_i[95:64];
-                            data_w2[{data_line, 4'b1011}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b11) begin
-                            data_w3[{data_line, 4'b1000}]   <= rdata_i[31:0];
-                            data_w3[{data_line, 4'b1001}]   <= rdata_i[63:32];
-                            data_w3[{data_line, 4'b1010}]   <= rdata_i[95:64];
-                            data_w3[{data_line, 4'b1011}]   <= rdata_i[127:96];
-                        end 
-
-                        error_ff            <= error_ff | (rresp_i != 2'b00);
-                        id_error            <= id_error | (rid_i != '0);
-
-                        state               <= S_IC_LOAD_3;
-                    end
-                end
-                S_IC_LOAD_3: begin
-                    flush_ff                 <= flush_ff | flush_i;
-
-                    if (rvalid_i) begin
-
-                        case(instr_offset)
-                            4'b1100: instr_hold             <= rdata_i[31:0];
-                            4'b1101: instr_hold             <= rdata_i[63:32];
-                            4'b1110: instr_hold             <= rdata_i[95:64];
-                            4'b1111: instr_hold             <= rdata_i[127:96];
-                            default: instr_hold             <= instr_hold;
-                        endcase
-
-                        if (way_fill_q == 2'b00) begin
-                            data_w0[{data_line, 4'b1100}]   <= rdata_i[31:0];
-                            data_w0[{data_line, 4'b1101}]   <= rdata_i[63:32];
-                            data_w0[{data_line, 4'b1110}]   <= rdata_i[95:64];
-                            data_w0[{data_line, 4'b1111}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b01) begin
-                            data_w1[{data_line, 4'b1100}]   <= rdata_i[31:0];
-                            data_w1[{data_line, 4'b1101}]   <= rdata_i[63:32];
-                            data_w1[{data_line, 4'b1110}]   <= rdata_i[95:64];
-                            data_w1[{data_line, 4'b1111}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b10) begin
-                            data_w2[{data_line, 4'b1100}]   <= rdata_i[31:0];
-                            data_w2[{data_line, 4'b1101}]   <= rdata_i[63:32];
-                            data_w2[{data_line, 4'b1110}]   <= rdata_i[95:64];
-                            data_w2[{data_line, 4'b1111}]   <= rdata_i[127:96];
-                        end else if (way_fill_q == 2'b11) begin
-                            data_w3[{data_line, 4'b1100}]   <= rdata_i[31:0];
-                            data_w3[{data_line, 4'b1101}]   <= rdata_i[63:32];
-                            data_w3[{data_line, 4'b1110}]   <= rdata_i[95:64];
-                            data_w3[{data_line, 4'b1111}]   <= rdata_i[127:96];
-                        end 
-
-                        error_ff            <= error_ff | (rresp_i != 2'b00);
-                        id_error            <= id_error | (rid_i != '0);
-
-                        state               <= S_IC_LOAD_DONE;
-                    end 
-                end
-                S_IC_LOAD_DONE: begin
-                    if (error_ff | id_error) begin
-                        if (instr_ready_i) begin
-                            if (way_fill_q == 2'b00) begin
-                                tags_w0[instr_index].valid      <= 1'b0; 
-                            end else if (way_fill_q == 2'b01) begin
-                                tags_w1[instr_index].valid      <= 1'b0;
-                            end else if (way_fill_q == 2'b10) begin
-                                tags_w2[instr_index].valid      <= 1'b0;
-                            end else if (way_fill_q == 2'b11) begin
-                                tags_w3[instr_index].valid      <= 1'b0;
-                            end
-
-                            flush_ff        <= 1'b0;
-                            error_ff        <= 1'b0;
-                            id_error        <= 1'b0;
-
-                            valid_instr_ff  <= 1'b0;
-
-                            state           <= S_IC_RUN;
-                        end
-                    end else if (flush_ff) begin
-                        if (way_fill_q == 2'b00) begin
-                            tags_w0[instr_index].valid      <= 1'b0; 
-                        end else if (way_fill_q == 2'b01) begin
-                            tags_w1[instr_index].valid      <= 1'b0;
-                        end else if (way_fill_q == 2'b10) begin
-                            tags_w2[instr_index].valid      <= 1'b0;
-                        end else if (way_fill_q == 2'b11) begin
-                            tags_w3[instr_index].valid      <= 1'b0;
-                        end
-
-                        flush_ff            <= 1'b0;
-
-                        valid_instr_ff      <= 1'b0;
-
-                        state               <= S_IC_RUN;
+                        state           <=  IC_RUN;
                     end else begin
-                        if (instr_ready_i) begin
-                            if (way_fill_q == 2'b00) begin
-                                tags_w0[instr_index].valid  <= 1'b1;
-                                tags_w0[instr_index].tag    <= instr_tag;
-                            end else if (way_fill_q == 2'b01) begin
-                                tags_w1[instr_index].valid  <= 1'b1;
-                                tags_w1[instr_index].tag    <= instr_tag;
-                            end else if (way_fill_q == 2'b10) begin
-                                tags_w2[instr_index].valid  <= 1'b1;
-                                tags_w2[instr_index].tag    <= instr_tag;
-                            end else if (way_fill_q == 2'b11) begin
-                                tags_w3[instr_index].valid  <= 1'b1;
-                                tags_w3[instr_index].tag    <= instr_tag;
+                        if (ifu_ready_i) begin
+                            if (!exc_ff) begin
+                                case (way_fill_q) 
+                                    3'b000: valid_w0[index_q]   <=  1'b1;
+                                    3'b001: valid_w1[index_q]   <=  1'b1;
+                                    3'b010: valid_w2[index_q]   <=  1'b1;
+                                    3'b011: valid_w3[index_q]   <=  1'b1;
+                                    3'b100: valid_w4[index_q]   <=  1'b1;
+                                    3'b101: valid_w5[index_q]   <=  1'b1;
+                                    3'b110: valid_w6[index_q]   <=  1'b1;
+                                    3'b111: valid_w7[index_q]   <=  1'b1;
+                                endcase
+
+                                PLRU_tree[index_q]              <= nxt_PLRU_set;
                             end
 
-                            PLRU_tree_q     <= nxt_PLRU_tree;
-                            instr_hold      <= 32'h0;
+                            instr_hold      <=  32'h0;
 
-                            flush_ff        <= 1'b0;
-                            error_ff        <= 1'b0;
-                            id_error        <= 1'b0;
+                            invalidate_ff   <=  1'b0;
+                            flush_ff        <=  1'b0;
+                            exc_ff          <=  1'b0;
 
-                            valid_instr_ff  <= 1'b0;
-
-                            state           <= S_IC_RUN;
+                            state           <=  IC_RUN;
                         end
                     end
-                end
-                default: begin
-                    state                   <= S_IC_RUN;
+
+                    if (invalidate || flush || ifu_ready_i) begin
+                        tag_rd_w0   <=  tags_w0[index];
+                        tag_rd_w1   <=  tags_w1[index];
+                        tag_rd_w2   <=  tags_w2[index];
+                        tag_rd_w3   <=  tags_w3[index];
+                        tag_rd_w4   <=  tags_w4[index];
+                        tag_rd_w5   <=  tags_w5[index];
+                        tag_rd_w6   <=  tags_w6[index];
+                        tag_rd_w7   <=  tags_w7[index];
+
+                        data_rd_w0  <=  data_w0[data_index];
+                        data_rd_w1  <=  data_w1[data_index];
+                        data_rd_w2  <=  data_w2[data_index];
+                        data_rd_w3  <=  data_w3[data_index];
+                        data_rd_w4  <=  data_w4[data_index];
+                        data_rd_w5  <=  data_w5[data_index];
+                        data_rd_w6  <=  data_w6[data_index];
+                        data_rd_w7  <=  data_w7[data_index];
+
+                        pc_q        <=  pc_i;
+                    end
                 end
             endcase
         end
     end
 
     always_comb begin
+        ic_ready_o          =   1'b0;
+        instr_valid_o       =   1'b0;
+        instr_o             =   32'h0;
+        pcF_o               =   pc_q;
 
-        instr_mem_ready_o           =   1'b0;
-        instr_o                     =   32'h0;
-        instr_valid_o               =   1'b0;
+        invalidate_done_o   =   1'b0;
 
-        exc_valid_o                 =   1'b0;
-        exc_code_o                  =   5'd0;
+        exc_valid_o         =   1'b0;
+        exc_code_o          =   5'h0;
 
-        araddr_o                    =   64'h0;
-        arlen_o                     =   8'h0;
-        arsize_o                    =   3'h0;
-        arburst_o                   =   2'h0;
-        arid_o                      =   '0;
-        arprot_o                    =   3'h0;
-        arvalid_o                   =   1'b0;
+        arvalid_o           =   1'b0;
+        arid_o              =   ID_IFU;
+        araddr_o            =   {pc_q[63:6], 6'b0};
+        arlen_o             =   8'd7;
+        arsize_o            =   SIZE_8B;
+        arburst_o           =   INCR;
+        arlock_o            =   1'b0;
+        arcache_o           =   CACHE_WB_RALLOC;
+        arprot_o            =   PROT_IFU;
+        arqos_o             =   4'b0000;
 
-        rready_o                    =   1'b0;
+        rready_o            =   1'b0;
 
-        nxt_PLRU_tree               =   PLRU_tree_q;
+        tag                 =   pc_i[63:12];
+        tag_q               =   pc_q[63:12];
+        index               =   pc_i[11:6];
+        index_q             =   pc_q[11:6];
+        offset              =   pc_i[5:2];
+        data_index          =   pc_i[11:3];
+        data_sel            =   pc_q[2];
 
-        hit_1h                      =   4'b0;
+        hit_1h              =   8'b0;
+        hit_raw             =   1'b0;
+        hit                 =   1'b0;
+        miss                =   1'b0;
 
-        instr_tag                   =   51'h0;
-        instr_index                 =   7'b0;
-        instr_offset                =   4'b0;
-        data_index                  =   11'b0;
-        data_line                   =   7'b0;
+        flush               =   flush_ff || flush_i;
+        invalidate          =   invalidate_ff || invalidate_i;
 
-        tag_ff                      =   instr_mem_addr_ff[63:13];
-
-        instr_hit                   =   1'b0;
-        cache_miss                  =   1'b0;
-        fetch_stall                 =   1'b0;
-        valid_instr                 =   1'b0;
-
-        way_fill_replace            =   1'b0;
-        way_fill_invalid            =   2'b00;
-        way_fill_PLRU               =   2'b00;
-        nxt_way_fill                =   way_fill_q;
+        PLRU_rd_set         =   PLRU_tree[index_q];
+        nxt_PLRU_set        =   PLRU_rd_set;
+        way_fill_PLRU       =   3'd0;
+        way_fill_invalid    =   3'd0;
+        way_fill_replace    =   3'd0;
+        nxt_way_fill        =   3'd0;
 
         case (state)
-            S_IC_RUN: begin
-                instr_tag           =   instr_mem_addr_i[63:13];
-                instr_index         =   instr_mem_addr_i[12:6];
-                instr_offset        =   instr_mem_addr_i[5:2];
+            IC_RUN: begin
+                invalidate_done_o   =   invalidate_i;
 
-                data_index          =   instr_mem_addr_i[12:2];
+                tag                 =   pc_i[63:12];
+                index               =   pc_i[11:6];
+                offset              =   pc_i[5:2];
 
-                tag_ff              =   instr_mem_addr_ff[63:13];
+                data_index          =   pc_i[11:3];
 
-                hit_1h[0]           =   (tag_rd_w0.valid) & (tag_ff == tag_rd_w0.tag);
-                hit_1h[1]           =   (tag_rd_w1.valid) & (tag_ff == tag_rd_w1.tag);
-                hit_1h[2]           =   (tag_rd_w2.valid) & (tag_ff == tag_rd_w2.tag);
-                hit_1h[3]           =   (tag_rd_w3.valid) & (tag_ff == tag_rd_w3.tag);
+                data_sel            =   pc_q[2];
 
-                instr_hit           =   |hit_1h & valid_instr_ff;
-                cache_miss          =   valid_instr_ff & ~instr_hit;
+                tag_q               =   pc_q[63:12];
+                index_q             =   pc_q[11:6];
 
-                instr_valid_o       =   instr_hit;
+                hit_1h[0]           =   valid_w0[index_q] && (tag_q == tag_rd_w0);
+                hit_1h[1]           =   valid_w1[index_q] && (tag_q == tag_rd_w1);
+                hit_1h[2]           =   valid_w2[index_q] && (tag_q == tag_rd_w2);
+                hit_1h[3]           =   valid_w3[index_q] && (tag_q == tag_rd_w3);
+                hit_1h[4]           =   valid_w4[index_q] && (tag_q == tag_rd_w4);
+                hit_1h[5]           =   valid_w5[index_q] && (tag_q == tag_rd_w5);
+                hit_1h[6]           =   valid_w6[index_q] && (tag_q == tag_rd_w6);
+                hit_1h[7]           =   valid_w7[index_q] && (tag_q == tag_rd_w7);
 
-                fetch_stall         =   instr_valid_o & ~instr_ready_i;
+                hit_raw             =   |hit_1h;
+                hit                 =   hit_raw && !flush_i && !invalidate_i && resetn_q_i;
+                miss                =   !hit_raw && !flush_i && !invalidate_i && resetn_q_i;
 
-                instr_mem_ready_o   =   ~fetch_stall & ~cache_miss;
+                instr_valid_o       =   hit && !stop_fillline_i;
 
-                valid_instr         =   instr_mem_req_i & instr_mem_ready_o;
+                ic_ready_o          =   !(miss && !stop_fillline_i) && ifu_ready_i;
 
-                case(hit_1h)
-                    4'b0001: instr_o        =   data_rd_w0;
-                    4'b0010: instr_o        =   data_rd_w1;
-                    4'b0100: instr_o        =   data_rd_w2;
-                    4'b1000: instr_o        =   data_rd_w3;
+                case (hit_1h)
+                    8'b0000_0001: instr_o   =   data_sel ? data_rd_w0[63:32] : data_rd_w0[31:0];
+                    8'b0000_0010: instr_o   =   data_sel ? data_rd_w1[63:32] : data_rd_w1[31:0];
+                    8'b0000_0100: instr_o   =   data_sel ? data_rd_w2[63:32] : data_rd_w2[31:0];
+                    8'b0000_1000: instr_o   =   data_sel ? data_rd_w3[63:32] : data_rd_w3[31:0];
+                    8'b0001_0000: instr_o   =   data_sel ? data_rd_w4[63:32] : data_rd_w4[31:0];
+                    8'b0010_0000: instr_o   =   data_sel ? data_rd_w5[63:32] : data_rd_w5[31:0];
+                    8'b0100_0000: instr_o   =   data_sel ? data_rd_w6[63:32] : data_rd_w6[31:0];
+                    8'b1000_0000: instr_o   =   data_sel ? data_rd_w7[63:32] : data_rd_w7[31:0];
                     default: instr_o        =   32'h0;
                 endcase
 
+                PLRU_rd_set         =   PLRU_tree[index_q];
+
                 case (hit_1h)
-                    4'b0001: nxt_PLRU_tree  =   {2'b11, PLRU_tree_q[2]};
-                    4'b0010: nxt_PLRU_tree  =   {2'b10, PLRU_tree_q[2]};
-                    4'b0100: nxt_PLRU_tree  =   {1'b0, PLRU_tree_q[1], 1'b1};
-                    4'b1000: nxt_PLRU_tree  =   {1'b0, PLRU_tree_q[1], 1'b0};
-                    default: nxt_PLRU_tree  =   PLRU_tree_q;
+                    8'b0000_0001: nxt_PLRU_set  =   PLRU_rd_set | 7'b1101000;
+                    8'b0000_0010: nxt_PLRU_set  =   (PLRU_rd_set | 7'b1100000) & 7'b1110111;
+                    8'b0000_0100: nxt_PLRU_set  =   (PLRU_rd_set | 7'b1000100) & 7'b1011111;
+                    8'b0000_1000: nxt_PLRU_set  =   (PLRU_rd_set | 7'b1000000) & 7'b1011011;
+                    8'b0001_0000: nxt_PLRU_set  =   (PLRU_rd_set | 7'b0010010) & 7'b0111111;
+                    8'b0010_0000: nxt_PLRU_set  =   (PLRU_rd_set | 7'b0010000) & 7'b0111101;
+                    8'b0100_0000: nxt_PLRU_set  =   (PLRU_rd_set | 7'b0000001) & 7'b0101111;
+                    8'b1000_0000: nxt_PLRU_set  =   (PLRU_rd_set | 7'b0000000) & 7'b0101110;
+                    default: nxt_PLRU_set       =   PLRU_rd_set;
                 endcase
 
-                way_fill_replace    =   tag_rd_w0.valid & tag_rd_w1.valid & tag_rd_w2.valid & tag_rd_w3.valid;
+                way_fill_replace    =   valid_w0[index_q] && valid_w1[index_q] && valid_w2[index_q] && valid_w3[index_q] &&
+                                        valid_w4[index_q] && valid_w5[index_q] && valid_w6[index_q] && valid_w7[index_q];
 
-                way_fill_invalid    =   ~tag_rd_w0.valid ? 2'b00 : 
-                                        (~tag_rd_w1.valid ? 2'b01 : 
-                                        (~tag_rd_w2.valid ? 2'b10 : 
-                                        (~tag_rd_w3.valid ? 2'b11 : 2'b00)));
+                way_fill_invalid    =   ~valid_w0[index_q] ? 3'd0 : 
+                                        (~valid_w1[index_q] ? 3'd1 : 
+                                        (~valid_w2[index_q] ? 3'd2 : 
+                                        (~valid_w3[index_q] ? 3'd3 : 
+                                        (~valid_w4[index_q] ? 3'd4 : 
+                                        (~valid_w5[index_q] ? 3'd5 : 
+                                        (~valid_w6[index_q] ? 3'd6 : 
+                                        (~valid_w7[index_q] ? 3'd7 : 3'd0)))))));
 
-                case(PLRU_tree_q)
-                    3'b000, 3'b001: way_fill_PLRU   =   2'b00;
-                    3'b010, 3'b011: way_fill_PLRU   =   2'b01;
-                    3'b100, 3'b110: way_fill_PLRU   =   2'b10;
-                    3'b101, 3'b111: way_fill_PLRU   =   2'b11;
-                    default: way_fill_PLRU          =   2'b00;
+                casez (PLRU_rd_set)
+                    7'b00?0???: way_fill_PLRU       =   3'd0;
+                    7'b00?1???: way_fill_PLRU       =   3'd1;
+                    7'b01??0??: way_fill_PLRU       =   3'd2;
+                    7'b01??1??: way_fill_PLRU       =   3'd3;
+                    7'b1?0??0?: way_fill_PLRU       =   3'd4;
+                    7'b1?0??1?: way_fill_PLRU       =   3'd5;
+                    7'b1?1???0: way_fill_PLRU       =   3'd6;
+                    7'b1?1???1: way_fill_PLRU       =   3'd7;
+                    default: way_fill_PLRU          =   3'd0;
                 endcase
 
-                nxt_way_fill        =   way_fill_replace ? way_fill_PLRU : way_fill_invalid;
+                nxt_way_fill    =   way_fill_replace ? way_fill_PLRU : way_fill_invalid;
             end
-            S_IC_LOAD_REQUEST: begin
-                araddr_o            =   {instr_mem_addr_ff[63:6], 6'b0};
-                arlen_o             =   8'd3;
-                arsize_o            =   3'd4;
-                arburst_o           =   2'b01;
-                arid_o              =   1'b0;
-                arprot_o            =   3'b000;
-                arvalid_o           =   1'b1;
+            IC_REFILL_REQ: begin
+                araddr_o    =   {pc_q[63:6], 6'b0};
+                arlen_o     =   8'd7;
+                arsize_o    =   SIZE_8B;
+                arburst_o   =   INCR;
+                arlock_o    =   1'b0;
+                arid_o      =   ID_IFU;
+                arcache_o   =   CACHE_WB_RALLOC;
+                arprot_o    =   PROT_IFU;
+                arqos_o     =   4'b0000;
+                arvalid_o   =   1'b1;
             end
-            S_IC_LOAD_WAIT: begin
-                instr_offset        =   instr_mem_addr_ff[5:2];
-                data_line           =   instr_mem_addr_ff[12:6];
+            IC_REFILL: begin
+                offset      =   pc_q[5:2];
+                index_q     =   pc_q[11:6];
+                tag_q       =   pc_q[63:12];
 
-                rready_o            =   1'b1;
+                rready_o    =   1'b1;
             end
-            S_IC_LOAD_1: begin
-                instr_offset        =   instr_mem_addr_ff[5:2];
-                data_line           =   instr_mem_addr_ff[12:6];
+            IC_REFILL_DONE: begin
+                flush                   =   flush_ff || flush_i;
+                invalidate              =   invalidate_ff || invalidate_i;
 
-                rready_o            =   1'b1;
-            end
-            S_IC_LOAD_2: begin
-                instr_offset        =   instr_mem_addr_ff[5:2];
-                data_line           =   instr_mem_addr_ff[12:6];
+                invalidate_done_o       =   invalidate;
 
-                rready_o            =   1'b1;
-            end
-            S_IC_LOAD_3: begin
-                instr_offset        =   instr_mem_addr_ff[5:2];
-                data_line           =   instr_mem_addr_ff[12:6];
+                index_q                 =   pc_q[11:6];
+                index                   =   pc_i[11:6];
+                data_index              =   pc_i[11:3];
 
-                rready_o            =   1'b1;
-            end
-            S_IC_LOAD_DONE: begin
-                exc_valid_o         =   error_ff | id_error;
-                exc_code_o          =   INSTR_ACC_FAULT;
+                ic_ready_o              =   flush || invalidate || ifu_ready_i;
 
-                instr_index         =   instr_mem_addr_ff[12:6];
-                instr_tag           =   instr_mem_addr_ff[63:13];
+                if (!(flush || invalidate)) begin
+                    instr_o             =   instr_hold;
+                    instr_valid_o       =   1'b1;
 
-                if (~(flush_ff)) begin
-                    instr_o         =   instr_hold;
-                    instr_valid_o   =   1'b1;
+                    exc_valid_o         =   exc_ff;
+                    exc_code_o          =   I_ACC_FAULT;
                 end
 
+                PLRU_rd_set             =   PLRU_tree[index_q];
+
                 case (way_fill_q)
-                    2'b00: nxt_PLRU_tree    =   {2'b11, PLRU_tree_q[2]};
-                    2'b01: nxt_PLRU_tree    =   {2'b10, PLRU_tree_q[2]};
-                    2'b10: nxt_PLRU_tree    =   {1'b0, PLRU_tree_q[1], 1'b1};
-                    2'b11: nxt_PLRU_tree    =   {1'b0, PLRU_tree_q[1], 1'b0};
-                    default: nxt_PLRU_tree  =   PLRU_tree_q;
+                    3'b000: nxt_PLRU_set    =   PLRU_rd_set | 7'b1101000;
+                    3'b001: nxt_PLRU_set    =   (PLRU_rd_set | 7'b1100000) & 7'b1110111;
+                    3'b010: nxt_PLRU_set    =   (PLRU_rd_set | 7'b1000100) & 7'b1011111;
+                    3'b011: nxt_PLRU_set    =   (PLRU_rd_set | 7'b1000000) & 7'b1011011;
+                    3'b100: nxt_PLRU_set    =   (PLRU_rd_set | 7'b0010010) & 7'b0111111;
+                    3'b101: nxt_PLRU_set    =   (PLRU_rd_set | 7'b0010000) & 7'b0111101;
+                    3'b110: nxt_PLRU_set    =   (PLRU_rd_set | 7'b0000001) & 7'b0101111;
+                    3'b111: nxt_PLRU_set    =   (PLRU_rd_set | 7'b0000000) & 7'b0101110;
+                    default: nxt_PLRU_set   =   PLRU_rd_set;
                 endcase
             end
         endcase

@@ -1,5 +1,4 @@
 import cpu_defines::*;
-import cpu_utils::*;
 
 module decode (
     input logic [31:0]      instr_i,

@@ -32,12 +32,12 @@ module i_pmp (
     logic [15:0][53:0]  pmpaddr;
     logic [15:0][7:0]   pmpcfg;
 
-    logic [2:0]         pmp_a;
+    logic [1:0]         pmp_a;
     logic [53:0]        na_mask;
 
     logic [15:0]        ge;
     logic [15:0]        match_addr;
-    logic [15:0]        pmpcfg_match;
+    logic [7:0]         pmpcfg_match;
 
     always_comb begin
         pc          =   pc_i[55:2];
@@ -54,13 +54,13 @@ module i_pmp (
         end
 
         for (int i=0; i<16; i++) begin
-            pmp_a   =   pmpcfg[i][4:3];
-            na_mask =   (pmp_a == NAPOT) ? napot_mask(pmpaddr[i]) : 54'h0;
+            pmp_a       =   pmpcfg[i][4:3];
+            na_mask     =   (pmp_a == NAPOT) ? napot_mask(pmpaddr[i]) : 54'h0;
 
             case (pmp_a)
-                OFF: match_addr[i]          =   1'b0;
-                TOR: match_addr[i]          =   (i == 0) ? !ge[0] : (ge[i-1] && !ge[i]);
-                NA4, NAPOT: match_addr[i]   =   &((pc ~^ pmpaddr[i]) | na_mask);
+                OFF:            match_addr[i]   =   1'b0;
+                TOR:            match_addr[i]   =   (i == 0) ? !ge[0] : (ge[i-1] && !ge[i]);
+                NA4, NAPOT:     match_addr[i]   =   &((pc ~^ pmpaddr[i]) | na_mask);
             endcase
         end
 

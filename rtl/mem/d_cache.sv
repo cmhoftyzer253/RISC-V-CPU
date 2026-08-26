@@ -1,826 +1,713 @@
-import cpu_consts::*;
+import cpu_defines::*;
+import cpu_types::*;
+import cpu_utils::*;
 
-module d_cache #(
-    parameter int ID_W = 1
-)(
-    input logic clk,
-    input logic resetn,
+module d_cache(
 
-    //memory module request interface
-    input logic                 dc_req_i,
-    input logic [63:0]          dc_addr_i,
-    input logic                 dc_wr_i,
-    input logic [63:0]          dc_wr_data_i,
-    input logic [7:0]           dc_mask_i,
-    output logic                dc_ready_o,
+    input logic             clk,
+    input logic             resetn,
 
-    //memory module response interface
-    input logic                 mem_ready_i,
-    output logic                dc_resp_valid_o,
-    output logic [63:0]         dc_rd_data_o,
+    input logic             dc_valid_i,
+    input logic [63:0]      dc_data_i,
+    input logic             dc_ls_i,
+    input logic [63:0]      dc_addr_i,
+    input logic [7:0]       dc_mask_i,
+    output logic            dc_ready_o,
 
-    //AXI Interface to DDR3 main memory
+    input logic             lsu_ready_i,        
+    output logic            dc_rvalid_o,
+    output logic [63:0]     dc_ldata_o,    
+
+    output logic            validM_o,
+    output logic [63:0]     dataM_o,
+    output logic [63:0]     addrM_o,   
+    output logic [7:0]      maskM_o,    
+
+    //AXI4 Interface
     // load request (AR channel)
-    input logic                 arready_i,
-    output logic [63:0]         araddr_o,               //Byte address for read request  
-    output logic [7:0]          arlen_o,                //burst length minus 1 (keep at 0 = 1 beat)
-    output logic [2:0]          arsize_o,               //log2 of number of bytes per beat 0=1byte, 1=2byte, 2=4byte, 3=8byte
-    output logic [1:0]          arburst_o,              // burst type
-    output logic [ID_W-1:0]     arid_o,                 //
-    output logic [2:0]          arprot_o,               //
-    output logic                arvalid_o,              //read address is valid
+    input logic             arready_i,
+    output logic [63:0]     araddr_o,
+    output logic [7:0]      arlen_o,
+    output logic [2:0]      arsize_o,
+    output logic [1:0]      arburst_o,
+    output logic            arlock_o,
+    output logic [3:0]      arid_o,
+    output logic [3:0]      arcache_o,
+    output logic [2:0]      arprot_o,
+    output logic [3:0]      arqos_o,
+    output logic            arvalid_o,
 
     // load response (R channel)
-    input logic                 rvalid_i,               //asserted when rdata is valid
-    input logic [127:0]         rdata_i,                //data from memory
-    input logic [1:0]           rresp_i,                //response code (00 = OKAY, otherwise error)
-    input logic                 rlast_i,                //last beat of burst 
-    input logic [ID_W-1:0]      rid_i,
-    output logic                rready_o,               //assert when ready to accept rdata
+    input logic [3:0]       rid_i,
+    input logic [63:0]      rdata_i,
+    input logic [1:0]       rresp_i,
+    input logic             rlast_i,
+    input logic             rvalid_i,
+    output logic            rready_o,
 
-    // store request (AW & W channel)
-    input logic                 awready_i,
-    input logic                 wready_i,
-    output logic [63:0]         awaddr_o,               //Byte address for write request
-    output logic                awvalid_o,              //write address is valid
-    output logic [2:0]          awsize_o,               //log2 of number of bytes per beat 0=1byte, 1=2byte, 2=4byte, 3=8byte
-    output logic [7:0]          awlen_o,                //burst length minus 1 (keep at 0 = 1 beat)
-    output logic [1:0]          awburst_o,              //burst type 
-    output logic [ID_W-1:0]     awid_o,
-    output logic [127:0]        wdata_o,                //data to be written
-    output logic [15:0]         wstrb_o,                //byte write strobes
-    output logic                wvalid_o,               //asserted when wdata valid
-    output logic                wlast_o,                //last beat of burst (single beat - always 1 when wvalid = 1)
+    // store request (AW, W channels)
+    input logic             awready_i,
+    input logic             wready_i,
+    output logic [63:0]     awaddr_o,
+    output logic            awvalid_o,
+    output logic [2:0]      awsize_o,
+    output logic [7:0]      awlen_o,
+    output logic [1:0]      awburst_o,
+    output logic            awlock_o,
+    output logic [3:0]      awid_o,
+    output logic [3:0]      awcache_o,
+    output logic [2:0]      awprot_o,
+    output logic [3:0]      awqos_o,
+    output logic [63:0]     wdata_o,
+    output logic [7:0]      wstrb_o,
+    output logic            wvalid_o,
+    output logic            wlast_o,
 
     // store response (B channel)
-    input logic [1:0]           bresp_i,                //response code (00 = OKAY, otherwise error)
-    input logic                 bvalid_i,               //write response is avilable
-    input logic [ID_W-1:0]      bid_i,
-    output logic                bready_o,               //assert when ready to accept response
+    input logic [1:0]       bresp_i,
+    input logic             bvalid_i,
+    input logic [3:0]       bid_i,
+    output logic            bready_o,
 
-    output logic                exc_valid_o,
-    output exc_cause_t          exc_code_o
+    input logic             flushM_i,
+    input logic             stop_cacheop_i,   
+
+    input logic             clean_i,
+    output logic            clean_done_o,
+
+    output logic            exc_valid_o
 );
 
-    logic req_handshake;
-    logic req_handshake_ff;
+    logic [51:0]        tag;
+    logic [51:0]        tagM;
+    logic [5:0]         index;
+    logic [5:0]         indexM;
+    logic [2:0]         offset;
+    logic [2:0]         offsetM;
+    logic [8:0]         data_index;
+    logic [8:0]         data_indexM;
 
-    logic [63:0]    dc_addr_ff;
-    logic           dc_wr_ff;
-    logic [63:0]    dc_wr_data_ff;
-    logic [7:0]     dc_mask_ff;
+    logic [7:0]         hit_1h;
+    logic [2:0]         hit_way;
+    logic               hit_raw;
+    logic               hit;
+    logic               miss;
 
-    logic [50:0]    data_tag;
-    logic [50:0]    data_tag_ff;
-    logic [50:0]    victim_tag;
+    logic               flush;
+    logic               exc;
+    logic               flush_ff;
+    logic               exc_ff;
 
-    logic [6:0]     tag_index;
-    logic [6:0]     tag_index_ff;
+    logic [2:0]         beat_cnt;
+    logic [2:0]         prefetch_cnt;
 
-    logic [6:0]     data_line;
-    logic [2:0]     data_offset;
-    logic [9:0]     data_index;
-    logic [9:0]     data_index_ff;
+    logic [63:0]        data_hold;
 
-    logic [3:0]     hit_1h;
+    logic               bypass_active;
+    logic               nxt_bypass_active;
+    logic [63:0]        bypass_data;
 
-    logic           data_hit;
-    logic           cache_miss;
+    logic [2:0]         cur_way;
 
-    logic [63:0]    fetch_data;
-    logic [63:0]    store_data;
-    logic [63:0]    data_hold;
+    logic [63:0]        load_data;
+    logic [63:0]        load_data_eff;
+    logic [63:0]        store_data;
+    logic [63:0]        refill_data;
+    logic [63:0]        refill_data_eff;
 
-    logic [2:0]     PLRU_tree_q;
-    logic [2:0]     nxt_PLRU_tree;
+    logic [7:0]         valid_sets;
+    logic [6:0]         PLRU_rd_set;
+    logic [6:0]         nxt_PLRU_hit;
+    logic [6:0]         nxt_PLRU_refill;
+    logic [2:0]         way_fill_PLRU;
+    logic [2:0]         way_fill_invalid;
+    logic               way_fill_evict;
+    logic [2:0]         nxt_way_fill;
+    logic [2:0]         way_fill_q;
+    logic               way_dirty;
+    logic               wb_dirty;
+    logic [51:0]        victim_tag;
 
-    logic [1:0]     way_fill_q;
-    logic [1:0]     nxt_way_fill;
+    logic               way_clean_done;
+    logic [5:0]         clean_line;
+    logic [63:0]        cur_way_dirty;
 
-    logic           way_dirty;
-    logic           wb_dirty;
+    logic               validM;
+    logic [63:0]        addrM;
+    logic [63:0]        dataM;
+    logic               lsM;
+    logic [7:0]         maskM;
 
-    logic           way_fill_replace;
+    logic [6:0]         PLRU_tree [63:0];
 
-    logic [1:0]     way_fill_invalid;
-    logic [1:0]     way_fill_PLRU;
+    logic [4:0]         state;
 
-    logic [63:0]    wb_lower;
-    logic [63:0]    wb_upper;
+    logic [7:0][51:0]   tag_rd;
+    logic [7:0][63:0]   data_rd;
 
-    logic           bypass_reg_wr;
-    logic           bypass_active;
+    logic [7:0][63:0]   valid;
+    logic [7:0][63:0]   dirty;
 
-    logic [63:0]    bypass_data;
+    logic               tag_rd_en;    
+    logic [5:0]         tag_rd_addr;
+    logic [7:0]         tag_wr_en;
+    logic [5:0]         tag_wr_addr;
+    logic [51:0]        tag_wr_data;
 
-    logic           error_ff;
-    logic           id_error;
+    logic               data_rd_en;
+    logic [8:0]         data_rd_addr;
+    logic [7:0]         data_wr_en;
+    logic [8:0]         data_wr_addr;
+    logic [63:0]        data_wr_data;
 
-    logic [63:0]    data_rd_w0;
-    logic [63:0]    data_rd_w1;
-    logic [63:0]    data_rd_w2;
-    logic [63:0]    data_rd_w3;
+    //tag, data RAM
+    genvar w;
+    generate
+        for (w=0; w<8; w++) begin : tag_RAM
+            xpm_memory_sdpram #(
+                .MEMORY_SIZE            (64 * 52),
+                .MEMORY_PRIMITIVE       ("auto"),
+                .CLOCKING_MODE          ("common_clock"),
+                .WRITE_DATA_WIDTH_A     (52),
+                .ADDR_WIDTH_A           (6),
+                .BYTE_WRITE_WIDTH_A     (52),
+                .READ_DATA_WIDTH_B      (52),
+                .ADDR_WIDTH_B           (6),
+                .READ_LATENCY_B         (1),
+                .READ_RESET_VALUE_B     ("0"),
+                .WRITE_MODE_B           ("read_first"),
+                .MEMORY_INIT_FILE       ("none"),
+                .USE_MEM_INIT           (0),
+                .ECC_MODE               ("no_ecc")
+            ) u_tag_spdram (
+                .clka                   (clk),
+                .ena                    (1'b1),
+                .wea                    (tag_wr_en[w]),
+                .addra                  (tag_wr_addr),
+                .dina                   (tag_wr_data),
+                .clkb                   (clk),
+                .enb                    (tag_rd_en),
+                .addrb                  (tag_rd_addr),
+                .doutb                  (tag_rd[w]),
+                .rstb                   (1'b0),
+                .regceb                 (1'b1),
+                .sleep                  (1'b0),
+                .injectsbiterra         (1'b0),
+                .injectdbiterra         (1'b0),
+                .sbiterrb               (),
+                .dbiterrb               ()
+            );
+        end
 
-    d_cache_tag_t   tag_rd_w0;
-    d_cache_tag_t   tag_rd_w1;
-    d_cache_tag_t   tag_rd_w2;
-    d_cache_tag_t   tag_rd_w3;
-    
-    d_cache_tag_t tags_w0 [127:0];
-    d_cache_tag_t tags_w1 [127:0];
-    d_cache_tag_t tags_w2 [127:0];
-    d_cache_tag_t tags_w3 [127:0];
-
-    d_cache_state_t             state;
-
-    (* ram_style = "block" *) logic [63:0] data_w0 [1023:0];
-    (* ram_style = "block" *) logic [63:0] data_w1 [1023:0];
-    (* ram_style = "block" *) logic [63:0] data_w2 [1023:0];
-    (* ram_style = "block" *) logic [63:0] data_w3 [1023:0];
+        for (w=0; w<8; w++) begin : data_RAM
+            xpm_memory_sdpram #(
+                .MEMORY_SIZE            (512 * 64),
+                .MEMORY_PRIMITIVE       ("block"),
+                .CLOCKING_MODE          ("common_clock"),
+                .WRITE_DATA_WIDTH_A     (64),
+                .ADDR_WIDTH_A           (9),
+                .BYTE_WRITE_WIDTH_A     (64),
+                .READ_DATA_WIDTH_B      (64),
+                .ADDR_WIDTH_B           (9),
+                .READ_LATENCY_B         (1),
+                .READ_RESET_VALUE_B     ("0"),
+                .WRITE_MODE_B           ("read_first"),
+                .MEMORY_INIT_FILE       ("none"),
+                .USE_MEM_INIT           (0),
+                .ECC_MODE               ("no_ecc")
+            ) u_data_spdram (
+                .clka                   (clk),
+                .ena                    (1'b1),
+                .wea                    (data_wr_en[w]),
+                .addra                  (data_wr_addr),
+                .dina                   (data_wr_data),
+                .clkb                   (clk),
+                .enb                    (data_rd_en),
+                .addrb                  (data_rd_addr),
+                .doutb                  (data_rd[w]),
+                .rstb                   (1'b0),
+                .regceb                 (1'b1),
+                .sleep                  (1'b0),
+                .injectsbiterra         (1'b0),
+                .injectdbiterra         (1'b0),
+                .sbiterrb               (),
+                .dbiterrb               ()
+            );
+        end
+    endgenerate
 
     always_ff @(posedge clk or negedge resetn) begin
         if (~resetn) begin
-            req_handshake_ff                    <= 1'b0;
+            validM          <=  1'b0;
+            addrM           <=  64'h0;
+            dataM           <=  64'h0;
+            lsM             <=  DC_LOAD;
+            maskM           <=  8'b0;
 
-            dc_addr_ff                          <= 64'h0;
-            dc_wr_ff                            <= 1'b0;
-            dc_wr_data_ff                       <= 64'h0;
-            dc_mask_ff                          <= 8'b0;
+            bypass_active   <=  1'b0;
+            bypass_data     <=  64'h0;
 
-            tag_rd_w0                           <= '0;
-            tag_rd_w1                           <= '0;
-            tag_rd_w2                           <= '0;
-            tag_rd_w3                           <= '0;
+            flush_ff        <=  1'b0;
+            exc_ff          <=  1'b0;
 
-            data_rd_w0                          <= 64'h0;
-            data_rd_w1                          <= 64'h0;
-            data_rd_w2                          <= 64'h0;
-            data_rd_w3                          <= 64'h0;
+            way_fill_q      <=  3'd0;
+            beat_cnt        <=  3'd0;
+            data_hold       <=  64'h0;
 
-            PLRU_tree_q                         <= 3'b000;
-            way_fill_q                          <= 2'b00;
+            cur_way         <=  3'd0;
 
-            wb_lower                            <= 64'h0;
-            wb_upper                            <= 64'h0;
+            valid           <=  '0;
+            dirty           <=  '0;
 
-            bypass_active                       <= 1'b0;
-            bypass_data                         <= 64'h0;
-
-            data_hold                           <= 64'h0;
-
-            error_ff                            <= 1'b0;
-            id_error                            <= 1'b0;
-
-            for (int i=0; i<128; i++) begin
-                tags_w0[i].valid                <= 1'b0;
-                tags_w1[i].valid                <= 1'b0;
-                tags_w2[i].valid                <= 1'b0;
-                tags_w3[i].valid                <= 1'b0;
-
-                tags_w0[i].dirty                <= 1'b0;
-                tags_w1[i].dirty                <= 1'b0;
-                tags_w2[i].dirty                <= 1'b0;
-                tags_w3[i].dirty                <= 1'b0;
-
-                tags_w0[i].tag                  <= '0;
-                tags_w1[i].tag                  <= '0;
-                tags_w2[i].tag                  <= '0;
-                tags_w3[i].tag                  <= '0;
-            end
-
-            state                               <= S_DC_RUN;
+            state           <=  DC_RUN;
         end else begin
             case (state)
-                S_DC_RUN: begin
-                    req_handshake_ff            <= req_handshake;
+                DC_RUN: begin
+                    bypass_active   <=  nxt_bypass_active;
+                    bypass_data     <=  store_data;
 
-                    if (data_hit) begin
-                        if (dc_wr_ff) begin
-                            case (hit_1h)
-                                4'b0001: begin
-                                    data_w0[data_index_ff]          <= store_data;
-                                    tags_w0[tag_index_ff].dirty     <= 1'b1;
-                                end
-                                4'b0010: begin
-                                    data_w1[data_index_ff]          <= store_data;
-                                    tags_w1[tag_index_ff].dirty     <= 1'b1;
-                                end 
-                                4'b0100: begin
-                                    data_w2[data_index_ff]          <= store_data;
-                                    tags_w2[tag_index_ff].dirty     <= 1'b1;
-                                end
-                                4'b1000: begin
-                                    data_w3[data_index_ff]          <= store_data;
-                                    tags_w3[tag_index_ff].dirty     <= 1'b1;
-                                end
-                            endcase
+                    if (hit && lsu_ready_i) begin
+                        PLRU_tree[indexM]  <=  nxt_PLRU_hit;
 
-                            if (bypass_reg_wr) begin
-                                bypass_data     <= store_data;
-                            end 
-                        end 
+                        if (lsM == DC_STORE)
+                            dirty[hit_way][indexM]          <=  1'b1;
+                    end
+                    if (!miss && lsu_ready_i) begin
+                        validM      <=  dc_valid_i;
+                        addrM       <=  dc_addr_i;
+                        dataM       <=  dc_data_i;
+                        lsM         <=  dc_ls_i;
+                        maskM       <=  dc_mask_i;
+                    end
+                    if (miss) begin
+                        way_fill_q                      <=  nxt_way_fill;
+                        beat_cnt                        <=  3'd0;
+                        valid[nxt_way_fill][indexM]     <=  1'b0;
+                    end
 
-                        PLRU_tree_q             <= nxt_PLRU_tree;
-                    end 
+                    //state updates
+                    if (miss) begin
+                        if (wb_dirty)
+                            state   <=  DC_WRITEBACK_REQ;
+                        else
+                            state   <=  DC_REFILL_REQ;
+                    end else if (clean_i && !flushM_i) begin
+                        cur_way     <=  3'd0;
 
-                    if (req_handshake) begin
-                        tag_rd_w0               <= tags_w0[tag_index];
-                        tag_rd_w1               <= tags_w1[tag_index];
-                        tag_rd_w2               <= tags_w2[tag_index];
-                        tag_rd_w3               <= tags_w3[tag_index];
+                        state       <=  DC_CLEAN;
+                    end
+                end
+                DC_WRITEBACK_REQ: begin
+                    flush_ff    <=  flush_ff || flushM_i;
 
-                        data_rd_w0              <= data_w0[data_index];
-                        data_rd_w1              <= data_w1[data_index];
-                        data_rd_w2              <= data_w2[data_index];
-                        data_rd_w3              <= data_w3[data_index];
+                    if (awready_i)
+                        state   <=  DC_WRITEBACK;
+                end
+                DC_WRITEBACK: begin
+                    flush_ff    <=  flush_ff || flushM_i;
 
-                        dc_addr_ff              <= dc_addr_i;
-                        dc_wr_ff                <= dc_wr_i;
-                        dc_wr_data_ff           <= dc_wr_data_i;
-                        dc_mask_ff              <= dc_mask_i;
+                    if (wready_i) begin
+                        if (beat_cnt == 3'd7) begin
+                            beat_cnt    <=  3'd0;
 
-                        bypass_active           <= bypass_reg_wr;
-                    end else begin
-                        bypass_active           <= 1'b0;
-                    end              
-
-                    if (cache_miss) begin
-                        way_fill_q              <= nxt_way_fill;
-
-                        data_hold               <= 64'h0;
-
-                        if (wb_dirty) begin
-                            state               <= S_DC_STORE_AW_WAIT;
+                            state       <=  DC_WRITEBACK_DONE;
                         end else begin
-                            state               <= S_DC_LOAD_REQUEST;
+                            beat_cnt    <=  beat_cnt + 3'd1;
                         end
                     end
                 end
-                S_DC_STORE_AW_WAIT: begin
-                    if (awready_i) begin
-                        case (way_fill_q)
-                            2'b00: begin
-                                wb_lower        <= data_w0[{tag_index_ff, 3'b000}];
-                                wb_upper        <= data_w0[{tag_index_ff, 3'b001}];
-                            end
-                            2'b01: begin
-                                wb_lower        <= data_w1[{tag_index_ff, 3'b000}];
-                                wb_upper        <= data_w1[{tag_index_ff, 3'b001}];
-                            end
-                            2'b10: begin
-                                wb_lower        <= data_w2[{tag_index_ff, 3'b000}];
-                                wb_upper        <= data_w2[{tag_index_ff, 3'b001}];
-                            end
-                            2'b11: begin
-                                wb_lower        <= data_w3[{tag_index_ff, 3'b000}];
-                                wb_upper        <= data_w3[{tag_index_ff, 3'b001}];
-                            end
-                        endcase
+                DC_WRITEBACK_DONE: begin
+                    flush_ff    <=  flush_ff || flushM_i;
 
-                        state                   <= S_DC_STORE_1;
-                    end
-                end
-                S_DC_STORE_1: begin
-                    if (wready_i) begin
-                        case (way_fill_q)
-                            2'b00: begin
-                                wb_lower        <= data_w0[{tag_index_ff, 3'b010}];
-                                wb_upper        <= data_w0[{tag_index_ff, 3'b011}];
-                            end
-                            2'b01: begin
-                                wb_lower        <= data_w1[{tag_index_ff, 3'b010}];
-                                wb_upper        <= data_w1[{tag_index_ff, 3'b011}];
-                            end
-                            2'b10: begin
-                                wb_lower        <= data_w2[{tag_index_ff, 3'b010}];
-                                wb_upper        <= data_w2[{tag_index_ff, 3'b011}];
-                            end 
-                            2'b11: begin
-                                wb_lower        <= data_w3[{tag_index_ff, 3'b010}];
-                                wb_upper        <= data_w3[{tag_index_ff, 3'b011}];
-                            end
-                        endcase
-
-                        state                   <= S_DC_STORE_2;
-                    end
-                end
-                S_DC_STORE_2: begin
-                    if (wready_i) begin
-                        case (way_fill_q)
-                            2'b00: begin
-                                wb_lower        <= data_w0[{tag_index_ff, 3'b100}];
-                                wb_upper        <= data_w0[{tag_index_ff, 3'b101}];
-                            end
-                            2'b01: begin
-                                wb_lower        <= data_w1[{tag_index_ff, 3'b100}];
-                                wb_upper        <= data_w1[{tag_index_ff, 3'b101}];
-                            end
-                            2'b10: begin
-                                wb_lower        <= data_w2[{tag_index_ff, 3'b100}];
-                                wb_upper        <= data_w2[{tag_index_ff, 3'b101}];
-                            end
-                            2'b11: begin
-                                wb_lower        <= data_w3[{tag_index_ff, 3'b100}];
-                                wb_upper        <= data_w3[{tag_index_ff, 3'b101}];
-                            end
-                        endcase
-
-                        state                   <= S_DC_STORE_3;
-                    end
-                end
-                S_DC_STORE_3: begin
-                    if (wready_i) begin
-                        case(way_fill_q)
-                            2'b00: begin
-                                wb_lower        <= data_w0[{tag_index_ff, 3'b110}];
-                                wb_upper        <= data_w0[{tag_index_ff, 3'b111}];
-                            end
-                            2'b01: begin
-                                wb_lower        <= data_w1[{tag_index_ff, 3'b110}];
-                                wb_upper        <= data_w1[{tag_index_ff, 3'b111}];
-                            end
-                            2'b10: begin
-                                wb_lower        <= data_w2[{tag_index_ff, 3'b110}];
-                                wb_upper        <= data_w2[{tag_index_ff, 3'b111}];
-                            end
-                            2'b11: begin
-                                wb_lower        <= data_w3[{tag_index_ff, 3'b110}];
-                                wb_upper        <= data_w3[{tag_index_ff, 3'b111}];
-                            end
-                        endcase
-
-                        state                   <= S_DC_STORE_4;
-                    end
-                end
-                S_DC_STORE_4: begin
-                    if (wready_i) begin
-                        state                   <= S_DC_STORE_DONE;
-                    end
-                end
-                S_DC_STORE_DONE: begin
                     if (bvalid_i) begin
-                        if ((bresp_i != 2'b00) | (bid_i != '0)) begin
-                            state               <= S_DC_RUN;
+                        dirty[way_fill_q][indexM]   <=  1'b0;
+
+                        if (flush) begin
+                            flush_ff    <=  1'b0;
+
+                            state       <=  DC_RUN;
                         end else begin
-                            state               <= S_DC_LOAD_REQUEST;
-                        end
+                            beat_cnt    <=  3'd0;
 
-                        
+                            state       <=  DC_REFILL_REQ;
+                        end
                     end
                 end
-                S_DC_LOAD_REQUEST: begin
-                    if (arready_i) begin
-                        state                   <= S_DC_LOAD_1;
-                    end
+                DC_REFILL_REQ: begin
+                    flush_ff    <=  flush_ff || flushM_i;
+
+                    if (arready_i)
+                        state   <=  DC_REFILL;
                 end
-                S_DC_LOAD_1: begin
+                DC_REFILL: begin
+                    flush_ff    <=  flush_ff || flushM_i;
+
                     if (rvalid_i) begin
-                        case (data_offset)
-                            3'b000: data_hold   <= rdata_i[63:0];
-                            3'b001: data_hold   <= rdata_i[127:64];
-                            default: data_hold  <= data_hold;
-                        endcase
+                        exc_ff <= exc_ff || exc;
 
-                        if (way_fill_q == 2'b00) begin
-                            data_w0[{data_line, 3'b000}]    <= rdata_i[63:0];
-                            data_w0[{data_line, 3'b001}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b01) begin
-                            data_w1[{data_line, 3'b000}]    <= rdata_i[63:0];
-                            data_w1[{data_line, 3'b001}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b10) begin
-                            data_w2[{data_line, 3'b000}]    <= rdata_i[63:0];
-                            data_w2[{data_line, 3'b001}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b11) begin
-                            data_w3[{data_line, 3'b000}]    <= rdata_i[63:0];
-                            data_w3[{data_line, 3'b001}]    <= rdata_i[127:64];
+                        if (offsetM == beat_cnt)
+                            data_hold   <=  refill_data_eff;
+
+                        if ((beat_cnt == 3'd7) || rlast_i) begin
+                            beat_cnt    <=  3'd0;
+
+                            dirty[way_fill_q][indexM]   <=  (lsM == DC_STORE);
+
+                            state       <=  DC_REFILL_DONE;
+                        end else begin
+                            beat_cnt    <=  beat_cnt + 3'd1;
                         end
-
-                        error_ff                <= (rresp_i != 2'b00);
-                        id_error                <= (rid_i != '0);
-
-                        state                   <= S_DC_LOAD_2;
                     end
                 end
-                S_DC_LOAD_2: begin
-                    if (rvalid_i) begin
-                        case (data_offset)
-                            3'b010: data_hold   <= rdata_i[63:0];
-                            3'b011: data_hold   <= rdata_i[127:64];
-                            default: data_hold  <= data_hold;
-                        endcase
+                DC_REFILL_DONE: begin
+                    flush_ff    <=  flush_ff || flushM_i;
 
-                        if (way_fill_q == 2'b00) begin
-                            data_w0[{data_line, 3'b010}]    <= rdata_i[63:0];
-                            data_w0[{data_line, 3'b011}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b01) begin
-                            data_w1[{data_line, 3'b010}]    <= rdata_i[63:0];
-                            data_w1[{data_line, 3'b011}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b10) begin
-                            data_w2[{data_line, 3'b010}]    <= rdata_i[63:0];
-                            data_w2[{data_line, 3'b011}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b11) begin
-                            data_w3[{data_line, 3'b010}]    <= rdata_i[63:0];
-                            data_w3[{data_line, 3'b011}]    <= rdata_i[127:64];
+                    //data registers
+                    if (flush || lsu_ready_i) begin
+                        validM          <= dc_valid_i;
+                        addrM           <= dc_addr_i;
+                        dataM           <= dc_data_i;
+                        lsM             <= dc_ls_i;
+                        maskM           <= dc_mask_i;
+
+                        flush_ff        <=  1'b0;
+                        exc_ff          <=  1'b0;
+                        bypass_active   <=  1'b0;
+
+                        if (!exc_ff) begin
+                            PLRU_tree[indexM]           <=  nxt_PLRU_refill;
+
+                            valid[way_fill_q][indexM]   <=  1'b1;
                         end
 
-                        error_ff                <= error_ff | (rresp_i != 2'b00);
-                        id_error                <= id_error | (rid_i != '0);
-
-                        state                   <= S_DC_LOAD_3;
+                        state           <=  DC_RUN;
                     end
                 end
-                S_DC_LOAD_3: begin
-                    if (rvalid_i) begin
-                        case (data_offset) 
-                            3'b100: data_hold   <= rdata_i[63:0];
-                            3'b101: data_hold   <= rdata_i[127:64];
-                            default: data_hold  <= data_hold;
-                        endcase
+                DC_CLEAN: begin
+                    if (flushM_i) begin
+                        cur_way         <=  3'd0;
 
-                        if (way_fill_q == 2'b00) begin
-                            data_w0[{data_line, 3'b100}]    <= rdata_i[63:0];
-                            data_w0[{data_line, 3'b101}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b01) begin
-                            data_w1[{data_line, 3'b100}]    <= rdata_i[63:0];
-                            data_w1[{data_line, 3'b101}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b10) begin
-                            data_w2[{data_line, 3'b100}]    <= rdata_i[63:0];
-                            data_w2[{data_line, 3'b101}]    <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b11) begin
-                            data_w3[{data_line, 3'b100}]    <= rdata_i[63:0];
-                            data_w3[{data_line, 3'b101}]    <= rdata_i[127:64];
+                        state           <=  DC_RUN;
+                    end else if (way_clean_done) begin
+                        if (cur_way == 3'd7) begin
+                            cur_way     <=  3'd0;
+                            state       <=  DC_RUN;
+                        end else begin
+                            cur_way     <=  cur_way + 3'd1;
                         end
-
-                        error_ff                <= error_ff | (rresp_i != 2'b00);
-                        id_error                <= id_error | (rid_i != '0);
-
-                        state                   <= S_DC_LOAD_4;
-                    end
-                end
-                S_DC_LOAD_4: begin
-                    if (rvalid_i) begin
-                        
-                        case (data_offset)
-                            3'b110: data_hold   <= rdata_i[63:0];
-                            3'b111: data_hold   <= rdata_i[127:64];
-                            default: data_hold  <= data_hold;
-                        endcase
-
-                        if (way_fill_q == 2'b00) begin
-                            data_w0[{data_line, 3'b110}]        <= rdata_i[63:0];
-                            data_w0[{data_line, 3'b111}]        <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b01) begin
-                            data_w1[{data_line, 3'b110}]        <= rdata_i[63:0];
-                            data_w1[{data_line, 3'b111}]        <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b10) begin
-                            data_w2[{data_line, 3'b110}]        <= rdata_i[63:0];
-                            data_w2[{data_line, 3'b111}]        <= rdata_i[127:64];
-                        end else if (way_fill_q == 2'b11) begin
-                            data_w3[{data_line, 3'b110}]        <= rdata_i[63:0];
-                            data_w3[{data_line, 3'b111}]        <= rdata_i[127:64];
-                        end
-
-                        error_ff                <= error_ff | (rresp_i != 2'b00);
-                        id_error                <= id_error | (rid_i != '0);
-
-                        state                   <= S_DC_LOAD_DONE;
-                    end 
-                end
-                S_DC_LOAD_DONE: begin
-                    if (error_ff | id_error) begin
-                        if (way_fill_q == 2'b00) begin
-                            tags_w0[data_line].valid            <= 1'b0;
-                            tags_w0[data_line].dirty            <= 1'b0;
-                        end else if (way_fill_q == 2'b01) begin
-                            tags_w1[data_line].valid            <= 1'b0;
-                            tags_w1[data_line].dirty            <= 1'b0;
-                        end else if (way_fill_q == 2'b10) begin
-                            tags_w2[data_line].valid            <= 1'b0;
-                            tags_w2[data_line].dirty            <= 1'b0;
-                        end else if (way_fill_q == 2'b11) begin
-                            tags_w3[data_line].valid            <= 1'b0;
-                            tags_w3[data_line].dirty            <= 1'b0;
-                        end
-
-                        error_ff            <= 1'b0;
-                        id_error            <= 1'b0;
-
-                        state               <= S_DC_RUN;
                     end else begin
-                        if (mem_ready_i) begin
-                            if (way_fill_q == 2'b00) begin
-                                tags_w0[data_line].valid        <= 1'b1;
-                                tags_w0[data_line].tag          <= data_tag;
-                                tags_w0[data_line].dirty        <= dc_wr_ff ? 1'b1 : 1'b0;
-                            end else if (way_fill_q == 2'b01) begin
-                                tags_w1[data_line].valid        <= 1'b1;
-                                tags_w1[data_line].tag          <= data_tag;
-                                tags_w1[data_line].dirty        <= dc_wr_ff ? 1'b1 : 1'b0;
-                            end else if (way_fill_q == 2'b10) begin
-                                tags_w2[data_line].valid        <= 1'b1;
-                                tags_w2[data_line].tag          <= data_tag;
-                                tags_w2[data_line].dirty        <= dc_wr_ff ? 1'b1 : 1'b0;
-                            end else if (way_fill_q == 2'b11) begin
-                                tags_w3[data_line].valid        <= 1'b1;
-                                tags_w3[data_line].tag          <= data_tag;
-                                tags_w3[data_line].dirty        <= dc_wr_ff ? 1'b1 : 1'b0;
-                            end
+                        state           <=  DC_CLEAN_WRITEBACK_REQ;
+                    end
+                end
+                DC_CLEAN_WRITEBACK_REQ: begin
+                    flush_ff    <=  flush_ff || flushM_i;
 
-                            if (dc_wr_ff) begin
-                                if (way_fill_q == 2'b00) begin
-                                    data_w0[data_index]         <= store_data;
-                                end else if (way_fill_q == 2'b01) begin
-                                    data_w1[data_index]         <= store_data;
-                                end else if (way_fill_q == 2'b10) begin
-                                    data_w2[data_index]         <= store_data;
-                                end else if (way_fill_q == 2'b11) begin
-                                    data_w3[data_index]         <= store_data;
-                                end
-                            end 
+                    if (awready_i) begin
+                        state   <=  DC_CLEAN_WRITEBACK;
+                    end
+                end
+                DC_CLEAN_WRITEBACK: begin
+                    flush_ff    <=  flush_ff || flushM_i;
 
-                            PLRU_tree_q         <= nxt_PLRU_tree;
-                            data_hold           <= 64'h0;
+                    if (wready_i) begin
+                        if (beat_cnt == 3'd7) begin
+                            beat_cnt    <=  3'd0;
 
-                            error_ff            <= 1'b0;
-                            id_error            <= 1'b0;
-
-                            state               <= S_DC_RUN;
+                            state       <=  DC_CLEAN_WRITEBACK_DONE;
+                        end else begin
+                            beat_cnt    <=  beat_cnt + 3'd1;
                         end
                     end
                 end
-                default: begin
-                    state                       <= S_DC_RUN;
+                DC_CLEAN_WRITEBACK_DONE: begin
+                    flush_ff    <=  flush_ff || flushM_i;
+
+                    if (bvalid_i) begin
+                        dirty[cur_way][clean_line]  <=  1'b0;
+
+                        if (flush) begin
+                            flush_ff    <=  1'b0;
+                            cur_way     <=  3'd0;
+
+                            state       <=  DC_RUN;
+                        end else begin
+                            state       <=  DC_CLEAN;
+                        end
+                    end
                 end
             endcase
         end
     end
 
+    //load/store logic 
     always_comb begin
+        tag                 =   dc_addr_i[63:12];
+        index               =   dc_addr_i[11:6];
+        data_index          =   dc_addr_i[11:3];
+        offset              =   dc_addr_i[5:3];
 
-        dc_ready_o                  =   1'b0;
-        dc_resp_valid_o             =   1'b0;
-        dc_rd_data_o                =   64'h0;
+        tagM                =   addrM[63:12];
+        indexM              =   addrM[11:6];
+        data_indexM         =   addrM[11:3];
+        offsetM             =   addrM[5:3];
 
-        araddr_o                    =   64'h0;
-        arlen_o                     =   8'b0;
-        arsize_o                    =   3'b0;
-        arburst_o                   =   2'b0;
-        arid_o                      =   '0;
-        arprot_o                    =   3'b0;
-        arvalid_o                   =   1'b0;
+        prefetch_cnt        =   beat_cnt + 3'd1;
 
-        rready_o                    =   1'b0;
+        for (int w=0; w<8; w++)
+            hit_1h[w] = valid[w][indexM] && (tagM == tag_rd[w]);
 
-        awaddr_o                    =   64'h0;
-        awlen_o                     =   8'b0;
-        awsize_o                    =   3'b0;
-        awburst_o                   =   2'b0;
-        awid_o                      =   '0;
-        awvalid_o                   =   1'b0;
+        hit_way = 3'd0;
+        for (int w=0; w<8; w++)
+            if (hit_1h[w]) hit_way = w[2:0];
 
-        wdata_o                     =   128'h0;
-        wstrb_o                     =   16'h0;
-        wvalid_o                    =   1'b0;
-        wlast_o                     =   1'b0;
+        hit_raw             =   |hit_1h;
+        hit                 =   hit_raw && validM && !flushM_i && !stop_cacheop_i;
+        miss                =   !hit_raw && validM && !flushM_i && !stop_cacheop_i;
 
-        bready_o                    =   1'b1;
+        nxt_bypass_active   =   dc_valid_i && (lsM == DC_STORE) && hit && (addrM[63:3] == dc_addr_i[63:3]);
 
-        exc_valid_o                 =   1'b0;
-        exc_code_o                  =   5'd0;
+        load_data           =   data_rd[hit_way];
 
-        req_handshake               =   1'b0;
+        load_data_eff       =   bypass_active ? bypass_data : load_data;
 
-        bypass_reg_wr               =   1'b0;
+        store_data[7:0]     =   maskM[0] ? dataM[7:0] : load_data_eff[7:0];
+        store_data[15:8]    =   maskM[1] ? dataM[15:8] : load_data_eff[15:8];
+        store_data[23:16]   =   maskM[2] ? dataM[23:16] : load_data_eff[23:16];
+        store_data[31:24]   =   maskM[3] ? dataM[31:24] : load_data_eff[31:24];
+        store_data[39:32]   =   maskM[4] ? dataM[39:32] : load_data_eff[39:32];
+        store_data[47:40]   =   maskM[5] ? dataM[47:40] : load_data_eff[47:40];
+        store_data[55:48]   =   maskM[6] ? dataM[55:48] : load_data_eff[55:48];
+        store_data[63:56]   =   maskM[7] ? dataM[63:56] : load_data_eff[63:56];
 
-        data_tag                    =   '0;
-        tag_index                   =   '0;
-        data_offset                 =   '0;
-        data_index                  =   '0;
+        refill_data[7:0]    =   maskM[0] ? dataM[7:0] : rdata_i[7:0];
+        refill_data[15:8]   =   maskM[1] ? dataM[15:8] : rdata_i[15:8];
+        refill_data[23:16]  =   maskM[2] ? dataM[23:16] : rdata_i[23:16];
+        refill_data[31:24]  =   maskM[3] ? dataM[31:24] : rdata_i[31:24];
+        refill_data[39:32]  =   maskM[4] ? dataM[39:32] : rdata_i[39:32];
+        refill_data[47:40]  =   maskM[5] ? dataM[47:40] : rdata_i[47:40];
+        refill_data[55:48]  =   maskM[6] ? dataM[55:48] : rdata_i[55:48];
+        refill_data[63:56]  =   maskM[7] ? dataM[63:56] : rdata_i[63:56];
 
-        data_tag_ff                 =   '0;
-        data_index_ff               =   '0;
-        tag_index_ff                =   '0;
+        refill_data_eff     =   ((lsM == DC_STORE) && (beat_cnt == offsetM)) ? refill_data : rdata_i; 
+    end
 
-        victim_tag                  =   '0;
+    //select victim
+    always_comb begin
+        PLRU_rd_set         =   PLRU_tree[indexM];
 
-        hit_1h                      =   4'b0000;
-        data_hit                    =   1'b0;
-        cache_miss                  =   1'b0;
+        nxt_PLRU_hit        =   plru_update(PLRU_rd_set, hit_way);
+        nxt_PLRU_refill     =   plru_update(PLRU_rd_set, way_fill_q);
 
-        fetch_data                  =   64'h0;
-        store_data                  =   64'h0;
+        casez (PLRU_rd_set)
+            7'b00?0???: way_fill_PLRU       =   3'd0;
+            7'b00?1???: way_fill_PLRU       =   3'd1;
+            7'b01??0??: way_fill_PLRU       =   3'd2;
+            7'b01??1??: way_fill_PLRU       =   3'd3;
+            7'b1?0??0?: way_fill_PLRU       =   3'd4;
+            7'b1?0??1?: way_fill_PLRU       =   3'd5;
+            7'b1?1???0: way_fill_PLRU       =   3'd6;
+            7'b1?1???1: way_fill_PLRU       =   3'd7;
+            default: way_fill_PLRU          =   3'd0;
+        endcase
 
-        nxt_PLRU_tree               =   PLRU_tree_q;
+        for (int w=0; w<8; w++)
+            valid_sets[w] = valid[w][indexM];
+
+        way_fill_evict      =   &valid_sets;
+
+        way_fill_invalid    =   3'd0;
+        for (int w=7; w >= 0; w--)
+            if (!valid_sets[w]) way_fill_invalid = w[2:0];
+
+        nxt_way_fill        =   way_fill_evict ? way_fill_PLRU : way_fill_invalid;
+
+        way_dirty           =   dirty[nxt_way_fill][indexM];
+
+        wb_dirty            =   way_fill_evict && way_dirty;
+
+        victim_tag          =   tag_rd[way_fill_q];
+    end
+
+    //clean logic 
+    always_comb begin
+        cur_way_dirty   =   dirty[cur_way];
+        way_clean_done  =   ~|cur_way_dirty;
+
+        clean_line      =   6'd0;
+        for (int i=63; i >= 0; i--)
+            if (cur_way_dirty[i]) clean_line = i[5:0];
+    end
+
+    always_comb begin
+        validM_o            =   validM;
+        dataM_o             =   dataM;
+        addrM_o             =   addrM;
+        maskM_o             =   maskM;
+
+        dc_ready_o          =   1'b0;
+        dc_rvalid_o         =   1'b0;
+        dc_ldata_o          =   64'h0;
+
+        araddr_o            =   64'h0;
+        arvalid_o           =   1'b0;
+        arlen_o             =   8'd0;
+        arsize_o            =   3'd0;
+        arburst_o           =   2'b0;
+        arid_o              =   4'b0;
+        arcache_o           =   4'd0;
+        arprot_o            =   3'b0;
+        arqos_o             =   4'd0;
         
-        way_fill_replace            =   1'b0;
-        way_fill_invalid            =   2'b00;
-        way_fill_PLRU               =   2'b00;
+        rready_o            =   1'b0;
 
-        nxt_way_fill                =   way_fill_q;
-        
-        way_dirty                   =   1'b0;
-        wb_dirty                    =   1'b0;
+        awaddr_o            =   64'h0;
+        awvalid_o           =   1'b0;
+        awsize_o            =   3'd0;
+        awlen_o             =   8'd0;
+        awburst_o           =   2'b0;
+        awlock_o            =   1'b0;
+        awid_o              =   4'b0;
+        awcache_o           =   4'b0;
+        awprot_o            =   3'b0;
+        awqos_o             =   4'b0;
+
+        wdata_o             =   64'h0;
+        wstrb_o             =   8'b0;
+        wvalid_o            =   1'b0;
+        wlast_o             =   1'b0;
+
+        bready_o            =   1'b0;
+
+        clean_done_o        =   1'b0;
+
+        tag_rd_en           =   1'b0;
+        tag_rd_addr         =   6'b0;
+
+        tag_wr_en           =   8'b0;
+        tag_wr_addr         =   6'b0;
+        tag_wr_data         =   52'h0;
+
+        data_rd_en          =   1'b0;
+        data_rd_addr        =   9'b0;
+
+        data_wr_en          =   8'b0;
+        data_wr_addr        =   9'b0;
+        data_wr_data        =   64'h0;
+
+        exc_valid_o         =   1'b0;
+
+        flush               =   flush_ff || flushM_i;
+        exc                 =   rvalid_i && ((rresp_i != 2'b00) || (rid_i != ID_LSU) || (rlast_i ^ (beat_cnt == 3'd7)));
 
         case (state)
-            S_DC_RUN: begin
-                data_tag            =   dc_addr_i[63:13];
-                tag_index           =   dc_addr_i[12:6];
-                data_offset         =   dc_addr_i[5:3];
+            DC_RUN: begin
+                data_wr_en      =   hit_1h & {8{hit & lsu_ready_i & (lsM == DC_STORE)}};
+                data_wr_addr    =   data_indexM;
+                data_wr_data    =   store_data;
 
-                data_index          =   dc_addr_i[12:3];
-
-                data_tag_ff         =   dc_addr_ff[63:13];
-                data_index_ff       =   dc_addr_ff[12:3];
-                tag_index_ff        =   dc_addr_ff[12:6];
-
-                hit_1h[0]           =   (tag_rd_w0.valid) & (data_tag_ff == tag_rd_w0.tag);
-                hit_1h[1]           =   (tag_rd_w1.valid) & (data_tag_ff == tag_rd_w1.tag);
-                hit_1h[2]           =   (tag_rd_w2.valid) & (data_tag_ff == tag_rd_w2.tag);
-                hit_1h[3]           =   (tag_rd_w3.valid) & (data_tag_ff == tag_rd_w3.tag);
-
-                data_hit            =   |hit_1h & req_handshake_ff;
-                cache_miss          =   req_handshake_ff & ~data_hit;
-
-                dc_ready_o          =   ~cache_miss;
-
-                req_handshake       =   dc_req_i & dc_ready_o;
-
-                bypass_reg_wr       =   req_handshake & req_handshake_ff & ~dc_wr_i & dc_wr_ff & 
-                                        (dc_addr_i[63:3] == dc_addr_ff[63:3]);
-
-                case (hit_1h)
-                    4'b0001: fetch_data     =   data_rd_w0;
-                    4'b0010: fetch_data     =   data_rd_w1;
-                    4'b0100: fetch_data     =   data_rd_w2;
-                    4'b1000: fetch_data     =   data_rd_w3;
-                    default: fetch_data     =   64'h0;
-                endcase
-
-                store_data[7:0]     =   dc_mask_ff[0] ? dc_wr_data_ff[7:0] : fetch_data[7:0];
-                store_data[15:8]    =   dc_mask_ff[1] ? dc_wr_data_ff[15:8] : fetch_data[15:8];
-                store_data[23:16]   =   dc_mask_ff[2] ? dc_wr_data_ff[23:16] : fetch_data[23:16];
-                store_data[31:24]   =   dc_mask_ff[3] ? dc_wr_data_ff[31:24] : fetch_data[31:24];
-                store_data[39:32]   =   dc_mask_ff[4] ? dc_wr_data_ff[39:32] : fetch_data[39:32];
-                store_data[47:40]   =   dc_mask_ff[5] ? dc_wr_data_ff[47:40] : fetch_data[47:40];
-                store_data[55:48]   =   dc_mask_ff[6] ? dc_wr_data_ff[55:48] : fetch_data[55:48];
-                store_data[63:56]   =   dc_mask_ff[7] ? dc_wr_data_ff[63:56] : fetch_data[63:56];
-
-                dc_resp_valid_o     =   data_hit;
-                dc_rd_data_o        =   bypass_active ? bypass_data : fetch_data;
-
-                case (hit_1h)
-                    4'b0001: nxt_PLRU_tree  =   {2'b11, PLRU_tree_q[2]};
-                    4'b0010: nxt_PLRU_tree  =   {2'b10, PLRU_tree_q[2]};
-                    4'b0100: nxt_PLRU_tree  =   {1'b0, PLRU_tree_q[1], 1'b1};
-                    4'b1000: nxt_PLRU_tree  =   {1'b0, PLRU_tree_q[1], 1'b0};
-                    default: nxt_PLRU_tree  =   PLRU_tree_q;
-                endcase
-
-                way_fill_replace    =   tag_rd_w0.valid & tag_rd_w1.valid & tag_rd_w2.valid & tag_rd_w3.valid;
-
-                way_fill_invalid    =   ~tag_rd_w0.valid ? 2'b00 : 
-                                       (~tag_rd_w1.valid ? 2'b01 : 
-                                       (~tag_rd_w2.valid ? 2'b10 : 
-                                       (~tag_rd_w3.valid ? 2'b11 : 2'b00)));
-
-                case (PLRU_tree_q)
-                    3'b000, 3'b001: way_fill_PLRU   =   2'b00;
-                    3'b010, 3'b011: way_fill_PLRU   =   2'b01;
-                    3'b100, 3'b110: way_fill_PLRU   =   2'b10;
-                    3'b101, 3'b111: way_fill_PLRU   =   2'b11;
-                    default: way_fill_PLRU          =   2'b00;
-                endcase
-
-                nxt_way_fill        =   way_fill_replace ? way_fill_PLRU : way_fill_invalid;
-
-                case (nxt_way_fill)
-                    2'b00: way_dirty        =   tag_rd_w0.dirty;
-                    2'b01: way_dirty        =   tag_rd_w1.dirty;
-                    2'b10: way_dirty        =   tag_rd_w2.dirty;
-                    2'b11: way_dirty        =   tag_rd_w3.dirty;
-                    default: way_dirty      =   1'b0;
-                endcase
-
-                wb_dirty            =   way_fill_replace & way_dirty;
+                tag_rd_en       =   !miss && lsu_ready_i;
+                tag_rd_addr     =   index;
+                data_rd_en      =   !miss && lsu_ready_i;
+                data_rd_addr    =   data_index;
+                
+                dc_rvalid_o     =   hit;
+                dc_ready_o      =   !miss && lsu_ready_i;
+                dc_ldata_o      =   load_data_eff;
             end
-            S_DC_STORE_AW_WAIT: begin
-                tag_index_ff        =   dc_addr_ff[12:6];
+            DC_WRITEBACK_REQ: begin
+                data_rd_en      =   awready_i;
+                data_rd_addr    =   {indexM, 3'b000};
 
-                case(way_fill_q)
-                    2'b00: victim_tag       =   tag_rd_w0.tag;
-                    2'b01: victim_tag       =   tag_rd_w1.tag;
-                    2'b10: victim_tag       =   tag_rd_w2.tag;
-                    2'b11: victim_tag       =   tag_rd_w3.tag;
-                endcase
-
-                awaddr_o            =   {victim_tag, tag_index_ff, 6'b0};
-                awlen_o             =   8'd3;
-                awsize_o            =   3'b100;
-                awburst_o           =   2'b01;
-                awid_o              =   1'b1;
-                awvalid_o           =   1'b1;
+                awaddr_o        =   {victim_tag, indexM, 6'b0};
+                awvalid_o       =   1'b1;
+                awsize_o        =   SIZE_8B;
+                awlen_o         =   8'd7;
+                awburst_o       =   INCR;
+                awlock_o        =   1'b0;
+                awid_o          =   ID_LSU;
+                awcache_o       =   CACHE_WB_RALLOC;
+                awprot_o        =   PROT_LSU;
+                awqos_o         =   4'b0000;
             end
-            S_DC_STORE_1: begin
-                tag_index_ff        =   dc_addr_ff[12:6];
-
-                wvalid_o            =   1'b1;
-                wdata_o             =   {wb_upper, wb_lower};
-                wstrb_o             =   16'hFFFF;
-                wlast_o             =   1'b0;
+            DC_WRITEBACK: begin
+                data_rd_en      =   wready_i;
+                data_rd_addr    =   {indexM, prefetch_cnt};
+                        
+                wdata_o         =   data_rd[way_fill_q];
+                wstrb_o         =   8'hFF;
+                wvalid_o        =   1'b1;
+                wlast_o         =   (beat_cnt == 3'd7);
             end
-            S_DC_STORE_2: begin
-                tag_index_ff        =   dc_addr_ff[12:6];
-
-                wvalid_o            =   1'b1;
-                wdata_o             =   {wb_upper, wb_lower};
-                wstrb_o             =   16'hFFFF;
-                wlast_o             =   1'b0;
+            DC_WRITEBACK_DONE: begin
+                bready_o        =   1'b1;                
             end
-            S_DC_STORE_3: begin
-                tag_index_ff        =   dc_addr_ff[12:6];
-
-                wvalid_o            =   1'b1;
-                wdata_o             =   {wb_upper, wb_lower};
-                wstrb_o             =   16'hFFFF;
-                wlast_o             =   1'b0;
+            DC_REFILL_REQ: begin
+                araddr_o        =   {addrM[63:6], 6'b0};
+                arvalid_o       =   1'b1;
+                arlen_o         =   8'd7;
+                arsize_o        =   SIZE_8B;
+                arburst_o       =   INCR;
+                arlock_o        =   1'b0;
+                arid_o          =   ID_LSU;
+                arcache_o       =   CACHE_WB_RALLOC;
+                arprot_o        =   PROT_LSU;
+                arqos_o         =   4'b0000;
             end
-            S_DC_STORE_4: begin
-                wvalid_o            =   1'b1;
-                wdata_o             =   {wb_upper, wb_lower};
-                wstrb_o             =   16'hFFFF;
-                wlast_o             =   1'b1;
+            DC_REFILL: begin
+                data_wr_en[way_fill_q]  =   rvalid_i;
+                data_wr_addr            =   {indexM, beat_cnt};
+                data_wr_data            =   refill_data_eff;
+
+                tag_wr_en[way_fill_q]   =   rvalid_i && ((beat_cnt == 3'd7) || rlast_i);
+                tag_wr_addr             =   indexM;
+                tag_wr_data             =   tagM;
+
+                rready_o                =   1'b1;
             end
-            S_DC_STORE_DONE: begin
-                tag_index_ff        =   dc_addr_ff[12:6];
+            DC_REFILL_DONE: begin
+                tag_rd_en       =   flush || lsu_ready_i;
+                tag_rd_addr     =   index;
+                data_rd_en      =   flush || lsu_ready_i;
+                data_rd_addr    =   data_index;
+                
+                dc_rvalid_o     =   !flush;
+                dc_ldata_o      =   data_hold;
+                dc_ready_o      =   lsu_ready_i || flush;
 
-                if (bvalid_i & ((bresp_i != 2'b00) | (bid_i != '0))) begin
-                    exc_valid_o     =   1'b1;
-                    exc_code_o      =   STORE_AMO_ACC_FAULT;
-
-                    dc_resp_valid_o =   1'b1;
-                end
+                exc_valid_o     =   exc_ff && !flush;
             end
-            S_DC_LOAD_REQUEST: begin
-                araddr_o            =   {dc_addr_ff[63:6], 6'b0};
-                arlen_o             =   8'd3;
-                arsize_o            =   3'b100;
-                arburst_o           =   2'b01;
-                arid_o              =   1'b1;
-                arprot_o            =   3'b000;
-                arvalid_o           =   1'b1;
+            DC_CLEAN: begin
+                tag_rd_en       =   !flushM_i && !way_clean_done;
+                tag_rd_addr     =   clean_line;
+
+                clean_done_o    =   (cur_way == 3'd7) && way_clean_done;
             end
-            S_DC_LOAD_1: begin
-                data_offset         =   dc_addr_ff[5:3];
-                data_line           =   dc_addr_ff[12:6];
+            DC_CLEAN_WRITEBACK_REQ: begin
+                data_rd_en      =   awready_i;
+                data_rd_addr    =   {clean_line, 3'b000};
 
-                rready_o            =   1'b1;
+                awaddr_o        =   {tag_rd[cur_way], clean_line, 6'b0};
+                awvalid_o       =   1'b1;
+                awsize_o        =   SIZE_8B;
+                awlen_o         =   8'd7;
+                awburst_o       =   INCR;
+                awlock_o        =   1'b0;
+                awid_o          =   ID_LSU;
+                awcache_o       =   CACHE_WB_RALLOC;
+                awprot_o        =   PROT_LSU;
+                awqos_o         =   4'b0000;
             end
-            S_DC_LOAD_2: begin
-                data_offset         =   dc_addr_ff[5:3];
-                data_line           =   dc_addr_ff[12:6];
-
-                rready_o            =   1'b1;
+            DC_CLEAN_WRITEBACK: begin
+                data_rd_en      =   wready_i;
+                data_rd_addr    =   {clean_line, prefetch_cnt};        
+                        
+                wdata_o         =   data_rd[cur_way];
+                wstrb_o         =   8'hFF;
+                wvalid_o        =   1'b1;
+                wlast_o         =   (beat_cnt == 3'd7);
             end
-            S_DC_LOAD_3: begin
-                data_offset         =   dc_addr_ff[5:3];
-                data_line           =   dc_addr_ff[12:6];
-
-                rready_o            =   1'b1;
-            end
-            S_DC_LOAD_4: begin
-                data_offset         =   dc_addr_ff[5:3];
-                data_line           =   dc_addr_ff[12:6];
-
-                rready_o            =   1'b1;
-            end
-            S_DC_LOAD_DONE: begin
-                exc_valid_o         =   error_ff | id_error;
-                exc_code_o          =   dc_wr_ff ? STORE_AMO_ACC_FAULT : LOAD_ACC_FAULT;
-
-                dc_rd_data_o        =   data_hold;
-                dc_resp_valid_o     =   1'b1;
-
-                data_index          =   dc_addr_ff[12:3];
-                data_line           =   dc_addr_ff[12:6];
-                data_tag            =   dc_addr_ff[63:13];
-
-                store_data[7:0]     =   dc_mask_ff[0] ? dc_wr_data_ff[7:0] : data_hold[7:0];
-                store_data[15:8]    =   dc_mask_ff[1] ? dc_wr_data_ff[15:8] : data_hold[15:8];
-                store_data[23:16]   =   dc_mask_ff[2] ? dc_wr_data_ff[23:16] : data_hold[23:16];
-                store_data[31:24]   =   dc_mask_ff[3] ? dc_wr_data_ff[31:24] : data_hold[31:24];
-                store_data[39:32]   =   dc_mask_ff[4] ? dc_wr_data_ff[39:32] : data_hold[39:32];
-                store_data[47:40]   =   dc_mask_ff[5] ? dc_wr_data_ff[47:40] : data_hold[47:40];
-                store_data[55:48]   =   dc_mask_ff[6] ? dc_wr_data_ff[55:48] : data_hold[55:48];
-                store_data[63:56]   =   dc_mask_ff[7] ? dc_wr_data_ff[63:56] : data_hold[63:56];
-
-
-                case (way_fill_q) 
-                    2'b00: nxt_PLRU_tree    =   {2'b11, PLRU_tree_q[2]};
-                    2'b01: nxt_PLRU_tree    =   {2'b10, PLRU_tree_q[2]};
-                    2'b10: nxt_PLRU_tree    =   {1'b0, PLRU_tree_q[1], 1'b1};
-                    2'b11: nxt_PLRU_tree    =   {1'b0, PLRU_tree_q[1], 1'b0};
-                    default: nxt_PLRU_tree  =   PLRU_tree_q;
-                endcase
+            DC_CLEAN_WRITEBACK_DONE: begin
+                bready_o    =   1'b1;
             end
         endcase
     end

@@ -25,7 +25,6 @@ module csr_addr_decode (
     logic           cntr_ok;
 
     logic           satp_ok;
-    logic           stimecmp_ok;
 
     always_comb begin
         case (csr_addr_i)
@@ -43,12 +42,11 @@ module csr_addr_decode (
             STVAL_ADDR,
             SIP_ADDR,
             SATP_ADDR,
-            STIMECMP_ADDR,
             MVENDORID_ADDR,
             MARCHID_ADDR,
             MIMPID_ADDR,
             MHARTID_ADDR,
-            MCONGFIGPTR_ADDR,
+            MCONFIGPTR_ADDR,
             MSTATUS_ADDR,
             MISA_ADDR,
             MEDELEG_ADDR,
@@ -82,10 +80,8 @@ module csr_addr_decode (
             PMPADDR15_ADDR,
             MCYCLE_ADDR,
             MINSTRET_ADDR,
-            MCOUNTINHIBIT_ADDR,
-            MCYCLECFG_ADDR,
-            MINSTRETCFG_ADDR: addr_exists   =   1'b1;
-            default: addr_exists            =   1'b0;
+            MCOUNTINHIBIT_ADDR: addr_exists     =   1'b1;
+            default: addr_exists                =   1'b0;
         endcase
     end
 
@@ -106,10 +102,6 @@ module csr_addr_decode (
 
     assign satp_ok              =   !((csr_addr_i == SATP_ADDR)  && (priv_level_i == S_MODE) && mstatus_tvm_i);
 
-    assign stimecmp_ok          =   !((csr_addr_i == STIMECMP_ADDR)     && 
-                                    (priv_level_i != M_MODE)            && 
-                                    (!menvcfg_stce_i || !mcounteren_i[1]));
-
-    assign csr_addr_valid_o     =   addr_exists && priv_ok && !(ro && write) && cntr_ok && satp_ok && stimecmp_ok;
+    assign csr_addr_valid_o     =   addr_exists && priv_ok && !(ro && write) && cntr_ok && satp_ok;
 
 endmodule

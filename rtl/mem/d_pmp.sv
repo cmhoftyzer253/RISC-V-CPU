@@ -12,22 +12,22 @@ module d_pmp (
     input logic [1:0]   mstatus_mpp_i,
     input logic         mstatus_mprv_i,
 
-    input logic [63:0]  pmpaddr0_i,
-    input logic [63:0]  pmpaddr1_i,
-    input logic [63:0]  pmpaddr2_i,
-    input logic [63:0]  pmpaddr3_i,
-    input logic [63:0]  pmpaddr4_i,
-    input logic [63:0]  pmpaddr5_i,
-    input logic [63:0]  pmpaddr6_i,
-    input logic [63:0]  pmpaddr7_i,
-    input logic [63:0]  pmpaddr8_i,
-    input logic [63:0]  pmpaddr9_i,
-    input logic [63:0]  pmpaddr10_i,
-    input logic [63:0]  pmpaddr11_i,
-    input logic [63:0]  pmpaddr12_i,
-    input logic [63:0]  pmpaddr13_i,
-    input logic [63:0]  pmpaddr14_i,
-    input logic [63:0]  pmpaddr15_i,
+    input logic [53:0]  pmpaddr0_i,
+    input logic [53:0]  pmpaddr1_i,
+    input logic [53:0]  pmpaddr2_i,
+    input logic [53:0]  pmpaddr3_i,
+    input logic [53:0]  pmpaddr4_i,
+    input logic [53:0]  pmpaddr5_i,
+    input logic [53:0]  pmpaddr6_i,
+    input logic [53:0]  pmpaddr7_i,
+    input logic [53:0]  pmpaddr8_i,
+    input logic [53:0]  pmpaddr9_i,
+    input logic [53:0]  pmpaddr10_i,
+    input logic [53:0]  pmpaddr11_i,
+    input logic [53:0]  pmpaddr12_i,
+    input logic [53:0]  pmpaddr13_i,
+    input logic [53:0]  pmpaddr14_i,
+    input logic [53:0]  pmpaddr15_i,
     input logic [63:0]  pmpcfg0_i,
     input logic [63:0]  pmpcfg2_i,
 
@@ -67,10 +67,10 @@ module d_pmp (
 
         pmpcfg          =   {pmpcfg2_i, pmpcfg0_i};
 
-        pmpaddr         =   {pmpaddr15_i[53:0], pmpaddr14_i[53:0], pmpaddr13_i[53:0], pmpaddr12_i[53:0],
-                            pmpaddr11_i[53:0], pmpaddr10_i[53:0], pmpaddr9_i[53:0], pmpaddr8_i[53:0],
-                            pmpaddr7_i[53:0], pmpaddr6_i[53:0], pmpaddr5_i[53:0], pmpaddr4_i[53:0], 
-                            pmpaddr3_i[53:0], pmpaddr2_i[53:0], pmpaddr1_i[53:0], pmpaddr0_i[53:0]};
+        pmpaddr         =   {pmpaddr15_i, pmpaddr14_i, pmpaddr13_i, pmpaddr12_i,
+                            pmpaddr11_i, pmpaddr10_i, pmpaddr9_i, pmpaddr8_i,
+                            pmpaddr7_i, pmpaddr6_i, pmpaddr5_i, pmpaddr4_i, 
+                            pmpaddr3_i, pmpaddr2_i, pmpaddr1_i, pmpaddr0_i};
 
         for (int i=0; i<16; i++) begin
             ge_base[i]  =   (addr_base >= pmpaddr[i]);

@@ -5,6 +5,7 @@ module branch_control (
     input logic [63:0]  opr_a_i,
     input logic [63:0]  opr_b_i,
 
+    input logic         valid_i,
     input logic         b_type_i,
     input logic [2:0]   instr_funct3_i,
 
@@ -25,6 +26,6 @@ module branch_control (
         endcase
     end
 
-    assign branch_taken_o = b_type_i & branch_taken;
+    assign branch_taken_o = b_type_i && branch_taken;
 
 endmodule;

@@ -26,6 +26,6 @@ module branch_control (
         endcase
     end
 
-    assign branch_taken_o = b_type_i && branch_taken;
+    assign branch_taken_o = valid_i && b_type_i && branch_taken;
 
 endmodule;

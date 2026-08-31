@@ -11,7 +11,7 @@ module branch_control (
     output logic        branch_taken_o
 );
 
-    logic branch_taken;
+    logic               branch_taken;
 
     always_comb begin                                                                   
         case (instr_funct3_i)

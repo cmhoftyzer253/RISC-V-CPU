@@ -4,20 +4,16 @@ module alu (
         input logic [63:0]      opr_a_i,
         input logic [63:0]      opr_b_i,
 
-        input logic             alu_valid_i,
-        input logic [3:0]       alu_func_i,
+        input logic [3:0]       alu_op_i,
         input logic             word_op_i,
 
-        input logic             flushE_i,
-
         output logic [63:0]     alu_res_o
-        output logic            valid_res_o,
     );
 
     logic [63:0]                alu_res;
 
     always_comb begin                                                                   
-        case (alu_func_i)
+        case (alu_op_i)
             OP_ADD: alu_res     =   opr_a_i + opr_b_i;
             OP_SUB: alu_res     =   opr_a_i - opr_b_i;
             OP_SLL: alu_res     =   word_op_i ? (opr_a_i[31:0] << opr_b_i[4:0]) : (opr_a_i << opr_b_i[5:0]); 
@@ -34,6 +30,5 @@ module alu (
     end
 
     assign alu_res_o    =   word_op_i ? {{32{alu_res[31]}}, alu_res[31:0]} : alu_res;
-    assign valid_res_o  =   alu_valid_i && !flushE_i;
 
 endmodule

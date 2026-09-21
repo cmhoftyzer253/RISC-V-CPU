@@ -5,9 +5,8 @@ module branch_control (
     input logic [63:0]  opr_a_i,
     input logic [63:0]  opr_b_i,
 
-    input logic         valid_i,
-    input logic         b_type_i,
-    input logic [2:0]   instr_funct3_i,
+    input logic         branch_en_i,
+    input logic [2:0]   branch_op_i,
 
     output logic        branch_taken_o
 );
@@ -15,7 +14,7 @@ module branch_control (
     logic               branch_taken;
 
     always_comb begin                                                                   
-        case (instr_funct3_i)
+        case (branch_op_i)
             BEQ     : branch_taken = (opr_a_i == opr_b_i);
             BNE     : branch_taken = (opr_a_i != opr_b_i);
             BLT     : branch_taken = ($signed(opr_a_i) < $signed(opr_b_i));
@@ -26,6 +25,6 @@ module branch_control (
         endcase
     end
 
-    assign branch_taken_o = valid_i && b_type_i && branch_taken;
+    assign branch_taken_o = branch_en_i && branch_taken;
 
 endmodule;

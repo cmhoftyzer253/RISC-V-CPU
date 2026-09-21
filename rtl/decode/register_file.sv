@@ -1,6 +1,6 @@
 module register_file (
-    input logic clk,
-    input logic resetn,
+    input logic         clk,
+    input logic         resetn,
 
     //source registers - addresses and data
     input logic [4:0]   rs1_addr_i,
@@ -26,7 +26,6 @@ module register_file (
         end
     end
 
-    //output assignments
     assign rs1_data_o = (rs1_addr_i == 5'b0) ? 64'b0 : regfile[rs1_addr_i];
     assign rs2_data_o = (rs2_addr_i == 5'b0) ? 64'b0 : regfile[rs2_addr_i];
 

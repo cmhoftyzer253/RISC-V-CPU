@@ -21,12 +21,14 @@ module decode (
     output logic [2:0]      pc_sel_o,
     output logic [1:0]      opa_sel_o,
     output logic            opb_sel_o,
+    output logic            rs1_used_o,
+    output logic            rs2_used_o,     
     output logic            word_op_o,
     output logic            alu_en_o,
     output logic            md_en_o,
     output logic [3:0]      exu_op_o,
     output logic [2:0]      branch_op_o,
-    output logic            csr_en_o,
+    output logic            csr_wr_en_o,
     output logic [1:0]      csr_op_o,
     output logic            mctrl_en_o,
     output logic [1:0]      mctrl_op_o,
@@ -177,7 +179,7 @@ module decode (
                                     exc_code_o          =   EBREAK_EXC;
                                 end
                                 SRET: exc_valid_o       =   mstatus_tsr_i ? (priv_level_i != M_MODE) : (priv_level_i == U_MODE);
-                                WFI: exc_valid_o        =   mstatus_tw_i ? (priv_level_i != M_MODE) : (priv_level_i == U_MODE);
+                                WFI: exc_valid_o        =   (priv_level_i == U_MODE);
                                 MRET: exc_valid_o       =   (priv_level_i != M_MODE);
                                 default: exc_valid_o    =   1'b1;
                             endcase
@@ -215,6 +217,8 @@ module decode (
     always_comb begin
         r_type_controls             =   '0;
 
+        r_type_controls.rs1_used    =   1'b1;
+        r_type_controls.rs2_used    =   1'b1;
         r_type_controls.word_op     =   (opcode == R_TYPE_1);
         r_type_controls.rf_wr_en    =   1'b1;
         if (funct7[0]) begin
@@ -231,6 +235,7 @@ module decode (
         i_type_controls             =   '0;
 
         i_type_controls.opb_sel     =   IMM;
+        i_type_controls.rs1_used    =   1'b1;
         i_type_controls.alu_en      =   1'b1;
         i_type_controls.rf_wr_en    =   1'b1;
 
@@ -277,6 +282,8 @@ module decode (
         s_type_controls             =   '0;
 
         s_type_controls.opb_sel     =   IMM;
+        s_type_controls.rs1_used    =   1'b1;
+        s_type_controls.rs2_used    =   1'b1;
         s_type_controls.alu_en      =   1'b1;
         s_type_controls.lsu_en      =   1'b1;
         s_type_controls.lsu_ls      =   LSU_STORE;
@@ -290,6 +297,8 @@ module decode (
         b_type_controls.pc_sel      =   BRANCH;
         b_type_controls.opa_sel     =   PC;
         b_type_controls.opb_sel     =   IMM;
+        b_type_controls.rs1_used    =   1'b1;
+        b_type_controls.rs2_used    =   1'b1;
         b_type_controls.alu_en      =   1'b1;
         b_type_controls.branch_op   =   funct3;
     end
@@ -324,6 +333,8 @@ module decode (
         a_type_controls = '0;
 
         a_type_controls.opb_sel     =   IMM;
+        a_type_controls.rs1_used    =   1'b1;
+        a_type_controls.rs2_used    =   (funct7[6:2] != LR);
         a_type_controls.alu_en      =   1'b1;
         a_type_controls.lsu_en      =   1'b1;
         a_type_controls.lsu_ls      =   LSU_ATOMIC;
@@ -349,19 +360,32 @@ module decode (
         privileged_controls = '0;
 
         case (funct3)
-            CSRRW,
-            CSRRS,
-            CSRRC: begin
-                privileged_controls.csr_en      =   1'b1;
+            CSRRW: begin
+                privileged_controls.rs1_used    =   1'b1;
+                privileged_controls.csr_wr_en   =   1'b1;
                 privileged_controls.csr_op      =   funct3[1:0];
                 privileged_controls.rf_wr_en    =   |rd_o;
                 privileged_controls.rf_sel      =   RF_CSR_SRC;
             end
-            CSRRWI,
+            CSRRS,
+            CSRRC: begin
+                privileged_controls.rs1_used    =   1'b1;
+                privileged_controls.csr_wr_en   =   |rs1_o;
+                privileged_controls.csr_op      =   funct3[1:0];
+                privileged_controls.rf_wr_en    =   |rd_o;
+                privileged_controls.rf_sel      =   RF_CSR_SRC;
+            end
+            CSRRWI: begin
+                privileged_controls.opa_sel     =   UIMM;
+                privileged_controls.csr_wr_en   =   1'b1;
+                privileged_controls.csr_op      =   funct3[1:0];
+                privileged_controls.rf_wr_en    =   |rd_o;
+                privileged_controls.rf_sel      =   RF_CSR_SRC;
+            end
             CSRRSI,
             CSRRCI: begin
                 privileged_controls.opa_sel     =   UIMM;
-                privileged_controls.csr_en      =   1'b1;
+                privileged_controls.csr_wr_en   =   |rs1_o;
                 privileged_controls.csr_op      =   funct3[1:0];
                 privileged_controls.rf_wr_en    =   |rd_o;
                 privileged_controls.rf_sel      =   RF_CSR_SRC;
@@ -400,12 +424,14 @@ module decode (
     assign pc_sel_o         =   controls.pc_sel;
     assign opa_sel_o        =   controls.opa_sel;
     assign opb_sel_o        =   controls.opb_sel;
+    assign rs1_used_o       =   controls.rs1_used;
+    assign rs2_used_o       =   controls.rs2_used;
     assign word_op_o        =   controls.word_op;
     assign alu_en_o         =   controls.alu_en;
     assign md_en_o          =   controls.md_en;
     assign exu_op_o         =   controls.exu_op;
     assign branch_op_o      =   controls.branch_op;
-    assign csr_en_o         =   controls.csr_en;
+    assign csr_wr_en_o      =   controls.csr_wr_en;
     assign csr_op_o         =   controls.csr_op;
     assign mctrl_en_o       =   controls.mctrl_en;
     assign mctrl_op_o       =   controls.mctrl_op;

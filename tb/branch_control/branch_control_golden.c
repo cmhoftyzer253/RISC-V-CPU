@@ -1,8 +1,8 @@
 #include <stdint.h>
-#include <branch_control_golden.h>
+#include "branch_control_golden.h"
 
 void branch_control_golden (
-    uint64_t opr_a_i, uint64_t opr_b_i, uint32_t is_b_type_i, uint32_t instr_funct3_i,
+    uint64_t opr_a_i, uint64_t opr_b_i, uint32_t b_type_i, uint32_t instr_funct3_i,
     uint32_t *branch_taken_o
 ) {
 
@@ -31,5 +31,5 @@ void branch_control_golden (
             branch_taken = 0;
     }
 
-    *branch_taken_o = branch_taken & is_b_type_i;
+    *branch_taken_o = branch_taken & b_type_i;
 }

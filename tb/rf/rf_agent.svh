@@ -35,7 +35,7 @@ class rf_agent extends uvm_agent;
             rf_driver_h.agent_config = rf_agent_config_h;
         end
 
-        rf_command_monitor_h                =    rf_command_monitor::type_id::create("rf_command_monitor_h", this);
+        rf_command_monitor_h                =   rf_command_monitor::type_id::create("rf_command_monitor_h", this);
         rf_command_monitor_h.agent_config   =   rf_agent_config_h;
         rf_result_monitor_h                 =   rf_result_monitor::type_id::create("rf_result_monitor_h", this);
         rf_result_monitor_h.agent_config    =   rf_agent_config_h;

@@ -6,6 +6,7 @@ class rf_env extends uvm_env;
     rf_agent                rf_agent_h;
     rf_reset_agent          rf_reset_agent_h;
     rf_scoreboard           rf_scoreboard_h;
+    rf_coverage             rf_coverage_h;
 
     rf_agent_config         rf_config;
     rf_reset_agent_config   reset_config;
@@ -36,6 +37,7 @@ class rf_env extends uvm_env;
         rf_agent_h          =   rf_agent::type_id::create("rf_agent_h", this);
         rf_reset_agent_h    =   rf_reset_agent::type_id::create("rf_reset_agent_h", this);
         rf_scoreboard_h     =   rf_scoreboard::type_id::create("rf_scoreboard_h", this);
+        rf_coverage_h       =   rf_coverage::type_id::create("rf_coverage", this);
     endfunction : build_phase
 
     function void connect_phase(uvm_phase phase);
@@ -44,6 +46,9 @@ class rf_env extends uvm_env;
         rf_agent_h.cmd_mon_ap.connect(rf_scoreboard_h.cmd_export);
         rf_agent_h.res_ap.connect(rf_scoreboard_h.res_export);
         rf_reset_agent_h.reset_mon_ap.connect(rf_scoreboard_h.reset_export);
+
+        rf_agent_h.cmd_mon_ap.connect(rf_coverage_h.cmd_export);
+        rf_reset_agent_h.reset_mon_ap.connect(rf_coverage_h.reset_export);
 
         rf_virtual_sequencer_h.cmd_sequencer    =   rf_agent_h.rf_sequencer_h;
         rf_virtual_sequencer_h.reset_sequencer  =   rf_reset_agent_h.rf_reset_sequencer_h;

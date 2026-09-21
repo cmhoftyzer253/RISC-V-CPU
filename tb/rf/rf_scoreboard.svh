@@ -5,7 +5,6 @@ class rf_scoreboard extends uvm_scoreboard;
     uvm_analysis_export #(rf_result_transaction)        res_export;
     uvm_analysis_export #(rf_reset_transaction)         reset_export;
 
-
     uvm_tlm_analysis_fifo #(rf_command_transaction)     cmd_fifo;
     uvm_tlm_analysis_fifo #(rf_result_transaction)      res_fifo;
     uvm_tlm_analysis_fifo #(rf_reset_transaction)       reset_fifo;

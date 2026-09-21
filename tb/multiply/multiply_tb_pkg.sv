@@ -53,6 +53,8 @@ package multiply_tb_pkg;
     `include "multiply_flush_sequence.svh"
     `include "multiply_reset_sequence.svh"
     `include "multiply_virtual_sequence.svh"
+
+    `include "multiply_base_test.svh"
     `include "multiply_random_test.svh"
 
 endpackage : multiply_tb_pkg

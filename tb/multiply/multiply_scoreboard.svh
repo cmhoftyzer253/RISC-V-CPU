@@ -1,6 +1,11 @@
 class multiply_scoreboard extends uvm_scoreboard;
     `uvm_component_utils(multiply_scoreboard)
 
+    uvm_analysis_export #(multiply_command_transaction)     cmd_export;
+    uvm_analysis_export #(multiply_result_transaction)      res_export;
+    uvm_analysis_export #(multiply_flush_transaction)       flush_export;
+    uvm_analysis_export #(multiply_reset_transaction)       reset_export;
+
     uvm_tlm_analysis_fifo #(multiply_command_transaction)   cmd_fifo;
     uvm_tlm_analysis_fifo #(multiply_result_transaction)    res_fifo;
     uvm_tlm_analysis_fifo #(multiply_flush_transaction)     flush_fifo;
@@ -13,11 +18,25 @@ class multiply_scoreboard extends uvm_scoreboard;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        cmd_fifo    =   new("cmd_fifo", this);
-        res_fifo    =   new("res_fifo", this);
-        flush_fifo  =   new("flush_fifo", this);
-        reset_fifo  =   new("reset_fifo", this);
+        cmd_export      =   new("cmd_export", this);
+        res_export      =   new("res_export", this);
+        flush_export    =   new("flush_export", this);
+        reset_export    =   new("reset_export", this);
+
+        cmd_fifo        =   new("cmd_fifo", this);
+        res_fifo        =   new("res_fifo", this);
+        flush_fifo      =   new("flush_fifo", this);
+        reset_fifo      =   new("reset_fifo", this);
     endfunction : build_phase
+
+    function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
+
+        cmd_export.connect(cmd_fifo.analysis_export);
+        res_export.connect(res_fifo.analysis_export);
+        flush_export.connect(flush_fifo.analysis_export);
+        reset_export.connect(reset_fifo.analysis_export);
+    endfunction : connect_phase
 
     function multiply_result_transaction predict_result(multiply_command_transaction cmd);
         multiply_result_transaction     predicted;

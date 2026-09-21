@@ -1,17 +1,9 @@
-class multiply_random_test extends uvm_test;
+class multiply_random_test extends multiply_base_test;
     `uvm_component_utils(multiply_random_test)
-
-    multiply_env env;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
     endfunction : new
-
-    function void build_phase(uvm_phase phase);
-        super.build_phase(phase);
-
-        env = multiply_env::type_id::create("env", this);
-    endfunction : build_phase
 
     task run_phase(uvm_phase phase);
         multiply_virtual_sequence virtual_sequence;

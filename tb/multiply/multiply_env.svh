@@ -53,10 +53,10 @@ class multiply_env extends uvm_env;
     function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
 
-        multiply_command_agent_h.multiply_command_monitor_h.ap.connect(multiply_scoreboard_h.cmd_fifo.analysis_export);
-        multiply_result_agent_h.multiply_result_monitor_h.ap.connect(multiply_scoreboard_h.res_fifo.analysis_export);
-        multiply_flush_agent_h.multiply_flush_monitor_h.ap.connect(multiply_scoreboard_h.flush_fifo.analysis_export);
-        multiply_reset_agent_h.multiply_reset_monitor_h.ap.connect(multiply_scoreboard_h.reset_fifo.analysis_export);
+        multiply_command_agent_h.cmd_mon_ap.connect(multiply_scoreboard_h.cmd_export);
+        multiply_result_agent_h.res_ap.connect(multiply_scoreboard_h.res_export);
+        multiply_flush_agent_h.flush_mon_ap.connect(multiply_scoreboard_h.flush_export);
+        multiply_reset_agent_h.reset_mon_ap.connect(multiply_scoreboard_h.reset_export);
 
         multiply_virtual_sequencer_h.cmd_sequencer      =   multiply_command_agent_h.multiply_command_sequencer_h;
         multiply_virtual_sequencer_h.ready_sequencer    =   multiply_result_agent_h.multiply_ready_sequencer_h;

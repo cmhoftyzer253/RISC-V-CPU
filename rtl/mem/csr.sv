@@ -44,7 +44,6 @@ module csr (
     input logic             seip_i,
 
     //pipeline module interface
-    input logic             flushM_i,
     input logic             retire_i,
 
     //export csr interface
@@ -53,6 +52,7 @@ module csr (
     output logic [31:0]     mcounteren_o,
     output logic            mstatus_ube_o,
     output logic [1:0]      mstatus_mpp_o,
+    output logic            mstatus_mprv_o,
     output logic            mstatus_tvm_o,
     output logic            mstatus_tw_o,
     output logic            mstatus_tsr_o,
@@ -217,19 +217,19 @@ module csr (
                     priv_level          <=  M_MODE;
                 end
             end
-            if (mret_i && !flushM_i) begin
+            if (mret_i) begin
                 MSTATUS_REG[3]          <=  MSTATUS_REG[7];
                 MSTATUS_REG[7]          <=  1'b1;
                 MSTATUS_REG[12:11]      <=  2'b00;
                 priv_level              <=  MSTATUS_REG[12:11];
             end
-            if (sret_i && !flushM_i) begin
+            if (sret_i) begin
                 MSTATUS_REG[1]          <=  MSTATUS_REG[5];
                 MSTATUS_REG[5]          <=  1'b1;
                 MSTATUS_REG[8]          <=  1'b0;
                 priv_level              <=  MSTATUS_REG[8] ? S_MODE : U_MODE;
             end
-            if (csr_wr_en_i && !flushM_i) begin
+            if (csr_wr_en_i) begin
                 case (csr_addr_i)
                     SSTATUS_ADDR: MSTATUS_REG               <=  (csr_wr_data & SSTATUS_WMASK) | (MSTATUS_REG & ~SSTATUS_WMASK);
                     SIE_ADDR: MIE_REG                       <=  (csr_wr_data[11:0] & MIE_WMASK & MIDELEG_REG) | (MIE_REG & ~(MIE_WMASK & MIDELEG_REG));
@@ -310,6 +310,7 @@ module csr (
         mstatus_tw_o        =   MSTATUS_REG[21];
         mstatus_tvm_o       =   MSTATUS_REG[20];
         mstatus_mpp_o       =   MSTATUS_REG[12:11];
+        mstatus_mprv_o      =   MSTATUS_REG[17];
         mstatus_mbe_o       =   MSTATUS_REG[37];
         mstatus_sbe_o       =   MSTATUS_REG[36];
         mstatus_ube_o       =   MSTATUS_REG[6];
@@ -345,8 +346,8 @@ module csr (
         mepc_o              =   MEPC_REG;
         sepc_o              =   SEPC_REG;
 
-        write_mcycle        =   csr_wr_en_i && !flushM_i && (csr_addr_i == MCYCLE_ADDR);
-        write_minstret      =   csr_wr_en_i && !flushM_i && (csr_addr_i == MINSTRET_ADDR);
+        write_mcycle        =   csr_wr_en_i && (csr_addr_i == MCYCLE_ADDR);
+        write_minstret      =   csr_wr_en_i && (csr_addr_i == MINSTRET_ADDR);
 
         PMPCFG0_WMASK       =   pmpcfg_wmask(PMPCFG_REG[7:0]);
         PMPCFG2_WMASK       =   pmpcfg_wmask(PMPCFG_REG[15:8]);

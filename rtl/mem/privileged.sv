@@ -12,9 +12,6 @@ module privileged (
     input logic             sret_i,
 
     input logic             validM_i,
-    input logic             stallW_i,
-    input logic             committedM_i,
-    input logic             flushM_i,
     input logic             retire_i,
 
     input logic             exc_validM_i,
@@ -28,6 +25,8 @@ module privileged (
     output logic [63:0]     mepc_o,
     output logic [63:0]     sepc_o,
 
+    output logic            wfi_wakeup_o,
+
     input logic [63:0]      mtime_i,
     input logic             mtip_i,
     input logic             msip_i,
@@ -40,6 +39,7 @@ module privileged (
     output logic [31:0]     mcounteren_o,
     output logic            mstatus_ube_o,
     output logic [1:0]      mstatus_mpp_o,
+    output logic            mstatus_mprv_o,
     output logic            mstatus_tvm_o,
     output logic            mstatus_tw_o,
     output logic            mstatus_tsr_o,
@@ -120,6 +120,7 @@ module privileged (
         .mcounteren_o       (mcounteren_o),
         .mstatus_ube_o      (mstatus_ube_o),
         .mstatus_mpp_o      (mstatus_mpp_o),
+        .mstatus_mprv_o     (mstatus_mprv_o),
         .mstatus_tvm_o      (mstatus_tvm_o),
         .mstatus_tw_o       (mstatus_tw_o),
         .mstatus_tsr_o      (mstatus_tsr_o),
@@ -160,14 +161,13 @@ module privileged (
         .mideleg_i          (mideleg),
         .medeleg_i          (medeleg),
         .validM_i           (validM_i),
-        .stallW_i           (stallW_i),
-        .committedM_i       (committedM_i),
         .flushM_i           (flushM_i),
         .exc_validM_i       (exc_validM_i),
         .exc_codeM_i        (exc_codeM_i),
         .pcM_i              (pcM_i),
         .nxt_pcM_i          (nxt_pcM_i),
-        .exc_xtvalM_i       (exc_xtvalM_i)    
+        .exc_xtvalM_i       (exc_xtvalM_i),
+        .wfi_wakeup_o       (wfi_wakeup_o)
     );
 
     assign trap_en_o        =   trap_en;

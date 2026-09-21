@@ -16,16 +16,15 @@ module trap_control (
     input logic [15:0]      medeleg_i,
 
     //pipeline interface
-    input logic             validM_i,
-    input logic             stallW_i,
-    input logic             committedM_i,
-    input logic             flushM_i,
+    input logic             validM_i
 
     input logic             exc_validM_i,
     input logic [4:0]       exc_codeM_i,
     input logic [63:0]      pcM_i,
     input logic [63:0]      nxt_pcM_i,
-    input logic [63:0]      exc_xtvalM_i
+    input logic [63:0]      exc_xtvalM_i,
+
+    output logic            wfi_wakeup_o
 );
 
     logic                   s_interrupt_en;
@@ -47,6 +46,8 @@ module trap_control (
     logic [63:0]            exc_xtval;
 
     always_comb begin : interrupts
+        wfi_wakeup_o    =   |(mip_i & mie_i);
+
         s_interrupt_en  =   (priv_level_i == U_MODE) || ((priv_level_i == S_MODE) && mstatus_sie_i);
         m_interrupt_en  =   mstatus_mie_i || (priv_level_i == U_MODE) || (priv_level_i == S_MODE);
 
@@ -55,7 +56,7 @@ module trap_control (
 
         int_en          =   m_int_en | s_int_en;
 
-        interrupt       =   |int_en && validM_i && !stallW_i && !committedM_i && !flushM_i && !exc_validM_i;
+        interrupt       =   |int_en && validM_i && !exc_validM_i;
         int_xepc        =   nxt_pcM_i;
 
         if (int_en[11]) begin
@@ -83,7 +84,7 @@ module trap_control (
     end
 
     always_comb begin : exceptions
-        exc             =   exc_validM_i && validM_i && !flushM_i && !stallW_i;
+        exc             =   exc_validM_i;
         exc_cause       =   {1'b0, exc_codeM_i};
         exc_xepc        =   pcM_i;
         exc_xtval       =   exc_xtvalM_i;

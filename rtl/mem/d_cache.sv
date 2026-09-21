@@ -14,7 +14,7 @@ module d_cache(
     input logic [7:0]       dc_mask_i,
     output logic            dc_ready_o,
 
-    input logic             lsu_ready_i,        
+    input logic             dc_advance_i,        
     output logic            dc_rvalid_o,
     output logic [63:0]     dc_ldata_o,    
 
@@ -69,7 +69,6 @@ module d_cache(
     input logic [3:0]       bid_i,
     output logic            bready_o,
 
-    input logic             flushM_i,
     input logic             stop_cacheop_i,   
 
     input logic             clean_i,
@@ -93,9 +92,7 @@ module d_cache(
     logic               hit;
     logic               miss;
 
-    logic               flush;
     logic               exc;
-    logic               flush_ff;
     logic               exc_ff;
 
     logic [2:0]         beat_cnt;
@@ -247,7 +244,6 @@ module d_cache(
             bypass_active   <=  1'b0;
             bypass_data     <=  64'h0;
 
-            flush_ff        <=  1'b0;
             exc_ff          <=  1'b0;
 
             way_fill_q      <=  3'd0;
@@ -266,13 +262,13 @@ module d_cache(
                     bypass_active   <=  nxt_bypass_active;
                     bypass_data     <=  store_data;
 
-                    if (hit && lsu_ready_i) begin
+                    if (hit && dc_advance_i) begin
                         PLRU_tree[indexM]  <=  nxt_PLRU_hit;
 
                         if (lsM == DC_STORE)
                             dirty[hit_way][indexM]          <=  1'b1;
                     end
-                    if (!miss && lsu_ready_i) begin
+                    if (!miss && dc_advance_i) begin
                         validM      <=  dc_valid_i;
                         addrM       <=  dc_addr_i;
                         dataM       <=  dc_data_i;
@@ -291,21 +287,17 @@ module d_cache(
                             state   <=  DC_WRITEBACK_REQ;
                         else
                             state   <=  DC_REFILL_REQ;
-                    end else if (clean_i && !flushM_i) begin
+                    end else if (clean_i) begin
                         cur_way     <=  3'd0;
 
                         state       <=  DC_CLEAN;
                     end
                 end
                 DC_WRITEBACK_REQ: begin
-                    flush_ff    <=  flush_ff || flushM_i;
-
                     if (awready_i)
                         state   <=  DC_WRITEBACK;
                 end
                 DC_WRITEBACK: begin
-                    flush_ff    <=  flush_ff || flushM_i;
-
                     if (wready_i) begin
                         if (beat_cnt == 3'd7) begin
                             beat_cnt    <=  3'd0;
@@ -317,31 +309,20 @@ module d_cache(
                     end
                 end
                 DC_WRITEBACK_DONE: begin
-                    flush_ff    <=  flush_ff || flushM_i;
 
                     if (bvalid_i) begin
                         dirty[way_fill_q][indexM]   <=  1'b0;
 
-                        if (flush) begin
-                            flush_ff    <=  1'b0;
+                        beat_cnt    <=  3'd0;
 
-                            state       <=  DC_RUN;
-                        end else begin
-                            beat_cnt    <=  3'd0;
-
-                            state       <=  DC_REFILL_REQ;
-                        end
+                        state       <=  DC_REFILL_REQ;
                     end
                 end
                 DC_REFILL_REQ: begin
-                    flush_ff    <=  flush_ff || flushM_i;
-
                     if (arready_i)
                         state   <=  DC_REFILL;
                 end
                 DC_REFILL: begin
-                    flush_ff    <=  flush_ff || flushM_i;
-
                     if (rvalid_i) begin
                         exc_ff <= exc_ff || exc;
 
@@ -360,17 +341,14 @@ module d_cache(
                     end
                 end
                 DC_REFILL_DONE: begin
-                    flush_ff    <=  flush_ff || flushM_i;
-
                     //data registers
-                    if (flush || lsu_ready_i) begin
+                    if (dc_advance_i) begin
                         validM          <= dc_valid_i;
                         addrM           <= dc_addr_i;
                         dataM           <= dc_data_i;
                         lsM             <= dc_ls_i;
                         maskM           <= dc_mask_i;
 
-                        flush_ff        <=  1'b0;
                         exc_ff          <=  1'b0;
                         bypass_active   <=  1'b0;
 
@@ -384,11 +362,7 @@ module d_cache(
                     end
                 end
                 DC_CLEAN: begin
-                    if (flushM_i) begin
-                        cur_way         <=  3'd0;
-
-                        state           <=  DC_RUN;
-                    end else if (way_clean_done) begin
+                    if (way_clean_done) begin
                         if (cur_way == 3'd7) begin
                             cur_way     <=  3'd0;
                             state       <=  DC_RUN;
@@ -400,15 +374,11 @@ module d_cache(
                     end
                 end
                 DC_CLEAN_WRITEBACK_REQ: begin
-                    flush_ff    <=  flush_ff || flushM_i;
-
                     if (awready_i) begin
                         state   <=  DC_CLEAN_WRITEBACK;
                     end
                 end
                 DC_CLEAN_WRITEBACK: begin
-                    flush_ff    <=  flush_ff || flushM_i;
-
                     if (wready_i) begin
                         if (beat_cnt == 3'd7) begin
                             beat_cnt    <=  3'd0;
@@ -420,19 +390,10 @@ module d_cache(
                     end
                 end
                 DC_CLEAN_WRITEBACK_DONE: begin
-                    flush_ff    <=  flush_ff || flushM_i;
-
                     if (bvalid_i) begin
                         dirty[cur_way][clean_line]  <=  1'b0;
 
-                        if (flush) begin
-                            flush_ff    <=  1'b0;
-                            cur_way     <=  3'd0;
-
-                            state       <=  DC_RUN;
-                        end else begin
-                            state       <=  DC_CLEAN;
-                        end
+                        state   <=  DC_CLEAN;
                     end
                 end
             endcase
@@ -461,8 +422,8 @@ module d_cache(
             if (hit_1h[w]) hit_way = w[2:0];
 
         hit_raw             =   |hit_1h;
-        hit                 =   hit_raw && validM && !flushM_i && !stop_cacheop_i;
-        miss                =   !hit_raw && validM && !flushM_i && !stop_cacheop_i;
+        hit                 =   hit_raw && validM && !stop_cacheop_i;
+        miss                =   !hit_raw && validM && !stop_cacheop_i;
 
         nxt_bypass_active   =   dc_valid_i && (lsM == DC_STORE) && hit && (addrM[63:3] == dc_addr_i[63:3]);
 
@@ -553,6 +514,7 @@ module d_cache(
         arlen_o             =   8'd0;
         arsize_o            =   3'd0;
         arburst_o           =   2'b0;
+        arlock_o            =   1'b0;
         arid_o              =   4'b0;
         arcache_o           =   4'd0;
         arprot_o            =   3'b0;
@@ -596,22 +558,21 @@ module d_cache(
 
         exc_valid_o         =   1'b0;
 
-        flush               =   flush_ff || flushM_i;
         exc                 =   rvalid_i && ((rresp_i != 2'b00) || (rid_i != ID_LSU) || (rlast_i ^ (beat_cnt == 3'd7)));
 
         case (state)
             DC_RUN: begin
-                data_wr_en      =   hit_1h & {8{hit & lsu_ready_i & (lsM == DC_STORE)}};
+                data_wr_en      =   hit_1h & {8{hit & dc_advance_i & (lsM == DC_STORE)}};
                 data_wr_addr    =   data_indexM;
                 data_wr_data    =   store_data;
 
-                tag_rd_en       =   !miss && lsu_ready_i;
+                tag_rd_en       =   !miss && dc_advance_i;
                 tag_rd_addr     =   index;
-                data_rd_en      =   !miss && lsu_ready_i;
+                data_rd_en      =   !miss && dc_advance_i;
                 data_rd_addr    =   data_index;
                 
                 dc_rvalid_o     =   hit;
-                dc_ready_o      =   !miss && lsu_ready_i;
+                dc_ready_o      =   !miss;
                 dc_ldata_o      =   load_data_eff;
             end
             DC_WRITEBACK_REQ: begin
@@ -620,9 +581,9 @@ module d_cache(
 
                 awaddr_o        =   {victim_tag, indexM, 6'b0};
                 awvalid_o       =   1'b1;
-                awsize_o        =   SIZE_8B;
+                awsize_o        =   AMBA_DOUBLE_WORD;
                 awlen_o         =   8'd7;
-                awburst_o       =   INCR;
+                awburst_o       =   AXI_INCR;
                 awlock_o        =   1'b0;
                 awid_o          =   ID_LSU;
                 awcache_o       =   CACHE_WB_RALLOC;
@@ -645,8 +606,8 @@ module d_cache(
                 araddr_o        =   {addrM[63:6], 6'b0};
                 arvalid_o       =   1'b1;
                 arlen_o         =   8'd7;
-                arsize_o        =   SIZE_8B;
-                arburst_o       =   INCR;
+                arsize_o        =   AMBA_DOUBLE_WORD;
+                arburst_o       =   AXI_INCR;
                 arlock_o        =   1'b0;
                 arid_o          =   ID_LSU;
                 arcache_o       =   CACHE_WB_RALLOC;
@@ -665,19 +626,19 @@ module d_cache(
                 rready_o                =   1'b1;
             end
             DC_REFILL_DONE: begin
-                tag_rd_en       =   flush || lsu_ready_i;
+                tag_rd_en       =   dc_advance_i;
                 tag_rd_addr     =   index;
-                data_rd_en      =   flush || lsu_ready_i;
+                data_rd_en      =   dc_advance_i;
                 data_rd_addr    =   data_index;
                 
-                dc_rvalid_o     =   !flush;
+                dc_rvalid_o     =   1'b1;
                 dc_ldata_o      =   data_hold;
-                dc_ready_o      =   lsu_ready_i || flush;
+                dc_ready_o      =   1'b1;
 
-                exc_valid_o     =   exc_ff && !flush;
+                exc_valid_o     =   exc_ff;
             end
             DC_CLEAN: begin
-                tag_rd_en       =   !flushM_i && !way_clean_done;
+                tag_rd_en       =   !way_clean_done;
                 tag_rd_addr     =   clean_line;
 
                 clean_done_o    =   (cur_way == 3'd7) && way_clean_done;
@@ -688,9 +649,9 @@ module d_cache(
 
                 awaddr_o        =   {tag_rd[cur_way], clean_line, 6'b0};
                 awvalid_o       =   1'b1;
-                awsize_o        =   SIZE_8B;
+                awsize_o        =   AMBA_DOUBLE_WORD;
                 awlen_o         =   8'd7;
-                awburst_o       =   INCR;
+                awburst_o       =   AXI_INCR;
                 awlock_o        =   1'b0;
                 awid_o          =   ID_LSU;
                 awcache_o       =   CACHE_WB_RALLOC;

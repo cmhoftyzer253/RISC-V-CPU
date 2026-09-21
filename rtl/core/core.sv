@@ -1,1106 +1,763 @@
-import cpu_consts::*;
-import cpu_defines::*;
-import cpu_utils::*;
-
 module core (
     input logic             clk,
     input logic             resetn,
 
-    //instruction memory interface
-    input logic             ic_arready_i,
-    output logic [63:0]     ic_araddr_o,
-    output logic [7:0]      ic_arlen_o,
-    output logic [2:0]      ic_arsize_o,
-    output logic [1:0]      ic_arburst_o,
-    output logic            ic_arid_o,
-    output logic [2:0]      ic_arprot_o,
-    output logic            ic_arvalid_o,
+    input logic [63:0]      mtime_i,
+    input logic             mtip_i,
+    input logic             msip_i,
+    input logic             meip_i,
+    input logic             seip_i,
 
-    input logic             ic_rvalid_i,
-    input logic [127:0]     ic_rdata_i,
-    input logic [1:0]       ic_rresp_i,
-    input logic             ic_rlast_i,
-    input logic             ic_rid_i,
-    output logic            ic_rready_o,
+    input logic             arready_i,
+    output logic [63:0]     araddr_o,
+    output logic [7:0]      arlen_o,
+    output logic [2:0]      arsize_o,
+    output logic [1:0]      arburst_o,
+    output logic            arlock_o,
+    output logic [3:0]      arid_o,
+    output logic [3:0]      arcache_o,
+    output logic [2:0]      arprot_o,
+    output logic [3:0]      arqos_o,
+    output logic            arvalid_o,
 
-    //data memory interface
-    input logic             dc_arready_i,
-    output logic [63:0]     dc_araddr_o,
-    output logic [7:0]      dc_arlen_o,
-    output logic [2:0]      dc_arsize_o,
-    output logic [1:0]      dc_arburst_o,
-    output logic            dc_arid_o,
-    output logic [2:0]      dc_arprot_o,
-    output logic            dc_arvalid_o,
+    input logic             rvalid_i,
+    input logic [63:0]      rdata_i,
+    input logic [1:0]       rresp_i,
+    input logic             rlast_i,
+    input logic [3:0]       rid_i,
+    output logic            rready_o,
 
-    input logic             dc_rvalid_i,
-    input logic [127:0]     dc_rdata_i,
-    input logic [1:0]       dc_rresp_i,
-    input logic             dc_rlast_i,
-    input logic             dc_rid_i,
-    output logic            dc_rready_o,
+    input logic             awready_i,
+    input logic             wready_i,
+    output logic [63:0]     awaddr_o,
+    output logic            awvalid_o,
+    output logic [2:0]      awsize_o,
+    output logic [7:0]      awlen_o,
+    output logic [1:0]      awburst_o,
+    output logic            awlock_o,
+    output logic [3:0]      awid_o,
+    output logic [3:0]      awcache_o,
+    output logic [2:0]      awprot_o,
+    output logic [3:0]      awqos_o,
+    output logic [63:0]     wdata_o,
+    output logic [7:0]      wstrb_o,
+    output logic            wvalid_o,
+    output logic            wlast_o,
 
-    input logic             dc_awready_i,
-    input logic             dc_wready_i,
-    output logic [63:0]     dc_awaddr_o,
-    output logic            dc_awvalid_o,
-    output logic [2:0]      dc_awsize_o,
-    output logic [7:0]      dc_awlen_o,
-    output logic [1:0]      dc_awburst_o,
-    output logic            dc_awid_o,
-    output logic [127:0]    dc_wdata_o,
-    output logic [15:0]     dc_wstrb_o,
-    output logic            dc_wvalid_o,
-    output logic            dc_wlast_o,
-
-    input logic [1:0]       dc_bresp_i,
-    input logic             dc_bvalid_i,
-    input logic             dc_bid_i,
-    output logic            dc_bready_o,
-
-    //interrupt inputs
-    input logic             signal1_i,
-    input logic             signal2_i,
-    input logic             signal3_i,
-    input logic             signal4_i,
-    input logic             signal5_i,
-    input logic             signal6_i,
-    input logic             signal7_i,
-    input logic             signal8_i
+    input logic [1:0]       bresp_i,
+    input logic             bvalid_i,
+    input logic [3:0]       bid_i,
+    output logic            bready_o
 );
 
-    logic [63:0]            pc_q;
-    logic [63:0]            nxt_pc;
-    logic [63:0]            pc_incr;
-    logic                   bj_pc;
+    logic                   ifu_ready;
 
-    logic                   flush_fetch;
+    logic [63:0]            nxt_pcF;
+    logic [63:0]            pcF;
 
-    logic                   if_pc_ready;
-    logic                   if_fetch_ready;
+    logic [31:0]            instrF;
+    logic                   instr_validF;
 
-    logic                   if_exc_valid;
-    exc_cause_t             if_exc_code;
-
-    logic                   if_req;
-    logic [63:0]            if_req_addr;
-    logic                   if_ready;
-    logic                   if_flush;
-
-    logic                   ic_instr_valid;
-    logic [31:0]            ic_instr;
-    logic                   ic_exc_valid;
-    exc_cause_t             ic_exc_code;
-
-    logic                   id_valid_q;
-    logic                   id_instr_valid;
-    logic [31:0]            id_instr;
-    logic [63:0]            id_pc_q;
-    logic [63:0]            id_pc_incr_q;
-    logic                   id_exc_valid_q;
-    exc_cause_t             id_exc_code_q;
-
-    logic [4:0]             id_rs1;
-    logic [4:0]             id_rs2;
-    logic [4:0]             id_rd;
-    logic [6:0]             id_opcode;
-    logic [2:0]             id_funct3;
-    logic [11:0]            id_funct12;
-    logic [11:0]            id_csr_addr;
-
-    logic                   id_r_type;
-    logic                   id_i_type;
-    logic                   id_s_type;
-    logic                   id_b_type;
-    logic                   id_u_type;
-    logic                   id_j_type;
-    logic                   id_system_type;
-    logic [63:0]            id_imm;
-
-    logic                   id_u_exc_valid;
-    exc_cause_t             id_u_exc_code;
-
-    logic                   ctrl_pc_sel;
-    alu_opr_a_sel_t         ctrl_opa_sel;
-    alu_opr_b_sel_t         ctrl_opb_sel;
-    logic [3:0]             ctrl_exu_func_sel;
-    rd_src_t                ctrl_rd_src;
-    logic                   ctrl_csr_en;
-    logic                   ctrl_csr_rw;
-    logic                   ctrl_data_req;
-    mem_access_size_t       ctrl_data_byte;
-    bypass_avail_t          ctrl_bypass_avail;
-    logic                   ctrl_data_wr;
-    logic                   ctrl_zero_extnd;
-    logic                   ctrl_rf_wr_en;
-    logic                   ctrl_word_op;
-    logic                   ctrl_alu_instr;
-    logic                   ctrl_mul_instr;
-    logic                   ctrl_div_instr;
-    logic                   ctrl_mret;
-    logic                   ctrl_wfi;
+    logic                   ic_invalidate;
+    logic                   ic_invalidate_done;
     
-    logic                   ctrl_exc_valid;
-    exc_cause_t             ctrl_exc_code;
+    logic                   exc_validF;
+    logic [4:0]             exc_codeF;
 
-    logic                   wfi_active;
-    logic                   wfi_stall;
-    logic                   wfi_end;
-    logic                   wfi_fetch_flush;
+    logic [31:0]            instrD;
+
+    logic [4:0]             rs1D;
+    logic [4:0]             rs2D;
+    logic [4:0]             rdD;
+
+    logic [63:0]            immD;
+    logic [11:0]            csr_addrD;
+
+    logic [2:0]             pc_selD;
+    logic [1:0]             opa_selD;
+    logic                   opb_selD;
+
+    logic                   rs1_usedD;
+    logic                   rs2_usedD;
+
+    logic                   word_opD;
+    logic                   alu_enD;
+    logic                   md_enD;
+
+    logic [3:0]             exu_opD;
+    logic [2:0]             branch_opD;
+
+    logic                   csr_wr_enD;
+    logic [1:0]             csr_opD;
+
+    logic                   mctrl_enD;
+    logic [1:0]             mctrl_opD;
+
+    logic                   lsu_enD;
+    logic [1:0]             lsu_lsD;
+    logic [1:0]             lsu_sizeD;
+    logic [4:0]             atomic_opD;
+    logic                   lsu_seD;
+
+    logic                   rf_wr_enD;
+    logic [2:0]             rf_selD;
+
+    logic                   exc_validD;
+    logic [4:0]             exc_codeD;
+
+    logic [63:0]            rs1_dataD;
+    logic [63:0]            rs2_dataD;
+
+    logic [63:0]            opr_aD;
+    logic [63:0]            opr_bD;
+
+    logic                   mdu_enD;
+    logic [3:0]             mdu_exu_opD;
+    logic                   mdu_word_opD;
+    logic                   mdu_readyD;
+
+    logic [63:0]            opr_aE;
+    logic [63:0]            opr_bE;
+
+    logic                   word_opE;
+    logic                   branch_enE;
+    logic [3:0]             exu_opE;
+    logic [2:0]             branch_opE;
+
+    logic [63:0]            alu_resE;
+    logic                   branch_takenE;
+
+    logic                   mdu_res_validE;
+    logic [63:0]            mdu_resE;
+
+    logic                   lsu_validE;
+    logic [63:0]            lsu_dataE;
+    logic [1:0]             lsu_lsE;
+    logic [63:0]            lsu_addrE;
+    logic [1:0]             lsu_sizeE;
+    logic                   lsu_seE;
+    logic                   lsu_readyE;
+    logic [4:0]             atomic_opE;
+
+    logic                   csr_wr_enM;
+    logic [11:0]            csr_addrM;
+    logic [63:0]            csr_wr_dataM;
+    logic [1:0]             csr_opM;
+    logic [63:0]            csr_dataM;
+
+    logic [63:0]            rs2_dataM;
+
+    logic [63:0]            lsu_ldataM;
+    logic [63:0]            addrM;
+
+    logic                   mretM;
+    logic                   sretM;
+    logic                   validM;
+
+    logic                   dc_cleanM;
+    logic                   dc_clean_doneM;
+
+    logic                   exc_validM;
+    logic [4:0]             exc_codeM;
     
-    logic [63:0]            id_rs1_rd_data;
-    logic [63:0]            id_rs2_rd_data;
-    
-    logic [63:0]            id_csr_rd_data;
+    logic                   exc_valid;
+    logic [4:0]             exc_code;
+    logic [63:0]            exc_xtvalM;
 
-    logic                   csr_mstatus_mie;
-    logic                   csr_mie_ext_ire;
-    logic                   csr_mie_sw_ire;
-    logic                   csr_mie_timer_ire;
-    logic                   csr_mie_lcof_ire;
-
-    logic                   csr_mie_ext_irp;
-    logic                   csr_mie_sw_irp;
-    logic                   csr_mie_timer_irp;
-    logic                   csr_mie_lcof_irp;
-
-    logic [63:0]            csr_mtvec;
-    logic [63:0]            csr_mepc;
-
-    logic                   csr_exc_valid;
-    exc_cause_t             csr_exc_code;
-
-    logic                   flush_decode;
-
-    logic                   csr_wr_en;
-
-    logic                   rd_exu_rs1_bypass_sel;
-    logic                   rd_exu_rs2_bypass_sel;
-
-    logic                   rd_wb_rs1_bypass_sel;
-    logic                   rd_wb_rs2_bypass_sel;
-
-    logic                   csr_exu_bypass_sel;
-    logic                   csr_mem_bypass_sel;
-    logic                   csr_wb_bypass_sel;
-
-    logic [63:0]            id_rs1_data;
-    logic [63:0]            id_rs2_data;
-    logic [63:0]            id_csr_data;
-
-    logic                   id_ready;
-    
-    logic                   id_stall;
-
-    logic [2:0]             id_u_exc_priority;
-    logic [2:0]             ctrl_exc_priority;
-    logic [2:0]             csr_exc_priority;
-
-    logic [2:0]             id_exc_valid_vec;
-    logic [2:0]             id_exc_priority_vec [3];
-    exc_cause_t             id_exc_code_vec [3];
-
-    logic [2:0]             id_max_exc_priority;
-
-    logic                   id_exc_valid;
-    exc_cause_t             id_exc_code;
-
-    logic                   exu_valid_q;
-    logic                   exu_exc_valid_q;
-    exc_cause_t             exu_exc_code_q;
-
-    logic                   exu_b_type_q;
-    logic [2:0]             exu_funct3_q;
-    logic [4:0]             exu_rd_q;
-
-    logic [11:0]            exu_csr_addr_q;
-    logic [63:0]            exu_csr_data_q;
-    logic                   exu_csr_instr_q;
-    logic                   exu_csr_wr_en_q;
-
-    logic [63:0]            exu_rs1_data_q;
-    logic [63:0]            exu_rs2_data_q;
-    logic [63:0]            exu_instr_imm_q;
-
-    alu_opr_a_sel_t         exu_opr_a_sel_q;
-    alu_opr_b_sel_t         exu_opr_b_sel_q;
-
-    logic [3:0]             exu_alu_func_q;
-    rd_src_t                exu_rd_src_q;
-
-    logic                   exu_pc_sel_q;
-    logic                   exu_data_req_q;
-    mem_access_size_t       exu_data_byte_q;
-    logic                   exu_data_wr_q;
-    logic                   exu_zero_extnd_q;
-    logic                   exu_rd_wr_en_q;
-    logic                   exu_word_op_q;
-    logic                   exu_alu_instr_q;
-    logic                   exu_mul_instr_q;
-    logic                   exu_div_instr_q;
-
-    bypass_avail_t          exu_bypass_avail_q;
-
-    logic [63:0]            exu_pc_q;
-    logic [63:0]            exu_pc_incr_q;
-
-    logic                   exu_valid;
-    logic                   exu_ready;
-    logic [63:0]            exu_opr_a;
-    logic [63:0]            exu_opr_b;
-
-    logic                   exu_valid_res;
-    logic [63:0]            exu_res;
-
-    logic                   branch_taken;
-    logic                   exu_jump_instr;
-    logic                   exu_branch_taken;
-
-    logic                   mem_valid_q;
-    logic                   mem_exc_valid_q;
-    exc_cause_t             mem_exc_code_q;
-
-    logic [63:0]            mem_rs2_data_q;
-    logic [63:0]            mem_instr_imm_q;
-    logic [4:0]             mem_rd_q;
-
-    logic                   mem_csr_instr_q;
-    logic [11:0]            mem_csr_addr_q;
-    logic [63:0]            mem_csr_data_q;
-    logic                   mem_csr_wr_en_q;
-
-    logic [63:0]            mem_pc_q;
-    logic [63:0]            mem_pc_incr_q;
-    rd_src_t                mem_rd_src_q;
-
-    logic                   mem_data_req_q;
-    mem_access_size_t       mem_data_byte_q;
-    logic                   mem_data_wr_q;
-    logic                   mem_zero_extnd_q;
-    
-    logic                   mem_rf_wr_en_q;
-    bypass_avail_t          mem_bypass_avail_q;
-
-    logic [63:0]            mem_alu_res_q;
-
-    logic                   mem_ready;
-    
-    logic                   dc_ready;
-    logic                   dc_req;
-    logic [63:0]            dc_addr;
-    logic                   dc_wr;
-    logic [63:0]            dc_wr_data;
-    logic [7:0]             dc_mask;
-    logic                   dc_resp_valid;
-    logic [63:0]            dc_rd_data;
-    logic                   mem_rd_ready;
-
-    logic                   dc_exc_valid;
-    exc_cause_t             dc_exc_code;
-
-    logic                   mem_u_exc_valid;
-    exc_cause_t             mem_u_exc_code;
-
-    logic                   mem_addr;
-    logic                   clint_addr;
-    logic                   plic_addr;
-
-    logic                   mem_req;
-    logic                   clint_req;
-    logic                   plic_req;
-
-    logic [63:0]            mem_rd_data;
-    
-    logic [63:0]            clint_rd_data;
-    logic                   clint_resp_valid;
-
-    logic                   clint_exc_valid;
-    exc_cause_t             clint_exc_code;
-
-    logic                   clint_msip_irp;
-    logic                   clint_mtip_irp;
-
-    logic [63:0]            clint_mtime;
-
-    logic [63:0]            plic_rd_data;
-    logic                   plic_resp_valid;
-
-    logic                   plic_exc_valid;
-    exc_cause_t             plic_exc_code;
-
-    logic                   plic_eip;
+    logic [63:0]            pcM;
+    logic [63:0]            nxt_pcM;
 
     logic                   trap_en;
-    logic [63:0]            nxt_mepc;
-    logic [5:0]             nxt_mcause;
-    logic [63:0]            nxt_pc_trap;
+    logic [63:0]            trap_pc;
+    logic [63:0]            mepc;
+    logic [63:0]            sepc;
 
-    logic                   tc_flush;
+    logic                   wfi_wakeup;
 
-    logic                   tc_exc_valid;
-    exc_cause_t             tc_exc_code;
-
-    logic                   mem_oob_exc_valid;
-    exc_cause_t             mem_oob_exc_code;
-
-    logic [2:0]             oob_exc_priority;
-    logic [2:0]             mem_u_exc_priority;
-    logic [2:0]             clint_exc_priority;
-    logic [2:0]             plic_exc_priority;
-
-    logic [3:0]             mem_exc_valid_vec;
-    logic [3:0]             mem_exc_priority_vec [4];
-    exc_cause_t             mem_exc_code_vec [4];
+    logic [1:0]             priv_level;
     
-    logic                   mem_exc_valid;
-    logic [2:0]             mem_max_exc_priority;
-    exc_cause_t             mem_exc_code;
+    logic [31:0]            mcounteren;
+    logic [31:0]            scounteren;
 
-    logic                   nxt_wb_valid;
+    logic                   mstatus_ube;
+    logic [1:0]             mstatus_mpp;
+    logic                   mstatus_mprv;
+    logic                   mstatus_tvm;
+    logic                   mstatus_tw;
+    logic                   mstatus_tsr;
+    logic                   mstatus_sbe;
+    logic                   mstatus_mbe;
 
-    logic                   wb_valid_q;
+    logic                   menvcfg_stce;
 
-    logic                   wb_valid;
-    logic                   wb_valid_mem_resp;
+    logic [63:0]            pmpcfg0;
+    logic [63:0]            pmpcfg2;
 
-    logic [63:0]            wb_alu_res_q;
-    logic [63:0]            wb_instr_imm_q;
-    logic [63:0]            wb_pc_incr_q;
+    logic [63:0]            pmpaddr0;
+    logic [63:0]            pmpaddr1;
+    logic [63:0]            pmpaddr2;
+    logic [63:0]            pmpaddr3;
+    logic [63:0]            pmpaddr4;
+    logic [63:0]            pmpaddr5;
+    logic [63:0]            pmpaddr6;
+    logic [63:0]            pmpaddr7;
+    logic [63:0]            pmpaddr8;
+    logic [63:0]            pmpaddr9;
+    logic [63:0]            pmpaddr10;
+    logic [63:0]            pmpaddr11;
+    logic [63:0]            pmpaddr12;
+    logic [63:0]            pmpaddr13;
+    logic [63:0]            pmpaddr14;
+    logic [63:0]            pmpaddr15;
 
-    logic [63:0]            wb_mem_rd_data_q;
-    logic [63:0]            wb_mem_rd_data;
+    logic [4:0]             rdW;
+    logic                   rf_wr_enW;
+    logic [63:0]            rf_wr_dataW;
 
-    logic [63:0]            wb_mem_wr_data;
+    logic                   stallD;
+    logic                   stallE;
+    logic                   stallM;
 
-    logic                   wb_mem_req_q;
+    logic                   flushF;
+    logic                   flushE;
 
-    logic                   wb_data_mem_resp_valid;
+    logic                   retire;
 
-    logic [11:0]            wb_csr_addr_q;
-    logic                   wb_csr_wr_en_q;
-    logic [63:0]            wb_csr_data_q;
-    
-    rd_src_t                wb_rd_src_q;
+    logic                   ifu_arready;
+    logic [63:0]            ifu_araddr;
+    logic [7:0]             ifu_arlen;
+    logic [2:0]             ifu_arsize;
+    logic [1:0]             ifu_arburst;
+    logic                   ifu_arlock;
+    logic [3:0]             ifu_arid;
+    logic [3:0]             ifu_arcache;
+    logic [2:0]             ifu_arprot;
+    logic [3:0]             ifu_arqos;
+    logic                   ifu_arvalid;
 
-    logic                   wb_rf_wr_en_q;
-    logic                   wb_rf_wr_en;
+    logic                   ifu_rvalid;
+    logic [63:0]            ifu_rdata;
+    logic [1:0]             ifu_rresp;
+    logic                   ifu_rlast;
+    logic [3:0]             ifu_rid;
+    logic                   ifu_rready;
 
-    bypass_avail_t          wb_bypass_avail_q;
+    logic                   lsu_arready;
+    logic [63:0]            lsu_araddr;
+    logic [7:0]             lsu_arlen;
+    logic [2:0]             lsu_arsize;
+    logic [1:0]             lsu_arburst;
+    logic                   lsu_arlock;
+    logic [3:0]             lsu_arid;
+    logic [3:0]             lsu_arcache;
+    logic [2:0]             lsu_arprot;
+    logic [3:0]             lsu_arqos;
+    logic                   lsu_arvalid;
 
-    logic                   wb_csr_instr_q;
-    logic                   wb_csr_wr_en;
-    logic                   minstret_incr;
-    
-    logic [63:0]            wb_wr_data;
+    logic                   lsu_rvalid;
+    logic [63:0]            lsu_rdata;
+    logic [1:0]             lsu_rresp;
+    logic                   lsu_rlast;
+    logic [3:0]             lsu_rid;
+    logic                   lsu_rready;
 
-    logic [4:0]             wb_rd_q;
+    logic                   lsu_awready;
+    logic [63:0]            lsu_awaddr;
+    logic                   lsu_awvalid;
+    logic [2:0]             lsu_awsize;
+    logic [7:0]             lsu_awlen;
+    logic [1:0]             lsu_awburst;
+    logic                   lsu_awlock;
+    logic [3:0]             lsu_awid;
+    logic [3:0]             lsu_awcache;
+    logic [2:0]             lsu_awprot;
+    logic [3:0]             lsu_awqos;
 
+    logic                   lsu_wready;
+    logic [63:0]            lsu_wdata;
+    logic [7:0]             lsu_wstrb;
+    logic                   lsu_wvalid;
+    logic                   lsu_wlast;
 
-    localparam RESET_PC = 64'h0000_0000_0001_0000;
+    logic [1:0]             lsu_bresp;
+    logic                   lsu_bvalid;
+    logic [3:0]             lsu_bid;
+    logic                   lsu_bready;
 
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            pc_q <= RESET_PC;
-        end else if (if_pc_ready | flush_fetch) begin
-            pc_q <= nxt_pc;
-        end
-    end
-
-    always_comb begin
-        pc_incr     =   pc_q + 64'd4;
-        bj_pc       =   exu_branch_taken | exu_jump_instr;
-
-        if (trap_en) 
-            nxt_pc  =   nxt_pc_trap;
-        else if (bj_pc)      
-            nxt_pc  =   exu_res;
-        else
-            nxt_pc  =   pc_incr;
-    end
-
-    fetch u_fetch (
-        .clk                (clk),
-        .resetn             (resetn),
-        .pc_i               (pc_q),
-        .pc_ready_o         (if_pc_ready),
-        .flush_i            (flush_fetch),
-        .exc_valid_o        (if_exc_valid),
-        .exc_code_o         (if_exc_code),
-        .instr_valid_i      (ic_instr_valid),
-        .instr_i            (ic_instr),
-        .instr_ready_o      (if_fetch_ready),
-        .exc_valid_i        (ic_exc_valid),
-        .exc_code_i         (ic_exc_code),
-        .instr_mem_ready_i  (if_ready),
-        .instr_mem_req_o    (if_req),
-        .instr_mem_addr_o   (if_req_addr),
-        .flush_o            (if_flush),
-        .decode_ready_i     (id_ready),
-        .instr_valid_o      (id_instr_valid),
-        .fetch_instr_o      (id_instr)
+    pipeline u_pipeline (
+        .clk                    (clk),
+        .resetn                 (resetn),
+        .ifu_ready_i            (ifu_ready),
+        .nxt_pcF_o              (nxt_pcF),
+        .instrF_i               (instrF),
+        .instr_validF_i         (instr_validF),
+        .ic_invalidateF_o       (ic_invalidate),
+        .ic_invalidate_doneF_i  (ic_invalidate_done),
+        .pcF_i                  (pcF),
+        .exc_validF_i           (exc_validF),
+        .exc_codeF_i            (exc_codeF),
+        .instrD_o               (instrD),
+        .rs1D_i                 (rs1D),
+        .rs2D_i                 (rs2D),
+        .rdD_i                  (rdD),
+        .immD_i                 (immD),
+        .csr_addrD_i            (csr_addrD),
+        .pc_selD_i              (pc_selD),
+        .opa_selD_i             (opa_selD),
+        .opb_selD_i             (opb_selD),
+        .rs1_usedD_i            (rs1_usedD),
+        .rs2_usedD_i            (rs2_usedD),
+        .word_opD_i             (word_opD),
+        .alu_enD_i              (alu_enD),
+        .md_enD_i               (md_enD),
+        .exu_opD_i              (exu_opD),
+        .branch_opD_i           (branch_opD),
+        .csr_wr_enD_i           (csr_wr_enD),
+        .csr_opD_i              (csr_opD),
+        .mctrl_enD_i            (mctrl_enD),
+        .mctrl_opD_i            (mctrl_opD),
+        .lsu_enD_i              (lsu_enD),
+        .lsu_lsD_i              (lsu_lsD),
+        .lsu_sizeD_i            (lsu_sizeD),
+        .atomic_opD_i           (atomic_opD),
+        .lsu_seD_i              (lsu_seD),
+        .rf_wr_enD_i            (rf_wr_enD),
+        .rf_selD_i              (rf_selD),
+        .exc_validD_i           (exc_validD),
+        .exc_codeD_i            (exc_codeD),
+        .rs1_dataD_i            (rs1_dataD),
+        .rs2_dataD_i            (rs2_dataD),
+        .opr_aD_o               (opr_aD),
+        .opr_bD_o               (opr_bD),
+        .md_enD_o               (mdu_enD),
+        .exu_opD_o              (mdu_exu_opD),
+        .word_opD_o             (mdu_word_opD),
+        .mdu_readyD_i           (mdu_readyD),
+        .opr_aE_o               (opr_aE),
+        .opr_bE_o               (opr_bE),
+        .word_opE_o             (word_opE),
+        .branch_enE_o           (branch_enE),
+        .exu_opE_o              (exu_opE),
+        .branch_opE_o           (branch_opE),
+        .alu_resE_i             (alu_resE),
+        .branch_takenE_i        (branch_takenE),
+        .mdu_res_validE_i       (mdu_res_validE),
+        .mdu_resE_i             (mdu_resE),
+        .lsu_validE_o           (lsu_validE),
+        .lsu_dataE_o            (lsu_dataE),
+        .lsu_lsE_o              (lsu_lsE),
+        .lsu_addrE_o            (lsu_addrE),
+        .lsu_sizeE_o            (lsu_sizeE),
+        .lsu_seE_o              (lsu_seE),
+        .lsu_readyE_i           (lsu_readyE),
+        .atomic_opE_o           (atomic_opE),
+        .csr_wr_enM_o           (csr_wr_enM),
+        .csr_addrM_o            (csr_addrM),
+        .csr_wr_dataM_o         (csr_wr_dataM),
+        .csr_opM_o              (csr_opM),
+        .csr_dataM_i            (csr_dataM),
+        .rs2_dataM_o            (rs2_dataM),
+        .lsu_ldataM_i           (lsu_ldataM),
+        .addrM_i                (addrM),
+        .mretM_o                (mretM),
+        .sretM_o                (sretM),
+        .validM_o               (validM),
+        .dc_cleanM_o            (dc_cleanM),
+        .dc_clean_doneM_i       (dc_clean_doneM),
+        .exc_validM_i           (exc_validM),
+        .exc_codeM_i            (exc_codeM),
+        .exc_validM_o           (exc_valid),
+        .exc_codeM_o            (exc_code),
+        .pcM_o                  (pcM),
+        .nxt_pcM_o              (nxt_pcM),
+        .exc_xtvalM_o           (exc_xtvalM),
+        .trap_en_i              (trap_en),
+        .trap_pc_i              (trap_pc),
+        .mepc_i                 (mepc),
+        .sepc_i                 (sepc),
+        .mstatus_tw_i           (mstatus_tw),
+        .priv_level_i           (priv_level),
+        .wfi_wakeup_i           (wfi_wakeup),
+        .rdW_o                  (rdW),
+        .rf_wr_enW_o            (rf_wr_enW),
+        .rf_wr_dataW_o          (rf_wr_dataW),
+        .stallD_o               (stallD),
+        .stallE_o               (stallE),
+        .stallM_o               (stallM),
+        .flushF_o               (flushF),
+        .flushE_o               (flushE),
+        .retire_o               (retire)
     );
 
-    i_cache u_i_cache (
-        .clk                (clk),
-        .resetn             (resetn),
-        .instr_mem_req_i    (if_req),
-        .instr_mem_addr_i   (if_req_addr),
-        .instr_mem_ready_o  (if_ready),
-        .instr_ready_i      (if_fetch_ready),
-        .instr_o            (ic_instr),
-        .instr_valid_o      (ic_instr_valid),
-        .arready_i          (ic_arready_i),
-        .araddr_o           (ic_araddr_o),
-        .arlen_o            (ic_arlen_o),
-        .arsize_o           (ic_arsize_o),
-        .arburst_o          (ic_arburst_o), 
-        .arid_o             (ic_arid_o),
-        .arprot_o           (ic_arprot_o),
-        .arvalid_o          (ic_arvalid_o),
-        .rvalid_i           (ic_rvalid_i),
-        .rdata_i            (ic_rdata_i),
-        .rresp_i            (ic_rresp_i),
-        .rlast_i            (ic_rlast_i),
-        .rid_i              (ic_rid_i),
-        .rready_o           (ic_rready_o),
-        .flush_i            (if_flush),
-        .exc_valid_o        (ic_exc_valid),
-        .exc_code_o         (ic_exc_code)
+    ifu u_ifu (
+        .clk                    (clk),
+        .resetn                 (resetn),
+        .pc_i                   (nxt_pcF),
+        .ifu_ready_o            (ifu_ready),
+        .stallD_i               (stallD),
+        .instr_o                (instrF),
+        .instr_valid_o          (instr_validF),
+        .ic_invalidate_i        (ic_invalidate),
+        .ic_invalidate_done_o   (ic_invalidate_done),
+        .flushF_i               (flushF),
+        .pcF_o                  (pcF),
+        .exc_valid_o            (exc_validF),
+        .exc_code_o             (exc_codeF),
+        .priv_level_i           (priv_level),
+        .pmpaddr0_i             (pmpaddr0),
+        .pmpaddr1_i             (pmpaddr1),
+        .pmpaddr2_i             (pmpaddr2),
+        .pmpaddr3_i             (pmpaddr3),
+        .pmpaddr4_i             (pmpaddr4),
+        .pmpaddr5_i             (pmpaddr5),
+        .pmpaddr6_i             (pmpaddr6),
+        .pmpaddr7_i             (pmpaddr7),
+        .pmpaddr8_i             (pmpaddr8),
+        .pmpaddr9_i             (pmpaddr9),
+        .pmpaddr10_i            (pmpaddr10),
+        .pmpaddr11_i            (pmpaddr11),
+        .pmpaddr12_i            (pmpaddr12),
+        .pmpaddr13_i            (pmpaddr13),
+        .pmpaddr14_i            (pmpaddr14),
+        .pmpaddr15_i            (pmpaddr15),
+        .pmpcfg0_i              (pmpcfg0),
+        .pmpcfg2_i              (pmpcfg2),
+        .arready_i              (ifu_arready),
+        .araddr_o               (ifu_araddr),
+        .arlen_o                (ifu_arlen),
+        .arsize_o               (ifu_arsize),
+        .arburst_o              (ifu_arburst),
+        .arlock_o               (ifu_arlock),
+        .arid_o                 (ifu_arid),
+        .arcache_o              (ifu_arcache),
+        .arprot_o               (ifu_arprot),
+        .arqos_o                (ifu_arqos),
+        .arvalid_o              (ifu_arvalid),
+        .rvalid_i               (ifu_rvalid),
+        .rdata_i                (ifu_rdata),
+        .rresp_i                (ifu_rresp),
+        .rlast_i                (ifu_rlast),
+        .rid_i                  (ifu_rid),
+        .rready_o               (ifu_rready)
     );
 
-    assign flush_fetch  =   tc_flush | exu_branch_taken | exu_jump_instr | (wfi_fetch_flush & wfi_active);
-
-    //pipeline registers fetch -> decode 
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            id_pc_q             <=  64'h0;
-            id_pc_incr_q        <=  64'h0;
-        end else if (id_ready) begin
-            id_pc_q             <=  pc_q;
-            id_pc_incr_q        <=  pc_incr;
-        end
-    end
-
-    // DECODE 
     decode u_decode (
-        .instr_i            (id_instr),
-        .rs1_o              (id_rs1),
-        .rs2_o              (id_rs2),
-        .rd_o               (id_rd),
-        .op_o               (id_opcode),
-        .funct3_o           (id_funct3),
-        .funct12_o          (id_funct12),
-        .csr_addr_o         (id_csr_addr),
-        .r_type_o           (id_r_type),
-        .i_type_o           (id_i_type),
-        .s_type_o           (id_s_type),
-        .b_type_o           (id_b_type),
-        .u_type_o           (id_u_type),
-        .j_type_o           (id_j_type),
-        .system_type_o      (id_system_type),
-        .imm_o              (id_imm),
-        .exc_valid_o        (id_u_exc_valid),
-        .exc_code_o         (id_u_exc_code)
-    );
-
-    control u_control (
-        .r_type_i           (id_r_type),
-        .i_type_i           (id_i_type),
-        .s_type_i           (id_s_type),
-        .b_type_i           (id_b_type),
-        .u_type_i           (id_u_type),
-        .j_type_i           (id_j_type),
-        .system_type_i      (id_system_type),
-        .instr_funct3_i     (id_funct3),
-        .instr_funct12_i    (id_funct12),
-        .instr_opcode_i     (id_opcode),
-        .pc_sel_o           (ctrl_pc_sel),
-        .opa_sel_o          (ctrl_opa_sel),
-        .opb_sel_o          (ctrl_opb_sel),
-        .exu_func_sel_o     (ctrl_exu_func_sel),
-        .rd_src_o           (ctrl_rd_src),
-        .csr_en_o           (ctrl_csr_en),
-        .csr_rw_o           (ctrl_csr_rw),
-        .data_req_o         (ctrl_data_req),
-        .data_byte_o        (ctrl_data_byte),
-        .bypass_avail_o     (ctrl_bypass_avail),
-        .data_wr_o          (ctrl_data_wr),
-        .zero_extnd_o       (ctrl_zero_extnd),
-        .rf_wr_en_o         (ctrl_rf_wr_en),
-        .word_op_o          (ctrl_word_op),
-        .alu_instr_o        (ctrl_alu_instr),
-        .mul_instr_o        (ctrl_mul_instr),
-        .div_instr_o        (ctrl_div_instr),
-        .mret_o             (ctrl_mret),
-        .wfi_o              (ctrl_wfi),
-        .exc_valid_o        (ctrl_exc_valid),
-        .exc_code_o         (ctrl_exc_code)
+        .instr_i                (instrD),
+        .priv_level_i           (priv_level),
+        .mcounteren_i           (mcounteren),
+        .scounteren_i           (scounteren),
+        .mstatus_tsr_i          (mstatus_tsr),
+        .mstatus_tw_i           (mstatus_tw),
+        .mstatus_tvm_i          (mstatus_tvm),
+        .menvcfg_stce_i         (menvcfg_stce),
+        .rs1_o                  (rs1D),
+        .rs2_o                  (rs2D),
+        .rd_o                   (rdD),
+        .imm_o                  (immD),
+        .csr_addr_o             (csr_addrD),
+        .pc_sel_o               (pc_selD),
+        .opa_sel_o              (opa_selD),
+        .opb_sel_o              (opb_selD),
+        .rs1_used_o             (rs1_usedD),
+        .rs2_used_o             (rs2_usedD),
+        .word_op_o              (word_opD),
+        .alu_en_o               (alu_enD),
+        .md_en_o                (md_enD),
+        .exu_op_o               (exu_opD),
+        .branch_op_o            (branch_opD),
+        .csr_wr_en_o            (csr_wr_enD),
+        .csr_op_o               (csr_opD),
+        .mctrl_en_o             (mctrl_enD),
+        .mctrl_op_o             (mctrl_opD),
+        .lsu_en_o               (lsu_enD),
+        .lsu_ls_o               (lsu_lsD),
+        .lsu_size_o             (lsu_sizeD),
+        .atomic_op_o            (atomic_opD),
+        .lsu_se_o               (lsu_seD),
+        .rf_wr_en_o             (rf_wr_enD),
+        .rf_sel_o               (rf_selD),
+        .exc_valid_o            (exc_validD),
+        .exc_code_o             (exc_codeD)
     );
 
     register_file u_register_file (
-        .clk                (clk),
-        .resetn             (resetn),
-        .rs1_addr_i         (id_rs1),
-        .rs2_addr_i         (id_rs2),
-        .rs1_data_o         (id_rs1_rd_data),
-        .rs2_data_o         (id_rs2_rd_data),
-        .rd_addr_i          (wb_rd_q),
-        .wr_en_i            (wb_rf_wr_en),
-        .wr_data_i          (wb_wr_data)
+        .rs1_addr_i             (rs1D),
+        .rs2_addr_i             (rs2D),
+        .rs1_data_o             (rs1_dataD),
+        .rs2_data_o             (rs2_dataD),
+        .rd_addr_i              (rdW),
+        .wr_en_i                (rf_wr_enW),
+        .wr_data_i              (rf_wr_dataW)
     );
 
-    csr u_csr (
-        .clk                (clk),
-        .resetn             (resetn),
-        .rd_en_i            (ctrl_csr_en),
-        .rd_addr_i          (id_csr_addr),
-        .rd_data_o          (id_csr_rd_data),
-        .wr_en_i            (wb_csr_wr_en),
-        .wr_addr_i          (wb_csr_addr_q),
-        .wr_data_i          (wb_alu_res_q),
-        .trap_en_i          (trap_en),
-        .mret_i             (ctrl_mret),
-        .nxt_mepc_i         (nxt_mepc),
-        .nxt_mcause_i       (nxt_mcause),
-        .mstatus_mie_o      (csr_mstatus_mie),
-        .mie_ext_ire_o      (csr_mie_ext_ire),
-        .mie_sw_ire_o       (csr_mie_sw_ire),
-        .mie_timer_ire_o    (csr_mie_timer_ire),
-        .mie_lcof_ire_o     (csr_mie_lcof_ire),
-        .mie_ext_irp_o      (csr_mie_ext_irp),
-        .mie_sw_irp_o       (csr_mie_sw_irp),
-        .mie_timer_irp_o    (csr_mie_timer_irp),
-        .mie_lcof_irp_o     (csr_mie_lcof_irp),
-        .eip_i              (plic_eip),
-        .msip_i             (clint_msip_irp),
-        .mtip_i             (clint_mtip_irp),
-        .mtvec_o            (csr_mtvec),
-        .mepc_o             (csr_mepc),
-        .mtime_i            (clint_mtime),
-        .minstret_incr_i    (minstret_incr),
-        .wfi_end_o          (wfi_end),
-        .wfi_fetch_flush_o  (wfi_fetch_flush),
-        .exc_valid_o        (csr_exc_valid),
-        .exc_code_o         (csr_exc_code)
+    mdu u_mdu (
+        .clk                    (clk),
+        .resetn                 (resetn),
+        .opr_a_i                (opr_aD),
+        .opr_b_i                (opr_bD),
+        .mdu_en_i               (mdu_enD),
+        .exu_op_i               (mdu_exu_opD),
+        .word_op_i              (mdu_word_opD),
+        .mdu_ready_o            (mdu_readyD),
+        .stallE_i               (stallE),
+        .flushE_i               (flushE),
+        .stallM_i               (stallM),
+        .mdu_res_valid_o        (mdu_res_validE),
+        .mdu_res_o              (mdu_resE)
     );
 
-    // bypassing logic 
-    always_comb begin
-        id_ready                =   exu_ready & ~wfi_stall & ~id_stall;
-
-        id_valid_q              =   id_instr_valid & ~flush_fetch;
-
-        id_exc_valid_q          =   if_exc_valid & ~flush_fetch;
-        id_exc_code_q           =   if_exc_code;
-
-        flush_decode            =   tc_flush | exu_branch_taken | exu_jump_instr;
-
-        csr_wr_en               =   id_valid_q & ctrl_csr_en & (|id_rs1 | ctrl_csr_rw);
-
-        wfi_active              =   id_valid_q & ctrl_wfi;
-        wfi_stall               =   wfi_active & ~wfi_end;
-
-        rd_exu_rs1_bypass_sel   =   (id_rs1 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == EXU_BYPASS) & id_valid_q & exu_valid_q;
-        rd_exu_rs2_bypass_sel   =   (id_rs2 == exu_rd_q) & |exu_rd_q & (exu_bypass_avail_q == EXU_BYPASS) & id_valid_q & exu_valid_q;
-        rd_wb_rs1_bypass_sel    =   (id_rs1 == wb_rd_q)  & |wb_rd_q  & id_valid_q & wb_valid;
-        rd_wb_rs2_bypass_sel    =   (id_rs2 == wb_rd_q)  & |wb_rd_q  & id_valid_q & wb_valid;
-        
-        csr_exu_bypass_sel      =   (id_csr_addr == exu_csr_addr_q) & |exu_csr_addr_q & ctrl_csr_en & exu_csr_instr_q & exu_valid_q;
-        csr_mem_bypass_sel      =   (id_csr_addr == mem_csr_addr_q) & |mem_csr_addr_q & ctrl_csr_en & mem_csr_instr_q & mem_valid_q;
-        csr_wb_bypass_sel       =   (id_csr_addr == wb_csr_addr_q)  & |wb_csr_addr_q & ctrl_csr_en & wb_csr_instr_q & wb_valid;
-
-        if (rd_exu_rs1_bypass_sel) begin
-            id_rs1_data         =   exu_res;
-        end else if (rd_wb_rs1_bypass_sel) begin
-            id_rs1_data         =   wb_wr_data;
-        end else begin
-            id_rs1_data         =   id_rs1_rd_data;
-        end
-
-        if (rd_exu_rs2_bypass_sel) begin
-            id_rs2_data         =   exu_res;
-        end else if (rd_wb_rs2_bypass_sel) begin
-            id_rs2_data         =   wb_wr_data;
-        end else begin
-            id_rs2_data         =   id_rs2_rd_data;
-        end
-
-        if (csr_exu_bypass_sel) begin
-            id_csr_data         =   exu_res;
-        end else if (csr_mem_bypass_sel) begin
-            id_csr_data         =   mem_alu_res_q;
-        end else if (csr_wb_bypass_sel) begin
-            id_csr_data         =   wb_alu_res_q;
-        end else begin
-            id_csr_data         =   id_csr_rd_data;
-        end
-
-        id_stall                =   (((id_rs1 == exu_rd_q) | (id_rs2 == exu_rd_q)) & (exu_bypass_avail_q == WB_BYPASS) & |exu_rd_q & id_valid_q & exu_valid_q)  |
-                                    (((id_rs1 == mem_rd_q) | (id_rs2 == mem_rd_q)) & (mem_bypass_avail_q == WB_BYPASS) & |mem_rd_q & id_valid_q & mem_valid_q);
-        
-
-        id_u_exc_priority       =   exc_priority_encode(id_u_exc_code);
-        ctrl_exc_priority       =   exc_priority_encode(ctrl_exc_code);
-        csr_exc_priority        =   exc_priority_encode(csr_exc_code);
-
-        id_exc_valid_vec        =   {id_u_exc_valid, ctrl_exc_valid, csr_exc_valid};
-        id_exc_priority_vec     =   '{id_u_exc_priority, ctrl_exc_priority, csr_exc_priority};
-        id_exc_code_vec         =   '{id_u_exc_code, ctrl_exc_code, csr_exc_code};
-
-        id_exc_valid            =   id_valid_q & |id_exc_valid_vec;
-
-        id_max_exc_priority     =   3'd7;
-        id_exc_code             =   5'd0;
-        for (int i=0; i<3; i++) begin
-            if (id_exc_valid_vec[i] & (id_exc_priority_vec[i] < id_max_exc_priority)) begin
-                id_max_exc_priority     =   id_exc_priority_vec[i];
-                id_exc_code             =   id_exc_code_vec[i];
-            end
-        end
-    end
-
-    //valid register decode -> execute
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            exu_valid_q         <=  1'b0;
-        end else if (flush_decode) begin
-            exu_valid_q         <=  1'b0;
-        end else if (exu_ready & ~id_stall) begin
-            exu_valid_q         <=  id_valid_q & ~wfi_active;
-        end
-    end
-
-    //pipeline registers decode -> execute
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            exu_b_type_q        <=  1'b0;
-            exu_funct3_q        <=  3'b0;
-            exu_rd_q            <=  5'b0;
-            exu_csr_addr_q      <=  12'h0;
-            exu_csr_data_q      <=  64'h0;
-            exu_csr_instr_q     <=  1'b0;
-            exu_csr_wr_en_q     <=  1'b0;
-            exu_rs1_data_q      <=  64'h0;
-            exu_rs2_data_q      <=  64'h0;
-            exu_instr_imm_q     <=  64'h0;
-            exu_pc_sel_q        <=  1'b0;
-            exu_opr_a_sel_q     <=  RS1_OPERAND_A;
-            exu_opr_b_sel_q     <=  RS2_OPERAND_B;
-            exu_alu_func_q      <=  OP_ADD;
-            exu_rd_src_q        <=  EXU_SRC;
-            exu_data_req_q      <=  1'b0;
-            exu_data_byte_q     <=  BYTE;
-            exu_bypass_avail_q  <=  EXU_BYPASS;
-            exu_data_wr_q       <=  1'b0;
-            exu_zero_extnd_q    <=  1'b0;
-            exu_rd_wr_en_q      <=  1'b0;
-            exu_word_op_q       <=  1'b0;
-            exu_alu_instr_q     <=  1'b0;
-            exu_mul_instr_q     <=  1'b0;
-            exu_div_instr_q     <=  1'b0;
-            exu_pc_q            <=  64'h0;
-            exu_pc_incr_q       <=  64'h0;
-        end else if (exu_ready & ~id_stall) begin
-            exu_b_type_q        <=  id_b_type;
-            exu_funct3_q        <=  id_funct3;
-            exu_rd_q            <=  id_rd;
-            exu_csr_addr_q      <=  id_csr_addr;
-            exu_csr_data_q      <=  id_csr_data;
-            exu_csr_instr_q     <=  ctrl_csr_en;
-            exu_csr_wr_en_q     <=  csr_wr_en;
-            exu_rs1_data_q      <=  id_rs1_data;
-            exu_rs2_data_q      <=  id_rs2_data;
-            exu_instr_imm_q     <=  id_imm;
-            exu_pc_sel_q        <=  ctrl_pc_sel;
-            exu_opr_a_sel_q     <=  ctrl_opa_sel;
-            exu_opr_b_sel_q     <=  ctrl_opb_sel;
-            exu_alu_func_q      <=  ctrl_exu_func_sel;
-            exu_rd_src_q        <=  ctrl_rd_src;
-            exu_data_req_q      <=  ctrl_data_req;
-            exu_data_byte_q     <=  ctrl_data_byte;
-            exu_bypass_avail_q  <=  ctrl_bypass_avail;
-            exu_data_wr_q       <=  ctrl_data_wr;
-            exu_zero_extnd_q    <=  ctrl_zero_extnd;
-            exu_rd_wr_en_q      <=  ctrl_rf_wr_en;
-            exu_word_op_q       <=  ctrl_word_op;
-            exu_alu_instr_q     <=  ctrl_alu_instr;
-            exu_mul_instr_q     <=  ctrl_mul_instr;
-            exu_div_instr_q     <=  ctrl_div_instr;
-            exu_pc_q            <=  id_pc_q;
-            exu_pc_incr_q       <=  id_pc_incr_q;
-        end
-    end
-
-    //exception registers decode -> execute
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            exu_exc_valid_q     <= 1'b0;
-            exu_exc_code_q      <= 5'd0;
-        end else if (flush_decode) begin
-            exu_exc_valid_q     <=  1'b0;
-            exu_exc_code_q      <=  5'd0;
-        end else if (exu_ready & ~id_stall) begin
-            exu_exc_valid_q     <= (id_exc_valid_q | id_exc_valid) & ~wfi_active;
-            exu_exc_code_q      <= id_exc_valid_q ? id_exc_code_q : id_exc_code;
-        end 
-    end
-
-    // EXECUTE
-
-    execute u_execute (
-        .clk                (clk),
-        .resetn             (resetn),
-        .valid_instr_i      (exu_valid),
-        .exu_ready_o        (exu_ready),
-        .flush_i            (tc_flush),
-        .opr_a_i            (exu_opr_a),
-        .opr_b_i            (exu_opr_b),
-        .exu_func_i         (exu_alu_func_q),
-        .word_op_i          (exu_word_op_q),
-        .mul_instr_i        (exu_mul_instr_q),
-        .div_instr_i        (exu_div_instr_q),
-        .res_ready_i        (mem_ready),
-        .valid_res_o        (exu_valid_res),
-        .exu_res_o          (exu_res)
+    alu u_alu (
+        .opr_a_i                (opr_aE),
+        .opr_b_i                (opr_bE),
+        .alu_op_i               (exu_opE),
+        .word_op_i              (word_opE),
+        .alu_res_o              (alu_resE)
     );
 
     branch_control u_branch_control (
-        .opr_a_i            (exu_opr_a),
-        .opr_b_i            (exu_opr_b),
-        .b_type_i        (exu_b_type_q),
-        .instr_funct3_i     (exu_funct3_q),
-        .branch_taken_o     (branch_taken)
+        .opr_a_i                (opr_aE),
+        .opr_b_i                (opr_bE),
+        .branch_en_i            (branch_enE),
+        .branch_op_i            (branch_opE),
+        .branch_taken_o         (branch_takenE)  
     );
 
-    always_comb begin
-        exu_valid   =   exu_valid_q & ~exu_exc_valid_q;
-
-        case (exu_opr_a_sel_q)
-            RS1_OPERAND_A: exu_opr_a    =   exu_rs1_data_q;
-            PC_OPERAND_A: exu_opr_a     =   exu_pc_q;
-            CSR_OPERAND_A: exu_opr_a    =   exu_csr_data_q; 
-        endcase
-
-        case (exu_opr_b_sel_q)
-            RS2_OPERAND_B: exu_opr_b    =   exu_rs2_data_q;
-            IMM_OPERAND_B: exu_opr_b    =   (exu_csr_instr_q & (exu_alu_func_q == OP_AND)) ? ~exu_instr_imm_q : exu_instr_imm_q;
-            RS1_OPERAND_B: exu_opr_b    =   (exu_csr_instr_q & (exu_alu_func_q == OP_AND)) ? ~exu_rs1_data_q : exu_rs1_data_q;
-        endcase
-
-        exu_jump_instr      =   exu_pc_sel_q & exu_valid_q & ~exu_exc_valid_q;
-        exu_branch_taken    =   branch_taken & exu_valid_q & ~exu_exc_valid_q;
-    end
-
-    //valid register execute -> memory
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            mem_valid_q         <=  1'b0;
-        end else if (tc_flush) begin
-            mem_valid_q         <=  1'b0;
-        end else if (mem_ready) begin
-            mem_valid_q         <=  exu_valid_q;
-        end
-    end
-
-    //pipeline registers execute -> memory
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            mem_rs2_data_q      <=  64'h0;
-            mem_instr_imm_q     <=  64'h0;
-            mem_rd_q            <=  5'b0;
-            mem_csr_instr_q     <=  1'b0;
-            mem_csr_addr_q      <=  12'h0;
-            mem_csr_data_q      <=  64'h0;
-            mem_csr_wr_en_q     <=  1'b0;
-            mem_pc_q            <=  64'h0;
-            mem_pc_incr_q       <=  64'h0;
-            mem_rd_src_q        <=  EXU_SRC;
-            mem_data_req_q      <=  1'b0;
-            mem_data_byte_q     <=  BYTE;
-            mem_bypass_avail_q  <=  EXU_BYPASS;
-            mem_data_wr_q       <=  1'b0;
-            mem_zero_extnd_q    <=  1'b0;
-            mem_rf_wr_en_q      <=  1'b0;
-            mem_alu_res_q       <=  64'h0;
-        end else if (mem_ready) begin
-            mem_rs2_data_q      <=  exu_rs2_data_q;
-            mem_instr_imm_q     <=  exu_instr_imm_q;
-            mem_rd_q            <=  exu_rd_q;
-            mem_csr_instr_q     <=  exu_csr_instr_q;
-            mem_csr_addr_q      <=  exu_csr_addr_q;
-            mem_csr_data_q      <=  exu_csr_data_q;
-            mem_csr_wr_en_q     <=  exu_csr_wr_en_q;
-            mem_pc_q            <=  exu_pc_q; 
-            mem_pc_incr_q       <=  exu_pc_incr_q;
-            mem_rd_src_q        <=  exu_rd_src_q;
-            mem_data_req_q      <=  exu_data_req_q;
-            mem_data_byte_q     <=  exu_data_byte_q;
-            mem_bypass_avail_q  <=  exu_bypass_avail_q;
-            mem_data_wr_q       <=  exu_data_wr_q;
-            mem_zero_extnd_q    <=  exu_zero_extnd_q;
-            mem_rf_wr_en_q      <=  exu_rd_wr_en_q;
-            mem_alu_res_q       <=  exu_res;
-        end
-    end
-
-    //exception registers execute -> memory
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            mem_exc_valid_q     <=  1'b0;
-            mem_exc_code_q      <=  5'd0;
-        end else if (tc_flush) begin
-            mem_exc_valid_q     <=  1'b0;
-            mem_exc_code_q      <=  5'd0;
-        end else if (mem_ready) begin
-            mem_exc_valid_q     <=  exu_exc_valid_q;
-            mem_exc_code_q      <=  exu_exc_code_q;
-        end
-    end
-
-    // MEMORY
-
-    memory u_memory (
+    lsu u_lsu (
         .clk                    (clk),
         .resetn                 (resetn),
-        .req_valid_i            (mem_req),
-        .req_addr_i             (mem_alu_res_q),
-        .req_byte_en_i          (mem_data_byte_q),
-        .req_wr_i               (mem_data_wr_q),
-        .req_zero_extnd_i       (mem_zero_extnd_q),
-        .req_wr_data_i          (mem_rs2_data_q),
-        .req_ready_o            (mem_ready),
-        .data_mem_resp_valid_o  (wb_data_mem_resp_valid),
-        .data_mem_rd_data_o     (wb_mem_rd_data),
-        .dc_ready_i             (dc_ready),
-        .dc_req_o               (dc_req),
-        .dc_addr_o              (dc_addr),
-        .dc_wr_o                (dc_wr),
-        .dc_wr_data_o           (dc_wr_data),
-        .dc_mask_o              (dc_mask),
-        .dc_resp_valid_i        (dc_resp_valid),
-        .dc_rd_data_i           (dc_rd_data),
-        .mem_rd_ready_o         (mem_rd_ready),
-        .exc_valid_i            (dc_exc_valid),
-        .exc_code_i             (dc_exc_code),
-        .exc_valid_o            (mem_u_exc_valid),
-        .exc_code_o             (mem_u_exc_code)
+        .lsu_valid_i            (lsu_validE),
+        .lsu_data_i             (lsu_dataE),
+        .lsu_ls_i               (lsu_lsE),
+        .lsu_addr_i             (lsu_addrE),
+        .lsu_size_i             (lsu_sizeE),
+        .lsu_se_i               (lsu_seE),
+        .lsu_ready_o            (lsu_readyE),
+        .atomic_op_i            (atomic_opE),
+        .addrM_o                (addrM),
+        .lsu_ldata_o            (lsu_ldataM),
+        .priv_level_i           (priv_level),
+        .mstatus_mpp_i          (mstatus_mpp),
+        .mstatus_mprv_i         (mstatus_mprv),
+        .mstatus_mbe_i          (mstatus_mbe),
+        .mstatus_sbe_i          (mstatus_sbe),
+        .mstatus_ube_i          (mstatus_ube),
+        .rs2_dataM_i            (rs2_dataM),
+        .dc_clean_i             (dc_cleanM),
+        .dc_clean_done_o        (dc_clean_doneM),
+        .trap_en_i              (trap_en),
+        .exc_valid_o            (exc_validM),
+        .exc_code_o             (exc_codeM),
+        .pmpaddr0_i             (pmpaddr0),
+        .pmpaddr1_i             (pmpaddr1),
+        .pmpaddr2_i             (pmpaddr2),
+        .pmpaddr3_i             (pmpaddr3),
+        .pmpaddr4_i             (pmpaddr4),
+        .pmpaddr5_i             (pmpaddr5),
+        .pmpaddr6_i             (pmpaddr6),
+        .pmpaddr7_i             (pmpaddr7),
+        .pmpaddr8_i             (pmpaddr8),
+        .pmpaddr9_i             (pmpaddr9),
+        .pmpaddr10_i            (pmpaddr10),
+        .pmpaddr11_i            (pmpaddr11),
+        .pmpaddr12_i            (pmpaddr12),
+        .pmpaddr13_i            (pmpaddr13),
+        .pmpaddr14_i            (pmpaddr14),
+        .pmpaddr15_i            (pmpaddr15),
+        .pmpcfg0_i              (pmpcfg0),
+        .pmpcfg2_i              (pmpcfg2),
+        .arready_i              (lsu_arready),
+        .araddr_o               (lsu_araddr),
+        .arlen_o                (lsu_arlen),
+        .arsize_o               (lsu_arsize),
+        .arburst_o              (lsu_arburst),
+        .arlock_o               (lsu_arlock),
+        .arid_o                 (lsu_arid),
+        .arcache_o              (lsu_arcache),
+        .arprot_o               (lsu_arprot),
+        .arqos_o                (lsu_arqos),
+        .arvalid_o              (lsu_arvalid),
+        .rvalid_i               (lsu_rvalid),
+        .rdata_i                (lsu_rdata),
+        .rresp_i                (lsu_rresp),
+        .rlast_i                (lsu_rlast),
+        .rid_i                  (lsu_rid),
+        .rready_o               (lsu_rready),
+        .awready_i              (lsu_awready),
+        .wready_i               (lsu_wready),
+        .awaddr_o               (lsu_awaddr),
+        .awvalid_o              (lsu_awvalid),
+        .awsize_o               (lsu_awsize),
+        .awlen_o                (lsu_awlen),
+        .awburst_o              (lsu_awburst),
+        .awlock_o               (lsu_awlock),
+        .awid_o                 (lsu_awid),
+        .awcache_o              (lsu_awcache),
+        .awprot_o               (lsu_awprot),
+        .awqos_o                (lsu_awqos),
+        .wdata_o                (lsu_wdata),
+        .wstrb_o                (lsu_wstrb),
+        .wvalid_o               (lsu_wvalid),
+        .wlast_o                (lsu_wlast),
+        .bresp_i                (lsu_bresp),
+        .bvalid_i               (lsu_bvalid),
+        .bid_i                  (lsu_bid),
+        .bready_o               (lsu_bready)
     );
 
-    d_cache u_d_cache (
+    privileged u_privileged (
         .clk                    (clk),
         .resetn                 (resetn),
-        .dc_req_i               (dc_req),
-        .dc_addr_i              (dc_addr),
-        .dc_wr_i                (dc_wr),
-        .dc_wr_data_i           (dc_wr_data),
-        .dc_mask_i              (dc_mask),
-        .dc_ready_o             (dc_ready),
-        .mem_ready_i            (mem_rd_ready),
-        .dc_resp_valid_o        (dc_resp_valid),
-        .dc_rd_data_o           (dc_rd_data),
-        .arready_i              (dc_arready_i),
-        .araddr_o               (dc_araddr_o),
-        .arlen_o                (dc_arlen_o),
-        .arsize_o               (dc_arsize_o),
-        .arburst_o              (dc_arburst_o),
-        .arid_o                 (dc_arid_o),
-        .arprot_o               (dc_arprot_o),
-        .arvalid_o              (dc_arvalid_o),
-        .rvalid_i               (dc_rvalid_i),
-        .rdata_i                (dc_rdata_i),
-        .rresp_i                (dc_rresp_i),
-        .rlast_i                (dc_rlast_i),
-        .rid_i                  (dc_rid_i),
-        .rready_o               (dc_rready_o),
-        .awready_i              (dc_awready_i),
-        .wready_i               (dc_wready_i),
-        .awaddr_o               (dc_awaddr_o),
-        .awvalid_o              (dc_awvalid_o),
-        .awsize_o               (dc_awsize_o),
-        .awlen_o                (dc_awlen_o),
-        .awburst_o              (dc_awburst_o),
-        .awid_o                 (dc_awid_o),
-        .wdata_o                (dc_wdata_o),
-        .wstrb_o                (dc_wstrb_o),
-        .wvalid_o               (dc_wvalid_o),
-        .wlast_o                (dc_wlast_o),
-        .bresp_i                (dc_bresp_i),
-        .bvalid_i               (dc_bvalid_i),
-        .bid_i                  (dc_bid_i),
-        .bready_o               (dc_bready_o),
-        .exc_valid_o            (dc_exc_valid),
-        .exc_code_o             (dc_exc_code)
-    );
-
-    clint u_clint (
-        .clk                    (clk),
-        .resetn                 (resetn),
-        .req_valid_i            (clint_req),
-        .req_addr_i             (mem_alu_res_q),
-        .req_byte_en_i          (mem_data_byte_q),
-        .req_wr_i               (mem_data_wr_q),
-        .req_wr_data_i          (mem_rs2_data_q),
-        .clint_rd_data_o        (clint_rd_data),
-        .clint_resp_valid_o     (clint_resp_valid),
-        .msip_irp_o             (clint_msip_irp),
-        .mtip_irp_o             (clint_mtip_irp),
-        .exc_valid_o            (clint_exc_valid),
-        .exc_code_o             (clint_exc_code),
-        .mtime_o                (clint_mtime)
-    );
-
-    plic u_plic (
-        .clk                    (clk),
-        .resetn                 (resetn),
-        .req_valid_i            (plic_req),
-        .req_addr_i             (mem_alu_res_q),
-        .req_byte_en_i          (mem_data_byte_q),
-        .req_wr_i               (mem_data_wr_q),
-        .req_wr_data_i          (mem_rs2_data_q),
-        .plic_rd_data_o         (plic_rd_data),
-        .plic_resp_valid_o      (plic_resp_valid),
-        .signal1_i              (signal1_i),
-        .signal2_i              (signal2_i),
-        .signal3_i              (signal3_i),
-        .signal4_i              (signal4_i),
-        .signal5_i              (signal5_i),
-        .signal6_i              (signal6_i),
-        .signal7_i              (signal7_i),
-        .signal8_i              (signal8_i),
-        .eip_o                  (plic_eip),
-        .exc_valid_o            (plic_exc_valid),
-        .exc_code_o             (plic_exc_code)
-    );
-
-    trap_controller u_trap_controller (
-        .clk                    (clk),
-        .resetn                 (resetn),
+        .csr_wr_en_i            (csr_wr_enM),
+        .csr_addr_i             (csr_addrM),
+        .csr_wr_data_i          (csr_wr_dataM),
+        .csr_op_i               (csr_opM),
+        .csr_data_o             (csr_dataM),
+        .mret_i                 (mretM),                 
+        .sret_i                 (sretM),
+        .validM_i               (validM),
+        .committedM_i           (lsu_committed),
+        .retire_i               (retire),
+        .exc_validM_i           (exc_valid),                 
+        .exc_codeM_i            (exc_code),                
+        .pcM_i                  (pcM),
+        .nxt_pcM_i              (nxt_pcM),
+        .exc_xtvalM_i           (exc_xtvalM),
         .trap_en_o              (trap_en),
-        .flush_o                (tc_flush),
-        .nxt_mepc_o             (nxt_mepc),
-        .nxt_mcause_o           (nxt_mcause),
-        .nxt_pc_o               (nxt_pc_trap),
-        .exc_valid_i            (tc_exc_valid),
-        .exc_code_i             (tc_exc_code),
-        .mem_pc_i               (mem_pc_q),
-        .if_pc_ready_i          (if_pc_ready),
-        .if_pc_incr_i           (pc_incr),
-        .mret_i                 (ctrl_mret),
-        .mstatus_mie_i          (csr_mstatus_mie),
-        .mie_ext_ire_i          (csr_mie_ext_ire),
-        .mie_sw_ire_i           (csr_mie_sw_ire),
-        .mie_timer_ire_i        (csr_mie_timer_ire),
-        .mie_lcof_ire_i         (csr_mie_lcof_ire),
-        .mie_ext_irp_i          (csr_mie_ext_irp),
-        .mie_sw_irp_i           (csr_mie_sw_irp),
-        .mie_timer_irp_i        (csr_mie_timer_irp),
-        .mie_lcof_irp_i         (csr_mie_lcof_irp),
-        .mtvec_i                (csr_mtvec),
-        .mepc_i                 (csr_mepc)
+        .trap_pc_o              (trap_pc),
+        .mepc_o                 (mepc),
+        .sepc_o                 (sepc),
+        .wfi_wakeup_o           (wfi_wakeup),
+        .mtime_i                (mtime_i),                 
+        .mtip_i                 (mtip_i),
+        .msip_i                 (msip_i),
+        .meip_i                 (meip_i),
+        .seip_i                 (seip_i),
+        .priv_level_o           (priv_level),
+        .scounteren_o           (scounteren),
+        .mcounteren_o           (mcounteren),
+        .mstatus_ube_o          (mstatus_ube),
+        .mstatus_mpp_o          (mstatus_mpp),
+        .mstatus_mprv_o         (mstatus_mprv),
+        .mstatus_tvm_o          (mstatus_tvm),
+        .mstatus_tw_o           (mstatus_tw),
+        .mstatus_tsr_o          (mstatus_tsr),
+        .mstatus_sbe_o          (mstatus_sbe),
+        .mstatus_mbe_o          (mstatus_mbe),
+        .menvcfg_stce_o         (menvcfg_stce),
+        .pmpcfg0_o              (pmpcfg0),
+        .pmpcfg2_o              (pmpcfg2),
+        .pmpaddr0_o             (pmpaddr0),
+        .pmpaddr1_o             (pmpaddr1),
+        .pmpaddr2_o             (pmpaddr2),
+        .pmpaddr3_o             (pmpaddr3),
+        .pmpaddr4_o             (pmpaddr4),
+        .pmpaddr5_o             (pmpaddr5),
+        .pmpaddr6_o             (pmpaddr6),
+        .pmpaddr7_o             (pmpaddr7),
+        .pmpaddr8_o             (pmpaddr8),
+        .pmpaddr9_o             (pmpaddr9),
+        .pmpaddr10_o            (pmpaddr10),
+        .pmpaddr11_o            (pmpaddr11),
+        .pmpaddr12_o            (pmpaddr12),
+        .pmpaddr13_o            (pmpaddr13),
+        .pmpaddr14_o            (pmpaddr14),
+        .pmpaddr15_o            (pmpaddr15)
     );
 
-    always_comb begin
-        mem_addr                =   (mem_alu_res_q >= DRAM_ADDR_LOW) & (mem_alu_res_q <= DRAM_ADDR_HIGH);
-        clint_addr              =   (mem_alu_res_q >= CLINT_ADDR_LOW) & (mem_alu_res_q <= CLINT_ADDR_HIGH);
-        plic_addr               =   (mem_alu_res_q >= PLIC_ADDR_LOW) & (mem_alu_res_q <= PLIC_ADDR_HIGH);
-
-        mem_req                 =   mem_valid_q & ~mem_exc_valid_q & mem_data_req_q & mem_addr;
-        clint_req               =   mem_valid_q & ~mem_exc_valid_q & mem_data_req_q & clint_addr;
-        plic_req                =   mem_valid_q & ~mem_exc_valid_q & mem_data_req_q & plic_addr;
-
-        mem_rd_data             =   ({64{clint_req}} & clint_rd_data)  | 
-                                    ({64{plic_req}} & plic_rd_data);
-
-        mem_oob_exc_valid       =   mem_valid_q & mem_data_req_q & ~(mem_addr | clint_addr | plic_addr);
-        mem_oob_exc_code        =   mem_data_wr_q ? STORE_AMO_ACC_FAULT : LOAD_ACC_FAULT;
-
-        oob_exc_priority        =   3'd6;
-        mem_u_exc_priority      =   exc_priority_encode(mem_u_exc_code);
-        clint_exc_priority      =   exc_priority_encode(clint_exc_code);
-        plic_exc_priority       =   exc_priority_encode(plic_exc_code);
-
-        mem_exc_valid_vec       =   {mem_oob_exc_valid, mem_u_exc_valid, clint_exc_valid, plic_exc_valid};
-        mem_exc_priority_vec    =   '{oob_exc_priority, mem_u_exc_priority, clint_exc_priority, plic_exc_priority};
-        mem_exc_code_vec        =   '{mem_oob_exc_code, mem_u_exc_code, clint_exc_code, plic_exc_code};
-
-        mem_exc_valid           =   mem_valid_q & |mem_exc_valid_vec;
-
-        mem_max_exc_priority    =   3'd7;
-        mem_exc_code            =   5'd0;
-        for (int i=0; i<4; i++) begin
-            if (mem_exc_valid_vec[i] & (mem_exc_priority_vec[i] < mem_max_exc_priority)) begin
-                mem_max_exc_priority    =   mem_exc_priority_vec[i];
-                mem_exc_code            =   mem_exc_code_vec[i];
-            end
-        end
-
-        tc_exc_valid            =   mem_exc_valid_q | mem_exc_valid;
-        tc_exc_code             =   mem_exc_valid_q ? mem_exc_code_q : mem_exc_code;
-
-        nxt_wb_valid            =   mem_valid_q & ~tc_exc_valid & (~mem_data_req_q | (clint_resp_valid | plic_resp_valid));  
-    end
-
-    //valid register memory -> writeback
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            wb_valid_q      <= 1'b0;
-        end else begin
-            wb_valid_q      <= nxt_wb_valid;
-        end
-    end
-
-    //pipeline registers memory -> writeback
-    always_ff @(posedge clk or negedge resetn) begin
-        if (~resetn) begin
-            wb_alu_res_q        <=  64'h0;
-            wb_instr_imm_q      <=  64'h0;
-            wb_mem_rd_data_q    <=  64'h0;
-            wb_rd_q             <=  5'b0;
-            wb_csr_instr_q      <=  1'b0;
-            wb_csr_addr_q       <=  12'h0;
-            wb_csr_wr_en_q      <=  1'b0;
-            wb_rd_src_q         <=  EXU_SRC;
-            wb_pc_incr_q        <=  64'h0;
-            wb_rf_wr_en_q       <=  1'b0;
-            wb_bypass_avail_q   <=  EXU_BYPASS;
-            wb_mem_req_q        <=  1'b0;
-        end else begin
-            wb_alu_res_q        <=  mem_alu_res_q;
-            wb_instr_imm_q      <=  mem_instr_imm_q;
-            wb_mem_rd_data_q    <=  mem_rd_data;
-            wb_rd_q             <=  mem_rd_q;
-            wb_csr_instr_q      <=  mem_csr_instr_q;
-            wb_csr_addr_q       <=  mem_csr_addr_q;
-            wb_csr_data_q       <=  mem_csr_data_q;
-            wb_csr_wr_en_q      <=  mem_csr_wr_en_q;
-            wb_rd_src_q         <=  mem_rd_src_q;
-            wb_pc_incr_q        <=  mem_pc_incr_q;
-            wb_rf_wr_en_q       <=  mem_rf_wr_en_q;
-            wb_bypass_avail_q   <=  mem_bypass_avail_q;
-            wb_mem_req_q        <=  mem_req;
-        end
-    end
-
-    // WRITEBACK
-    always_comb begin
-        wb_valid_mem_resp           =   wb_mem_req_q & wb_data_mem_resp_valid;
-        wb_valid                    =   wb_valid_q | wb_valid_mem_resp;
-
-        wb_csr_wr_en                =   wb_valid & wb_csr_wr_en_q;
-        minstret_incr               =   wb_valid;
-
-        wb_rf_wr_en                 =   wb_rf_wr_en_q & wb_valid;
-
-        wb_wr_data                  =   wb_data_mem_resp_valid ? wb_mem_rd_data : wb_mem_rd_data_q;
-
-        case (wb_rd_src_q)
-            EXU_SRC: wb_wr_data     =   wb_alu_res_q;
-            MEM_SRC: wb_wr_data     =   wb_wr_data;
-            IMM_SRC: wb_wr_data     =   wb_instr_imm_q;
-            PC_SRC: wb_wr_data      =   wb_pc_incr_q;
-            CSR_SRC: wb_wr_data     =   wb_csr_data_q;
-            default: wb_wr_data     =   64'h0;
-        endcase
-    end
+    arbitrate u_arbitrate (
+        .clk                    (clk),
+        .resetn                 (resetn),
+        .lsu_araddr_i           (lsu_araddr),
+        .lsu_arlen_i            (lsu_arlen),
+        .lsu_arsize_i           (lsu_arsize),
+        .lsu_arburst_i          (lsu_arburst),
+        .lsu_arlock_i           (lsu_arlock),
+        .lsu_arid_i             (lsu_arid),
+        .lsu_arcache_i          (lsu_arcache),
+        .lsu_arprot_i           (lsu_arprot),
+        .lsu_arqos_i            (lsu_arqos),
+        .lsu_arvalid_i          (lsu_arvalid),
+        .lsu_arready_o          (lsu_arready),
+        .lsu_rready_i           (lsu_rready),
+        .lsu_rvalid_o           (lsu_rvalid),
+        .lsu_rid_o              (lsu_rid),
+        .lsu_rdata_o            (lsu_rdata),
+        .lsu_rresp_o            (lsu_rresp),
+        .lsu_rlast_o            (lsu_rlast),
+        .lsu_awaddr_i           (lsu_awaddr),
+        .lsu_awvalid_i          (lsu_awvalid),
+        .lsu_awsize_i           (lsu_awsize),
+        .lsu_awlen_i            (lsu_awlen),
+        .lsu_awburst_i          (lsu_awburst),
+        .lsu_awlock_i           (lsu_awlock),
+        .lsu_awid_i             (lsu_awid),
+        .lsu_awcache_i          (lsu_awcache),
+        .lsu_awprot_i           (lsu_awprot),
+        .lsu_awqos_i            (lsu_awqos),
+        .lsu_wdata_i            (lsu_wdata),
+        .lsu_wstrb_i            (lsu_wstrb),
+        .lsu_wvalid_i           (lsu_wvalid),
+        .lsu_wlast_i            (lsu_wlast),
+        .lsu_awready_o          (lsu_awready),
+        .lsu_wready_o           (lsu_wready),
+        .lsu_bready_i           (lsu_bready),
+        .lsu_bresp_o            (lsu_bresp),
+        .lsu_bvalid_o           (lsu_bvalid),
+        .lsu_bid_o              (lsu_bid),
+        .ifu_araddr_i           (ifu_araddr),
+        .ifu_arlen_i            (ifu_arlen),
+        .ifu_arsize_i           (ifu_arsize),
+        .ifu_arburst_i          (ifu_arburst),
+        .ifu_arlock_i           (ifu_arlock),
+        .ifu_arid_i             (ifu_arid),
+        .ifu_arcache_i          (ifu_arcache),
+        .ifu_arprot_i           (ifu_arprot),
+        .ifu_arqos_i            (ifu_arqos),
+        .ifu_arvalid_i          (ifu_arvalid),
+        .ifu_arready_o          (ifu_arready),
+        .ifu_rready_i           (ifu_rready),
+        .ifu_rvalid_o           (ifu_rvalid),
+        .ifu_rdata_o            (ifu_rdata),
+        .ifu_rresp_o            (ifu_rresp),
+        .ifu_rlast_o            (ifu_rlast),
+        .ifu_rid_o              (ifu_rid),
+        .arready_i              (arready_i),
+        .araddr_o               (araddr_o),
+        .arlen_o                (arlen_o),
+        .arsize_o               (arsize_o),
+        .arburst_o              (arburst_o),
+        .arlock_o               (arlock_o),
+        .arid_o                 (arid_o),
+        .arcache_o              (arcache_o),
+        .arprot_o               (arprot_o),
+        .arqos_o                (arqos_o),
+        .arvalid_o              (arvalid_o),
+        .rvalid_i               (rvalid_i),
+        .rdata_i                (rdata_i),
+        .rresp_i                (rresp_i),
+        .rlast_i                (rlast_i),
+        .rid_i                  (rid_i),
+        .rready_o               (rready_o),
+        .awready_i              (awready_i),
+        .wready_i               (wready_i),
+        .awaddr_o               (awaddr_o),
+        .awvalid_o              (awvalid_o),
+        .awsize_o               (awsize_o),
+        .awlen_o                (awlen_o),
+        .awburst_o              (awburst_o),
+        .awlock_o               (awlock_o),
+        .awid_o                 (awid_o),
+        .awcache_o              (awcache_o),
+        .awprot_o               (awprot_o),
+        .awqos_o                (awqos_o),
+        .wdata_o                (wdata_o),
+        .wstrb_o                (wstrb_o),
+        .wvalid_o               (wvalid_o),
+        .wlast_o                (wlast_o),
+        .bresp_i                (bresp_i),
+        .bvalid_i               (bvalid_i),
+        .bid_i                  (bid_i),
+        .bready_o               (bready_o)
+    );
 
 endmodule

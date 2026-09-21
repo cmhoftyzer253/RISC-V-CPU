@@ -5,11 +5,8 @@ module ifu (
     input logic             clk,
     input logic             resetn,
 
-    input logic             resetn_q_i,
-
     input logic [63:0]      pc_i,
-    input logic [63:0]      nxt_pc_i,
-    output logic            stall_ifu_o,
+    output logic            ifu_ready_o,
 
     input logic             stallD_i,
     output logic [31:0]     instr_o,
@@ -19,6 +16,7 @@ module ifu (
     output logic            ic_invalidate_done_o,
     
     input logic             flushF_i,
+    output logic [63:0]     pcF_o,
 
     output logic            exc_valid_o,
     output logic [4:0]      exc_code_o,
@@ -148,9 +146,8 @@ module ifu (
     i_cache u_i_cache (
         .clk                (clk),
         .resetn             (resetn),
-        .resetn_q_i         (resetn_q_i),
         .ic_ready_o         (ic_ready),
-        .pc_i               (ifu_pc),
+        .pc_i               (pc_i),
         .ifu_ready_i        (ifu_ready),
         .instr_valid_o      (ic_instr_valid),
         .instr_o            (ic_instr),
@@ -225,15 +222,15 @@ module ifu (
     end
 
     always_comb begin
-        stall_ifu_o     =   1'b0;
         instr_o         =   32'h0;
         instr_valid_o   =   1'b0;
         ifu_ready       =   1'b0;
+        ifu_ready_o     =   1'b0;
+
+        pcF_o           =   pcF;
 
         uncacheable     =   1'b0;
         flush           =   1'b0;
-
-        ifu_pc          =   resetn_q_i ? nxt_pc_i : pc_i;
 
         stop_fillline   =   !pma_cacheable || pma_fault || pmp_fault;
 
@@ -264,9 +261,10 @@ module ifu (
 
         case (state)
             IFU_IC_RUN: begin
+                ifu_ready_o     =   ic_ready && !uncacheable;
+
                 uncacheable     =   !pma_cacheable && !pma_fault && !pmp_fault && !flushF_i && resetn_q_i;
 
-                stall_ifu_o     =   !ic_ready;
                 instr_o         =   ic_instr;
                 instr_valid_o   =   ((ic_instr_valid && pma_cacheable) || pma_fault || pmp_fault) && !flushF_i && resetn_q_i;
                 ifu_ready       =   !stallD_i && !uncacheable;
@@ -275,15 +273,14 @@ module ifu (
                 exc_code_o      =   I_ACC_FAULT;
             end
             IFU_MEM_REQ: begin
-                stall_ifu_o     =   !ic_ready;
                 instr_o         =   32'h0;
                 instr_valid_o   =   1'b0;
                 ifu_ready       =   1'b0;
 
                 araddr_o        =   pcF;
                 arlen_o         =   8'd0;
-                arsize_o        =   SIZE_4B;
-                arburst_o       =   INCR;
+                arsize_o        =   AMBA_WORD;
+                arburst_o       =   AXI_INCR;
                 arlock_o        =   1'b0;
                 arid_o          =   ID_IFU;
                 arcache_o       =   CACHE_NONCACHEABLE;
@@ -294,7 +291,6 @@ module ifu (
                 rready_o        =   1'b0;
             end
             IFU_MEM_WAIT: begin
-                stall_ifu_o     =   !ic_ready;
                 instr_o         =   32'h0;
                 instr_valid_o   =   1'b0;
                 ifu_ready       =   1'b0;
@@ -303,9 +299,10 @@ module ifu (
                 rready_o        =   1'b1;
             end 
             IFU_MEM_DONE: begin
+                ifu_ready_o     =   1'b1;
+                
                 flush           =   flush_ff || flushF_i;
 
-                stall_ifu_o     =   !ic_ready;
                 instr_o         =   instr_hold;
                 instr_valid_o   =   !flush;
                 ifu_ready       =   !stallD_i || flush;

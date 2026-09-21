@@ -46,66 +46,66 @@ module i_cache(
     output logic [4:0]      exc_code_o
 );
 
-    logic [51:0]        tag;
-    logic [51:0]        tagF;
-    logic [5:0]         index;
-    logic [5:0]         indexF;
-    logic [3:0]         offset;
-    logic [3:0]         offsetF;
-    logic [8:0]         data_index;
-    logic               data_sel;
+    logic [51:0]            tag;
+    logic [51:0]            tagF;
+    logic [5:0]             index;
+    logic [5:0]             indexF;
+    logic [3:0]             offset;
+    logic [3:0]             offsetF;
+    logic [8:0]             data_index;
+    logic                   data_sel;
 
-    logic [7:0]         hit_1h;
-    logic [2:0]         hit_way;
-    logic [7:0]         valid_sets;
-    logic               hit_raw;
-    logic               hit;
-    logic               miss;
+    logic [7:0]             hit_1h;
+    logic [2:0]             hit_way;
+    logic [7:0]             valid_sets;
+    logic                   hit_raw;
+    logic                   hit;
+    logic                   miss;
 
-    logic               flush;
-    logic               exc;
-    logic               invalidate;
+    logic                   flush;
+    logic                   exc;
+    logic                   invalidate;
 
-    logic [6:0]         PLRU_rd_set;
-    logic [6:0]         nxt_PLRU_hit;
-    logic [6:0]         nxt_PLRU_refill;
-    logic [2:0]         way_fill_PLRU;
-    logic [2:0]         way_fill_invalid;
-    logic               way_fill_evict;
-    logic [2:0]         nxt_way_fill;
+    logic [6:0]             PLRU_rd_set;
+    logic [6:0]             nxt_PLRU_hit;
+    logic [6:0]             nxt_PLRU_refill;
+    logic [2:0]             way_fill_PLRU;
+    logic [2:0]             way_fill_invalid;
+    logic                   way_fill_evict;
+    logic [2:0]             nxt_way_fill;
 
-    logic [31:0]        instr_sel;
+    logic [31:0]            instr_sel;
 
-    logic [31:0]        instr_hold;
-    logic [2:0]         beat_cnt;
-    logic [2:0]         way_fill_q;
+    logic [31:0]            instr_hold;
+    logic [2:0]             beat_cnt;
+    logic [2:0]             way_fill_q;
 
-    logic               flush_ff;
-    logic               invalidate_ff;
-    logic               exc_ff;
+    logic                   flush_ff;
+    logic                   invalidate_ff;
+    logic                   exc_ff;
 
-    logic [6:0]         PLRU_tree [63:0];
+    logic [6:0]             PLRU_tree [63:0];
 
-    logic [63:0]        pcF;
+    logic [63:0]            pcF;
 
-    ic_state_t          state;
+    ic_state_t              state;
 
-    logic [7:0][51:0]   tag_rd;
-    logic [7:0][63:0]   data_rd;
+    logic [7:0][51:0]       tag_rd;
+    logic [7:0][63:0]       data_rd;
 
-    logic [7:0][63:0]   valid;
+    logic [7:0][63:0]       valid;
 
-    logic               tag_rd_en;
-    logic [5:0]         tag_rd_addr;
-    logic [7:0]         tag_wr_en;
-    logic [5:0]         tag_wr_addr;
-    logic [51:0]        tag_wr_data;
+    logic                   tag_rd_en;
+    logic [5:0]             tag_rd_addr;
+    logic [7:0]             tag_wr_en;
+    logic [5:0]             tag_wr_addr;
+    logic [51:0]            tag_wr_data;
 
-    logic               data_rd_en;
-    logic [8:0]         data_rd_addr;
-    logic [7:0]         data_wr_en;
-    logic [8:0]         data_wr_addr;
-    logic [63:0]        data_wr_data;
+    logic                   data_rd_en;
+    logic [8:0]             data_rd_addr;
+    logic [7:0]             data_wr_en;
+    logic [8:0]             data_wr_addr;
+    logic [63:0]            data_wr_data;
 
     //tag, data RAM
     genvar w;
@@ -202,10 +202,10 @@ module i_cache(
             case (state) 
                 IC_RUN: begin
                     if (hit) begin
-                        PLRU_tree[indexF]   <=  nxt_PLRU_hit;
+                        PLRU_tree[indexF]               <=  nxt_PLRU_hit;
                     end
                     if (!miss && ifu_ready_i) begin
-                        pcF             <=  pc_i;
+                        pcF     <=  pc_i;
                     end
                     if (miss) begin
                         way_fill_q                      <=  nxt_way_fill;
@@ -372,7 +372,7 @@ module i_cache(
             IC_RUN: begin
                 instr_o             =   instr_sel;
                 instr_valid_o       =   hit;
-                ic_ready_o          =   !miss && ifu_ready_i;
+                ic_ready_o          =   !miss;
 
                 tag_rd_en           =   !miss && ifu_ready_i;
                 tag_rd_addr         =   index;
@@ -384,8 +384,8 @@ module i_cache(
             IC_REFILL_REQ: begin
                 araddr_o    =   {pcF[63:6], 6'b0};
                 arlen_o     =   8'd7;
-                arsize_o    =   SIZE_8B;
-                arburst_o   =   INCR;
+                arsize_o    =   AMBA_DOUBLE_WORD;
+                arburst_o   =   AXI_INCR;
                 arlock_o    =   1'b0;
                 arid_o      =   ID_IFU;
                 arcache_o   =   CACHE_WB_RALLOC;
@@ -405,14 +405,14 @@ module i_cache(
                 rready_o    =   1'b1;
             end
             IC_REFILL_DONE: begin
+                ic_ready_o              =   1'b1;
+                
                 tag_rd_en               =   invalidate || flush || ifu_ready_i;
                 tag_rd_addr             =   index;
                 data_rd_en              =   invalidate || flush || ifu_ready_i;
                 data_rd_addr            =   data_index;
 
                 invalidate_done_o       =   invalidate;
-
-                ic_ready_o              =   flush || invalidate || ifu_ready_i;
 
                 if (!(flush || invalidate)) begin
                     instr_o             =   instr_hold;

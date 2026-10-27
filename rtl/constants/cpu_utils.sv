@@ -74,7 +74,7 @@ module fifo #(
     logic [PTR_W-1:0] rd_ptr;
     logic [PTR_W-1:0] wr_ptr;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             rd_ptr  <=  '0;
             wr_ptr  <=  '0;
@@ -110,7 +110,7 @@ module gateway_level #(
 
     logic           block_ff;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             block_ff    <=  1'b0;
         end else if (complete_i) begin
@@ -136,7 +136,7 @@ module clk_sync_2ff(
     (* ASYNC_REG = "TRUE" *) logic [WIDTH-1:0]  d_q;
     (* ASYNC_REG = "TRUE" *) logic [WIDTH-1:0]  d_q2;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             d_q     <=  '0;
             d_2q    <=  '0;
@@ -153,10 +153,10 @@ endmodule
 module resetn_sync (
     input logic     clk,
     input logic     aresetn_i,
-    input logic     resetn_o
+    output logic    resetn_o
 );
-    (* ASYNC_REG = "TRUE" *) logic [WIDTH-1:0]  aresetn_q;
-    (* ASYNC_REG = "TRUE" *) logic [WIDTH-1:0]  aresetn_2q;
+    (* ASYNC_REG = "TRUE" *) logic  aresetn_q;
+    (* ASYNC_REG = "TRUE" *) logic  aresetn_2q;
 
     always_ff @(posedge clk or negedge aresetn_i) begin
         if (!areset_n_i) begin
@@ -164,8 +164,10 @@ module resetn_sync (
             aresetn_2q  <=  1'b0;
         end else begin
             aresetn_q   <=  1'b1;
-            aresetn_2q  <=  aresetn_2q;
+            aresetn_2q  <=  aresetn_q;
         end
     end
+
+    assign resetn_o =   aresetn_2q;
 
 endmodule

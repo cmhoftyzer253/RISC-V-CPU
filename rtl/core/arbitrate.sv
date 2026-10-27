@@ -114,10 +114,9 @@ module arbitrate (
 
     always_ff @(posedge clk or negedge resetn) begin
         if (~resetn) begin
-            grant_q         <=  GRANT_IDLE;
-        end else begin
-            if ((grant_q == GRANT_IDLE) || load_done)
-                grant_q     <=  nxt_grant;
+            grant_q     <=  GRANT_IDLE;
+        end else if ((grant_q == GRANT_IDLE) || load_done) begin
+            grant_q     <=  nxt_grant;
         end
     end
 

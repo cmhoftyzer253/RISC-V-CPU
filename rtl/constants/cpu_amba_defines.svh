@@ -22,14 +22,18 @@ localparam logic [3:0] ID_IFU                   =   4'b0000;
 localparam logic [3:0] ID_LSU                   =   4'b0001;
 
 //AXI response codes
-localparam logic [1:0] OKAY                     =   2'b00;
-localparam logic [1:0] EXOKAY                   =   2'b01;
-localparam logic [1:0] SLVERR                   =   2'b10;
-localparam logic [1:0] DECERR                   =   2'b11;
+localparam logic [1:0] AXI_OKAY                 =   2'b00;
+localparam logic [1:0] AXI_EXOKAY               =   2'b01;
+localparam logic [1:0] AXI_SLVERR               =   2'b10;
+localparam logic [1:0] AXI_DECERR               =   2'b11;
+
+//AHB reponse codes
+localparam logic AHB_OKAY                       =   1'b0;
+localparam logic AHB_ERROR                      =   1'b1;
 
 //AHB htrans codes
 localparam logic [1:0] IDLE                     =   2'b00;
-localparam logic [1:0] BUSY                     =   2'b10;
+localparam logic [1:0] BUSY                     =   2'b01;
 localparam logic [1:0] NONSEQ                   =   2'b10;
 localparam logic [1:0] SEQ                      =   2'b11;
 

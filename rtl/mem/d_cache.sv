@@ -77,85 +77,85 @@ module d_cache(
     output logic            exc_valid_o
 );
 
-    logic [51:0]        tag;
-    logic [51:0]        tagM;
-    logic [5:0]         index;
-    logic [5:0]         indexM;
-    logic [2:0]         offset;
-    logic [2:0]         offsetM;
-    logic [8:0]         data_index;
-    logic [8:0]         data_indexM;
+    logic [51:0]            tag;
+    logic [51:0]            tagM;
+    logic [5:0]             index;
+    logic [5:0]             indexM;
+    logic [2:0]             offset;
+    logic [2:0]             offsetM;
+    logic [8:0]             data_index;
+    logic [8:0]             data_indexM;
 
-    logic [7:0]         hit_1h;
-    logic [2:0]         hit_way;
-    logic               hit_raw;
-    logic               hit;
-    logic               miss;
+    logic [7:0]             hit_1h;
+    logic [2:0]             hit_way;
+    logic                   hit_raw;
+    logic                   hit;
+    logic                   miss;
 
-    logic               exc;
-    logic               exc_ff;
+    logic                   exc_r;
+    logic                   exc_ff;
 
-    logic [2:0]         beat_cnt;
-    logic [2:0]         prefetch_cnt;
+    logic [2:0]             beat_cnt;
+    logic [2:0]             prefetch_cnt;
 
-    logic [63:0]        data_hold;
+    logic [63:0]            data_hold;
 
-    logic               bypass_active;
-    logic               nxt_bypass_active;
-    logic [63:0]        bypass_data;
+    logic                   bypass_active;
+    logic                   nxt_bypass_active;
+    logic [63:0]            bypass_data;
 
-    logic [2:0]         cur_way;
+    logic [2:0]             cur_way;
 
-    logic [63:0]        load_data;
-    logic [63:0]        load_data_eff;
-    logic [63:0]        store_data;
-    logic [63:0]        refill_data;
-    logic [63:0]        refill_data_eff;
+    logic [63:0]            load_data;
+    logic [63:0]            load_data_eff;
+    logic [63:0]            store_data;
+    logic [63:0]            refill_data;
+    logic [63:0]            refill_data_eff;
 
-    logic [7:0]         valid_sets;
-    logic [6:0]         PLRU_rd_set;
-    logic [6:0]         nxt_PLRU_hit;
-    logic [6:0]         nxt_PLRU_refill;
-    logic [2:0]         way_fill_PLRU;
-    logic [2:0]         way_fill_invalid;
-    logic               way_fill_evict;
-    logic [2:0]         nxt_way_fill;
-    logic [2:0]         way_fill_q;
-    logic               way_dirty;
-    logic               wb_dirty;
-    logic [51:0]        victim_tag;
+    logic [7:0]             valid_sets;
+    logic [6:0]             PLRU_rd_set;
+    logic [6:0]             nxt_PLRU_hit;
+    logic [6:0]             nxt_PLRU_refill;
+    logic [2:0]             way_fill_PLRU;
+    logic [2:0]             way_fill_invalid;
+    logic                   way_fill_evict;
+    logic [2:0]             nxt_way_fill;
+    logic [2:0]             way_fill_q;
+    logic                   way_dirty;
+    logic                   wb_dirty;
+    logic [51:0]            victim_tag;
 
-    logic               way_clean_done;
-    logic [5:0]         clean_line;
-    logic [63:0]        cur_way_dirty;
+    logic                   way_clean_done;
+    logic [5:0]             clean_line;
+    logic [63:0]            cur_way_dirty;
 
-    logic               validM;
-    logic [63:0]        addrM;
-    logic [63:0]        dataM;
-    logic               lsM;
-    logic [7:0]         maskM;
+    logic                   validM;
+    logic [63:0]            addrM;
+    logic [63:0]            dataM;
+    logic                   lsM;
+    logic [7:0]             maskM;
 
-    logic [6:0]         PLRU_tree [63:0];
+    logic [6:0]             PLRU_tree [63:0];
 
-    logic [4:0]         state;
+    logic [4:0]             state;
 
-    logic [7:0][51:0]   tag_rd;
-    logic [7:0][63:0]   data_rd;
+    logic [7:0][51:0]       tag_rd;
+    logic [7:0][63:0]       data_rd;
 
-    logic [7:0][63:0]   valid;
-    logic [7:0][63:0]   dirty;
+    logic [7:0][63:0]       valid;
+    logic [7:0][63:0]       dirty;
 
-    logic               tag_rd_en;    
-    logic [5:0]         tag_rd_addr;
-    logic [7:0]         tag_wr_en;
-    logic [5:0]         tag_wr_addr;
-    logic [51:0]        tag_wr_data;
+    logic                   tag_rd_en;    
+    logic [5:0]             tag_rd_addr;
+    logic [7:0]             tag_wr_en;
+    logic [5:0]             tag_wr_addr;
+    logic [51:0]            tag_wr_data;
 
-    logic               data_rd_en;
-    logic [8:0]         data_rd_addr;
-    logic [7:0]         data_wr_en;
-    logic [8:0]         data_wr_addr;
-    logic [63:0]        data_wr_data;
+    logic                   data_rd_en;
+    logic [8:0]             data_rd_addr;
+    logic [7:0]             data_wr_en;
+    logic [8:0]             data_wr_addr;
+    logic [63:0]            data_wr_data;
 
     //tag, data RAM
     genvar w;
@@ -255,6 +255,8 @@ module d_cache(
             valid           <=  '0;
             dirty           <=  '0;
 
+            PLRU_tree       <=  '0;
+
             state           <=  DC_RUN;
         end else begin
             case (state)
@@ -276,8 +278,9 @@ module d_cache(
                         maskM       <=  dc_mask_i;
                     end
                     if (miss) begin
-                        way_fill_q                      <=  nxt_way_fill;
-                        beat_cnt                        <=  3'd0;
+                        way_fill_q  <=  nxt_way_fill;
+                        beat_cnt    <=  3'd0;
+
                         valid[nxt_way_fill][indexM]     <=  1'b0;
                     end
 
@@ -309,7 +312,6 @@ module d_cache(
                     end
                 end
                 DC_WRITEBACK_DONE: begin
-
                     if (bvalid_i) begin
                         dirty[way_fill_q][indexM]   <=  1'b0;
 
@@ -324,7 +326,7 @@ module d_cache(
                 end
                 DC_REFILL: begin
                     if (rvalid_i) begin
-                        exc_ff <= exc_ff || exc;
+                        exc_ff <= exc_ff || exc_r;
 
                         if (offsetM == beat_cnt)
                             data_hold   <=  refill_data_eff;
@@ -341,7 +343,6 @@ module d_cache(
                     end
                 end
                 DC_REFILL_DONE: begin
-                    //data registers
                     if (dc_advance_i) begin
                         validM          <= dc_valid_i;
                         addrM           <= dc_addr_i;
@@ -365,6 +366,17 @@ module d_cache(
                     if (way_clean_done) begin
                         if (cur_way == 3'd7) begin
                             cur_way     <=  3'd0;
+
+                            if (dc_advance_i) begin
+                                validM          <= dc_valid_i;
+                                addrM           <= dc_addr_i;
+                                dataM           <= dc_data_i;
+                                lsM             <= dc_ls_i;
+                                maskM           <= dc_mask_i;
+
+                                bypass_active   <= 1'b0;
+                            end
+
                             state       <=  DC_RUN;
                         end else begin
                             cur_way     <=  cur_way + 3'd1;
@@ -558,7 +570,7 @@ module d_cache(
 
         exc_valid_o         =   1'b0;
 
-        exc                 =   rvalid_i && ((rresp_i != 2'b00) || (rid_i != ID_LSU) || (rlast_i ^ (beat_cnt == 3'd7)));
+        exc_r               =   rvalid_i && ((rresp_i != AXI_OKAY) || (rid_i != ID_LSU) || (rlast_i ^ (beat_cnt == 3'd7)));
 
         case (state)
             DC_RUN: begin
@@ -600,7 +612,7 @@ module d_cache(
                 wlast_o         =   (beat_cnt == 3'd7);
             end
             DC_WRITEBACK_DONE: begin
-                bready_o        =   1'b1;                
+                bready_o            =   1'b1;                
             end
             DC_REFILL_REQ: begin
                 araddr_o        =   {addrM[63:6], 6'b0};
@@ -642,6 +654,16 @@ module d_cache(
                 tag_rd_addr     =   clean_line;
 
                 clean_done_o    =   (cur_way == 3'd7) && way_clean_done;
+
+                if (clean_done_o) begin
+                    dc_ready_o      =   1'b1;
+
+                    tag_rd_en       =   dc_advance_i;
+                    tag_rd_addr     =   index;
+
+                    data_rd_en      =   dc_advance_i;
+                    data_rd_addr    =   data_index;
+                end
             end
             DC_CLEAN_WRITEBACK_REQ: begin
                 data_rd_en      =   awready_i;

@@ -365,7 +365,7 @@ module i_cache(
         exc_code_o          =   5'd0;
 
         flush               =   flush_ff || flush_i;
-        exc                 =   rvalid_i && ((rresp_i != 2'b00) || (rid_i != ID_IFU) || (rlast_i ^ (beat_cnt == 3'd7)));
+        exc                 =   rvalid_i && ((rresp_i != AXI_OKAY) || (rid_i != ID_IFU) || (rlast_i ^ (beat_cnt == 3'd7)));
         invalidate          =   invalidate_ff || invalidate_i;
 
         case (state)

@@ -96,3 +96,76 @@ module fifo #(
     assign rd_data_o    =   fifo_ff[rd_ptr[PTR_W-2:0]];
 
 endmodule
+
+module gateway_level #(
+    parameter logic REQ_LEVEL = 1'b1
+)(
+    input logic     clk,
+    input logic     resetn,
+
+    input logic     complete_i,
+    input logic     source_i,
+    output logic    request_o
+);
+
+    logic           block_ff;
+
+    always_ff @(posedge clk or negedge resetn) begin
+        if (!resetn) begin
+            block_ff    <=  1'b0;
+        end else if (complete_i) begin
+            block_ff    <=  1'b0;
+        end else if (request_o) begin
+            block_ff    <=  1'b1;
+        end
+    end
+
+    assign request_o = !block_ff && (source_i == REQ_LEVEL);
+
+endmodule
+
+module clk_sync_2ff(
+    parameter int WIDTH = 1
+) (
+    input logic                 clk,
+    input logic                 resetn,
+    input logic [WIDTH-1:0]     d_i,
+    output logic [WIDTH-1:0]    q_o
+);
+
+    (* ASYNC_REG = "TRUE" *) logic [WIDTH-1:0]  d_q;
+    (* ASYNC_REG = "TRUE" *) logic [WIDTH-1:0]  d_q2;
+
+    always_ff @(posedge clk or negedge resetn) begin
+        if (!resetn) begin
+            d_q     <=  '0;
+            d_2q    <=  '0;
+        end else begin
+            d_q     <=  d_i;
+            d_2q    <=  d_q;
+        end
+    end
+
+    assign q_o  =   d_2q;
+
+endmodule
+
+module resetn_sync (
+    input logic     clk,
+    input logic     aresetn_i,
+    input logic     resetn_o
+);
+    (* ASYNC_REG = "TRUE" *) logic [WIDTH-1:0]  aresetn_q;
+    (* ASYNC_REG = "TRUE" *) logic [WIDTH-1:0]  aresetn_2q;
+
+    always_ff @(posedge clk or negedge aresetn_i) begin
+        if (!areset_n_i) begin
+            aresetn_q   <=  1'b0;
+            aresetn_2q  <=  1'b0;
+        end else begin
+            aresetn_q   <=  1'b1;
+            aresetn_2q  <=  aresetn_2q;
+        end
+    end
+
+endmodule

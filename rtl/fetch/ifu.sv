@@ -204,7 +204,7 @@ module ifu (
                     end
 
                     flush_ff        <=  flush_ff || flushF_i;
-                    exc_ff          <=  rvalid_i && (((rresp_i != 2'b00) || (rid_i != ID_IFU)) || !rlast_i);
+                    exc_ff          <=  rvalid_i && (((rresp_i != AXI_OKAY) || (rid_i != ID_IFU)) || !rlast_i);
                 end
                 IFU_MEM_DONE: begin
                     if (!stallD_i || flush) begin

@@ -31,9 +31,7 @@ module spi (
 
     logic                   ahb_advance;
     logic                   hvalid_d;
-    logic                   ahb_error;
     logic                   hwrite_en;
-    logic                   error_ff;
 
     logic [3:0]             txmark;
     logic [3:0]             rxmark;
@@ -44,7 +42,6 @@ module spi (
     logic [11:0]            haddr_d;
     logic [1:0]             htrans_d;
     logic                   hwrite_d;
-    logic [2:0]             hburst_d;
 
     logic [7:0]             cssck;
     logic [7:0]             sckcs;
@@ -155,30 +152,30 @@ module spi (
     //register writes
     always_ff @(posedge clk or negedge resetn) begin
         if (!resetn) begin
-            SCKDIV_REG      <=  12'h003;
-            SCKMODE_REG     <=  2'b0;
-            CSID_REG        <=  2'b0;
-            CSDEF_REG       <=  4'hF;
-            CSMODE_REG      <=  AUTO;
-            DELAY0_REG      <=  24'h010001;
-            DELAY1_REG      <=  24'h000001;
-            FMT_REG         <=  20'h80000;
-            TXMARK_REG      <=  3'b0;
-            RXMARK_REG      <=  3'b0;
-            IE_REG          <=  2'b0;
+            SPI_SCKDIV_REG      <=  12'h003;
+            SPI_SCKMODE_REG     <=  2'b0;
+            SPI_CSID_REG        <=  2'b0;
+            SPI_CSDEF_REG       <=  4'hF;
+            SPI_CSMODE_REG      <=  AUTO;
+            SPI_DELAY0_REG      <=  24'h010001;
+            SPI_DELAY1_REG      <=  24'h000001;
+            SPI_FMT_REG         <=  20'h80000;
+            SPI_TXMARK_REG      <=  3'b0;
+            SPI_RXMARK_REG      <=  3'b0;
+            SPI_IE_REG          <=  2'b0;
         end else if (hwrite_en) begin
             case (haddr_d)
-                SCKDIV_OFFSET: SCKDIV_REG       <=  hwdata_i[11:0];
-                SCKMODE_OFFSET: SCKMODE_REG     <=  hwdata_i[1:0];
-                CSID_OFFSET: CSID_REG           <=  hwdata_i[1:0];
-                CSDEF_OFFSET: CSDEF_REG         <=  hwdata_i[3:0];
-                CSMODE_OFFSET: CSMODE_REG       <=  hwdata_i[1:0];
-                DELAY0_OFFSET: DELAY0_REG       <=  hwdata_i[23:0] & DELAY0_WMASK;
-                DELAY1_OFFSET: DELAY1_REG       <=  hwdata_i[23:0] & DELAY1_WMASK;
-                FMT_OFFSET: FMT_REG             <=  hwdata_i[19:0] & FMT_WMASK;
-                TXMARK_OFFSET: TXMARK_REG       <=  hwdata_i[2:0];
-                RXMARK_OFFSET: RXMARK_REG       <=  hwdata_i[2:0];
-                IE_OFFSET: IE_REG               <=  hwdata_i[1:0];
+                SPI_SCKDIV_OFFSET: SCKDIV_REG       <=  hwdata_i[11:0];
+                SPI_SCKMODE_OFFSET: SCKMODE_REG     <=  hwdata_i[1:0];
+                SPI_CSID_OFFSET: CSID_REG           <=  hwdata_i[1:0];
+                SPI_CSDEF_OFFSET: CSDEF_REG         <=  hwdata_i[3:0];
+                SPI_CSMODE_OFFSET: CSMODE_REG       <=  hwdata_i[1:0];
+                SPI_DELAY0_OFFSET: DELAY0_REG       <=  hwdata_i[23:0] & DELAY0_WMASK;
+                SPI_DELAY1_OFFSET: DELAY1_REG       <=  hwdata_i[23:0] & DELAY1_WMASK;
+                SPI_FMT_OFFSET: FMT_REG             <=  hwdata_i[19:0] & FMT_WMASK;
+                SPI_TXMARK_OFFSET: TXMARK_REG       <=  hwdata_i[2:0];
+                SPI_RXMARK_OFFSET: RXMARK_REG       <=  hwdata_i[2:0];
+                SPI_IE_OFFSET: IE_REG               <=  hwdata_i[1:0];
             endcase
         end
     end
@@ -189,23 +186,11 @@ module spi (
             haddr_d     <=  12'h0;
             htrans_d    <=  2'b0;
             hwrite_d    <=  1'b0;
-            hburst_d    <=  3'b0;
         end else if (ahb_advance) begin
             hsel_d      <=  hsel_i;
             haddr_d     <=  haddr_i[11:0];
             htrans_d    <=  htrans_i;
             hwrite_d    <=  hwrite_i;
-            hburst_d    <=  hburst_i;
-        end
-    end
-
-    always_ff @(posedge clk or negedge resetn) begin
-        if (!resetn) begin
-            error_ff    <=  1'b0;
-        end else if (error_ff && hready_i) begin
-            error_ff    <=  1'b0;
-        end else if (ahb_error) begin
-            error_ff    <=  1'b1;
         end
     end
 
@@ -213,16 +198,15 @@ module spi (
         ahb_advance         =   hready_i;
 
         hvalid_d            =   hsel_d && htrans_d[1];
-        ahb_error           =   hvalid_d && ((hburst_d != SINGLE) || (htrans_d == SEQ));
 
-        hwrite_en           =   hvalid_d && !ahb_error && hwrite_d && hready_i;
+        hwrite_en           =   hvalid_d && hwrite_d && hready_i;
 
-        hreadyout_o         =   !ahb_error || error_ff;
-        hresp_o             =   ahb_error;
+        hreadyout_o         =   1'b1;
+        hresp_o             =   AHB_OKAY;
 
-        rx_fifo_pop         =   hvalid_d && !ahb_error && !hwrite_d && hready_i && (haddr_d == RXDATA_OFFSET) && !rx_fifo_empty;
+        rx_fifo_pop         =   hvalid_d && !hwrite_d && hready_i && (haddr_d == SPI_RXDATA_OFFSET) && !rx_fifo_empty;
         
-        tx_fifo_push        =   hwrite_en && (haddr_d == TXDATA_OFFSET);
+        tx_fifo_push        =   hwrite_en && (haddr_d == SPI_TXDATA_OFFSET);
         tx_fifo_push_data   =   hwdata_i[7:0];
 
         txmark              =   {1'b0, TXMARK_REG};
@@ -251,21 +235,21 @@ module spi (
         FMT_RD              =   {12'h0, FMT_REG};
         TXDATA_RD           =   {tx_fifo_full, 31'h0};
         RXDATA_RD           =   {rx_fifo_empty, 23'h0, rx_fifo_pop_data};
-        TXMARK_RD           =   {30'h0, TXMARK_REG};
-        RXMARK_RD           =   {30'h0, RXMARK_REG};
+        TXMARK_RD           =   {29'h0, TXMARK_REG};
+        RXMARK_RD           =   {29'h0, RXMARK_REG};
         IE_RD               =   {30'h0, IE_REG};
         IP_RD               =   {30'h0, rx_wm_ip, tx_wm_ip};        
 
         case (haddr_d[11:3])
-            SCKDIV_OFFSET[11:3]: hrdata_o   =   {SCKMODE_RD, SCKDIV_RD};
-            CSID_OFFSET[11:3]: hrdata_o     =   {CSDEF_RD, CSID_RD};
-            CSMODE_OFFSET[11:3]: hrdata_o   =   {32'h0, CSMODE_RD};
-            DELAY0_OFFSET[11:3]: hrdata_o   =   {DELAY1_RD, DELAY0_RD};
-            FMT_OFFSET[11:3]: hrdata_o      =   {32'h0, FMT_RD};
-            TXDATA_OFFSET[11:3]: hrdata_o   =   {RXDATA_RD, TXDATA_RD};
-            TXMARK_OFFSET[11:3]: hrdata_o   =   {RXMARK_RD, TXMARK_RD};
-            IE_OFFSET[11:3]: hrdata_o       =   {IP_RD, IE_RD};
-            default: hrdata_o               =   64'h0;
+            SPI_SCKDIV_OFFSET[11:3]: hrdata_o   =   {SCKMODE_RD, SCKDIV_RD};
+            SPI_CSID_OFFSET[11:3]: hrdata_o     =   {CSDEF_RD, CSID_RD};
+            SPI_CSMODE_OFFSET[11:3]: hrdata_o   =   {32'h0, CSMODE_RD};
+            SPI_DELAY0_OFFSET[11:3]: hrdata_o   =   {DELAY1_RD, DELAY0_RD};
+            SPI_FMT_OFFSET[11:3]: hrdata_o      =   {32'h0, FMT_RD};
+            SPI_TXDATA_OFFSET[11:3]: hrdata_o   =   {RXDATA_RD, TXDATA_RD};
+            SPI_TXMARK_OFFSET[11:3]: hrdata_o   =   {RXMARK_RD, TXMARK_RD};
+            SPI_IE_OFFSET[11:3]: hrdata_o       =   {IP_RD, IE_RD};
+            default: hrdata_o                   =   64'h0;
         endcase
     end
 

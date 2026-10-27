@@ -162,7 +162,7 @@ module multiply (
                     if (flushE_i) begin
                         state           <=  M_IDLE;
                     end else if (!stallM_i) begin
-                        if (mul_valid_i) begin
+                        if (mul_valid_i && stallE_i) begin
                             a_high_q    <=  a_highD;
                             a_low_q     <=  a_lowD;
                             b_high_q    <=  b_highD;

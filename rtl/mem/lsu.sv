@@ -508,7 +508,7 @@ module lsu (
         exc_valid_o         =   1'b0;
         exc_code_o          =   5'd0;
 
-        exc_load            =   rvalid_i && ((rid_i != ID_LSU) || (rresp_i != 2'b00) || !rlast_i);
+        exc_load            =   rvalid_i && ((rid_i != ID_LSU) || (rresp_i != AXI_OKAY) || !rlast_i);
         exc_store           =   bvalid_i && ((bresp_i != 2'b00) || (bid_i != ID_LSU));
 
         dc_ls               =   (lsu_ls_i == LSU_STORE) || ((lsu_ls_i == LSU_ATOMIC) && (atomic_op_i == SC));

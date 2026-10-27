@@ -141,7 +141,7 @@ module spi_tx (
                             frame_done_q    <=  1'b1;
 
                             case (csmode_i)
-                                AUTO: begin
+                                SPI_AUTO_CSMODE: begin
                                     if ((sckcs_i == 8'b0) && !pha) begin
                                         spi_delay_cnt           <=  intercs_i;
 
@@ -153,8 +153,8 @@ module spi_tx (
                                         state                   <=  SPI_SCKCS;
                                     end
                                 end
-                                HOLD,
-                                OFF: begin
+                                SPI_HOLD_CSMODE,
+                                SPI_OFF_CSMODE: begin
                                     if (interxfr_i != 8'b0) begin
                                         spi_delay_cnt   <=  interxfr_i;
 
@@ -243,7 +243,7 @@ module spi_tx (
                 SPI_HOLD: begin
                     frame_done_q        <=  1'b0;
 
-                    if (csmode_i == AUTO) begin
+                    if (csmode_i == SPI_AUTO_CSMODE) begin
                         state           <=  SPI_IDLE;
                     end else if (!tx_fifo_empty_i) begin
                         spi_data_cnt                <=  3'd0;
@@ -274,7 +274,7 @@ module spi_tx (
         leading_edge            =   tick && (sck == pol);
         trailing_edge           =   tick && (sck != pol);
 
-        cs_off                  =   (csmode_i == OFF);
+        cs_off                  =   (csmode_i == SPI_OFF_CSMODE);
 
         sck_en                  =   1'b0;
 
@@ -313,7 +313,7 @@ module spi_tx (
                 tx_data_shift_en    =   (pha && leading_edge && (spi_data_cnt != 3'd0)) || 
                                         !pha && trailing_edge;
 
-                tx_fifo_pop_o       =   frame_done && ((csmode_i == HOLD) || (csmode_i == OFF)) && (interxfr_i == 8'b0) && !tx_fifo_empty_i;
+                tx_fifo_pop_o       =   frame_done && ((csmode_i == SPI_HOLD_CSMODE) || (csmode_i == SPI_OFF_CSMODE)) && (interxfr_i == 8'b0) && !tx_fifo_empty_i;
             end
             SPI_SCKCS: begin
                 cs_o                =   csdef_i ^ (cs_off ? 4'b0 : csid_1h);
@@ -335,8 +335,8 @@ module spi_tx (
                 tx_fifo_pop_o       =   trailing_edge && (spi_delay_cnt == 8'b1) && !tx_fifo_empty_i;
             end
             SPI_HOLD: begin
-                cs_o                =   csdef_i ^ ((csmode_i == HOLD) ? csid_1h : 4'b0);
-                tx_fifo_pop_o       =   !tx_fifo_empty_i && ((csmode_i == HOLD) || (csmode_i == OFF));
+                cs_o                =   csdef_i ^ ((csmode_i == SPI_HOLD_CSMODE) ? csid_1h : 4'b0);
+                tx_fifo_pop_o       =   !tx_fifo_empty_i && ((csmode_i == SPI_HOLD_CSMODE) || (csmode_i == SPI_OFF_CSMODE));
             end
         endcase
     end

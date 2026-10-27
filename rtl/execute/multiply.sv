@@ -76,7 +76,7 @@ module multiply (
 
     mul_state_t             state;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             a_high_q                    <= 32'h0;
             a_low_q                     <= 32'h0;

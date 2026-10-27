@@ -91,24 +91,24 @@ module top (
     assign mig_resetn_raw   =   resetn_i && clk_locked;
 
     resetn_sync u_resetn_sync_cpu (
-        .clk        (clk_cpu),
-        .aresetn_i  (!reset_raw),
-        .resetn_o   (cpu_resetn)
+        .clk                    (clk_cpu),
+        .aresetn_i              (!reset_raw),
+        .resetn_o               (cpu_resetn)
     );
 
     resetn_sync u_resetn_sync_ddr (
-        .clk        (ui_clk),
-        .aresetn_i  (!reset_raw),
-        .resetn_o   (ddr_resetn)
+        .clk                    (ui_clk),
+        .aresetn_i              (!reset_raw),
+        .resetn_o               (ddr_resetn)
     );
 
     //clock generation
     clk_wiz_0 u_clk_wiz (
-        .clk_100M   (clk_100M),
-        .clk_200M   (clk_200M),
-        .clk_cpu    (clk_cpu),
-        .locked     (clk_locked),
-        .clk_in1    (clk_100M_i)
+        .clk_100M               (clk_100M),
+        .clk_200M               (clk_200M),
+        .clk_cpu                (clk_cpu),
+        .locked                 (clk_locked),
+        .clk_in1                (clk_100M_i)
     );
 
     core u_core (

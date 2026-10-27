@@ -41,7 +41,7 @@ module clint (
     logic                   mtime_hwrite;
     logic [1:0]             hwrite_mask;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             MTIME_REG                       <=  64'h0;
             MTIMECMP_REG                    <=  64'hFFFF_FFFF_FFFF_FFFF;
@@ -66,7 +66,7 @@ module clint (
         end
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             hsel_d      <=  1'b0;
             haddr_d     <=  16'h0;

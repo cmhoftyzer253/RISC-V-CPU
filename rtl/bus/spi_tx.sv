@@ -63,7 +63,7 @@ module spi_tx (
 
     spi_state_t             state;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             frame_done_q            <=  1'b0;
             sck_toggle_suppress     <=  1'b0;

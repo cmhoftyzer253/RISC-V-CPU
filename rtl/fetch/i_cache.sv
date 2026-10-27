@@ -183,7 +183,7 @@ module i_cache(
         end
     endgenerate
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (~resetn) begin
             flush_ff        <=  1'b0;
             invalidate_ff   <=  1'b0;

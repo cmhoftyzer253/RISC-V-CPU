@@ -17,7 +17,7 @@ module ahb_ctrl(
 
     logic [5:0]             hsel_d;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             hsel_d  <=  6'b0;
         end else if (hready_o) begin

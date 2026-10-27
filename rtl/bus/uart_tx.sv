@@ -21,7 +21,7 @@ module uart_tx (
 
     uart_tx_state_t     state;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             tx_data     <=  8'b0;
 

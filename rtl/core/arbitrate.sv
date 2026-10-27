@@ -112,7 +112,7 @@ module arbitrate (
 
     logic                   load_done;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (~resetn) begin
             grant_q     <=  GRANT_IDLE;
         end else if ((grant_q == GRANT_IDLE) || load_done) begin

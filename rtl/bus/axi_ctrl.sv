@@ -89,7 +89,7 @@ module axi_ctrl(
     logic                   ahb_load_sel;
     logic                   ahb_store_sel;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             load_grant_q    <=  GRANT_IDLE;
             store_grant_q   <=  GRANT_IDLE;

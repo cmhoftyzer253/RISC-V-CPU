@@ -347,7 +347,7 @@ module pipeline (
     assign nxt_pcF_o                =   nxt_pcF;
 
     //handle pc redirects during backpressure
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             redirect_pending        <= 1'b0;
             redirect_pending_pc     <= 64'h0;
@@ -369,7 +369,7 @@ module pipeline (
     assign flushF_o     =   flushF;
 
     //F -> D registers
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             validD      <=  1'b0;
             instrD      <=  32'h0;
@@ -385,7 +385,7 @@ module pipeline (
         end
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             exc_validD  <=  1'b0;
             exc_codeD   <=  5'd0;
@@ -456,7 +456,7 @@ module pipeline (
     assign flushD       =   trap_en_i || mretM || sretM || redirect_serialize || redirect_bjE;
 
     //D -> E registers
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             validE      <=  1'b0;
             instrE      <=  32'h0;
@@ -543,7 +543,7 @@ module pipeline (
         end
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             exc_validE  <=  1'b0;
             exc_codeE   <=  5'd0;
@@ -596,7 +596,7 @@ module pipeline (
     assign flushE_o     =   flushE;
 
     //E -> M registers
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             validM          <=  1'b0;
             instrM          <=  32'h0;
@@ -642,7 +642,7 @@ module pipeline (
     assign nxt_exc_codeM    =   exc_validE ? exc_codeE : I_ADDR_MISALIGNED;
     assign nxt_exc_xtvalM   =   exc_validE ? exc_xtvalE : alu_resE_i;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             exc_validM  <=  1'b0;
             exc_codeM   <=  5'd0;
@@ -710,7 +710,7 @@ module pipeline (
         wfi_timeout = wfi_timer_en && wfi_timer[16];
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             wfi_timer <= 17'h0;
         end else if (wfi_timeout || wfi_wakeup_i) begin
@@ -732,7 +732,7 @@ module pipeline (
         dc_cleanM_o         =   fencei_start;
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn)
             fencei_started  <= 1'b0;
         else if (fencei_start)
@@ -741,7 +741,7 @@ module pipeline (
             fencei_started  <= 1'b0;
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             ic_invalidate_wait_ff       <= 1'b0;
             dc_clean_wait_ff            <= 1'b0;
@@ -763,7 +763,7 @@ module pipeline (
     assign nxt_validW   =   validM && !stallM && !exc_validM_o;
 
     //M -> W registers
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             validW          <=  1'b0;
             rdW             <=  5'd0;

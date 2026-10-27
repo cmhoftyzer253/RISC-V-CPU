@@ -177,7 +177,7 @@ module ifu (
         .exc_code_o         (ic_exc_code)
     );
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (~resetn) begin
             instr_hold  <=  32'h0;
 

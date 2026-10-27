@@ -96,7 +96,7 @@ module divide (
 
     div_state_t             state;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             word_op_ff                      <=  1'b0;
             rem_op_ff                       <=  1'b0;

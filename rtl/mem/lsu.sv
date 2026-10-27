@@ -102,111 +102,111 @@ module lsu (
     output logic            bready_o
 );
 
-    logic [1:0]     sizeM;
-    logic           seM;
-    logic [3:0]     atomic_opM;
-    logic [1:0]     lsM;
+    logic [1:0]             sizeM;
+    logic                   seM;
+    logic [3:0]             atomic_opM;
+    logic [1:0]             lsM;
 
-    logic           dc_ready;
-    logic           dc_resp_valid;
-    logic [63:0]    dc_ldata;
-    logic           dc_exc_valid;
+    logic                   dc_ready;
+    logic                   dc_resp_valid;
+    logic [63:0]            dc_ldata;
+    logic                   dc_exc_valid;
 
-    logic           validM;
-    logic [63:0]    dataM;
-    logic [63:0]    addrM;
-    logic [7:0]     maskM;
+    logic                   validM;
+    logic [63:0]            dataM;
+    logic [63:0]            addrM;
+    logic [7:0]             maskM;
 
-    logic           dc_valid;
-    logic           dc_ls;
-    logic [63:0]    dc_addr;
-    logic [63:0]    dc_data;
-    logic [7:0]     dc_mask;
-    logic           dc_advance;
+    logic                   dc_valid;
+    logic                   dc_ls;
+    logic [63:0]            dc_addr;
+    logic [63:0]            dc_data;
+    logic [7:0]             dc_mask;
+    logic                   dc_advance;
 
-    logic           stop_cacheop;
+    logic                   stop_cacheop;
 
-    logic [63:0]    dc_araddr;
-    logic [7:0]     dc_arlen;
-    logic [2:0]     dc_arsize;
-    logic [1:0]     dc_arburst;
-    logic           dc_arlock;
-    logic [3:0]     dc_arid;
-    logic [3:0]     dc_arcache;
-    logic [2:0]     dc_arprot;
-    logic [3:0]     dc_arqos;
-    logic           dc_arvalid;
-    logic           dc_rready;
-    logic [63:0]    dc_awaddr;
-    logic           dc_awvalid;
-    logic [2:0]     dc_awsize;
-    logic [7:0]     dc_awlen;
-    logic [1:0]     dc_awburst;
-    logic           dc_awlock;
-    logic [3:0]     dc_awid;
-    logic [3:0]     dc_awcache;
-    logic [2:0]     dc_awprot;
-    logic [3:0]     dc_awqos;
-    logic [63:0]    dc_wdata;
-    logic [7:0]     dc_wstrb;
-    logic           dc_wvalid;
-    logic           dc_wlast;
-    logic           dc_bready;
+    logic [63:0]        dc_araddr;
+    logic [7:0]         dc_arlen;
+    logic [2:0]         dc_arsize;
+    logic [1:0]         dc_arburst;
+    logic               dc_arlock;
+    logic [3:0]         dc_arid;
+    logic [3:0]         dc_arcache;
+    logic [2:0]         dc_arprot;
+    logic [3:0]         dc_arqos;
+    logic               dc_arvalid;
+    logic               dc_rready;
+    logic [63:0]        dc_awaddr;
+    logic               dc_awvalid;
+    logic [2:0]         dc_awsize;
+    logic [7:0]         dc_awlen;
+    logic [1:0]         dc_awburst;
+    logic               dc_awlock;
+    logic [3:0]         dc_awid;
+    logic [3:0]         dc_awcache;
+    logic [2:0]         dc_awprot;
+    logic [3:0]         dc_awqos;
+    logic [63:0]        dc_wdata;
+    logic [7:0]         dc_wstrb;
+    logic               dc_wvalid;
+    logic               dc_wlast;
+    logic               dc_bready;
 
-    logic           pma_cacheable;
-    logic           pma_fault;
-    logic           pmp_fault;
+    logic               pma_cacheable;
+    logic               pma_fault;
+    logic               pmp_fault;
 
-    logic [63:0]    store_raw_data;
-    logic [2:0]     store_addr_algn;
-    logic [1:0]     store_size;
-    logic [63:0]    load_raw_data;
-    logic [63:0]    load_data;
+    logic [63:0]        store_raw_data;
+    logic [2:0]         store_addr_algn;
+    logic [1:0]         store_size;
+    logic [63:0]        load_raw_data;
+    logic [63:0]        load_data;
 
-    logic [63:0]    amo_res;
-    logic           amo_word_opM;
-    logic           amo_store;
-    logic           amo_store_ready;
-    logic           amo_load_fault;
-    logic           amo_load;
-    logic [63:0]    amo_load_data;
+    logic [63:0]        amo_res;
+    logic               amo_word_opM;
+    logic               amo_store;
+    logic               amo_store_ready;
+    logic               amo_load_fault;
+    logic               amo_load;
+    logic [63:0]        amo_load_data;
 
-    logic           LR_valid;
-    logic [63:0]    LR_addr;
-    logic [1:0]     LR_size;
+    logic               LR_valid;
+    logic [63:0]        LR_addr;
+    logic [1:0]         LR_size;
     
-    logic           LR_set;
-    logic           LR_invalidate;
+    logic               LR_set;
+    logic               LR_invalidate;
 
-    logic           lrM;
-    logic           scM;
+    logic               lrM;
+    logic               scM;
 
-    logic           sc_lr_miss;
-    logic           sc_fail;
+    logic               sc_lr_miss;
+    logic               sc_fail;
 
-    logic           lr_addr_match;
+    logic               lr_addr_match;
 
-    logic           lsu_store;
+    logic               lsu_store;
 
-    logic           misaligned_addr;
-    logic           misaligned_exc;
-    logic           exc;
+    logic               misaligned_addr;
+    logic               misaligned_exc;
+    logic               exc;
 
-    logic           uncacheable_load;
-    logic           uncacheable_store;
+    logic               uncacheable_load;
+    logic               uncacheable_store;
 
-    logic [63:0]    mem_load_data;
+    logic [63:0]        mem_load_data;
     
-    logic           aw_done;
-    logic           w_done;
+    logic               aw_done;
+    logic               w_done;
 
-    logic           store_req_done;
+    logic               store_req_done;
 
-    logic           exc_load;
-    logic           exc_store;
-    logic           exc_ff;
+    logic               exc_load;
+    logic               exc_store;
+    logic               exc_ff;
 
-    lsu_state_t     state;
+    lsu_state_t         state;
 
     d_pma u_d_pma (
         .lsu_valid_i        (validM),
@@ -340,7 +340,7 @@ module lsu (
         .exc_valid_o        (dc_exc_valid)
     );
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (~resetn) begin
             sizeM           <=  2'b0;
             seM             <=  1'b0;

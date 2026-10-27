@@ -150,7 +150,7 @@ module spi (
     );
 
     //register writes
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             SPI_SCKDIV_REG      <=  12'h003;
             SPI_SCKMODE_REG     <=  2'b0;
@@ -180,7 +180,7 @@ module spi (
         end
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             hsel_d      <=  1'b0;
             haddr_d     <=  12'h0;

@@ -70,7 +70,7 @@ module gpio (
     logic                   high_ip_hwrite;
     logic                   low_ip_hwrite;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             gpio_in_q   <=  32'h0;
             gpio_in_q2  <=  32'h0;
@@ -82,7 +82,7 @@ module gpio (
         end
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             INPUT_EN_REG    <=  32'h0;
             OUTPUT_EN_REG   <=  32'h0;
@@ -129,7 +129,7 @@ module gpio (
         end
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             hsel_d      <=  1'b0;
             haddr_d     <=  12'h0;

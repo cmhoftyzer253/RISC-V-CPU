@@ -123,7 +123,7 @@ module uart(
         .tx_o                   (tx_o)
     );
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             TXCTRL_REG  <=  19'h0;
             RXCTRL_REG  <=  19'h0;
@@ -139,7 +139,7 @@ module uart(
         end
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             hsel_d      <=  1'b0;
             haddr_d     <=  12'h0;

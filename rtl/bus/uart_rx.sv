@@ -31,7 +31,7 @@ module uart_rx (
 
     uart_rx_state_t         state;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             tick_cnt    <=  32'h0;
             rx_bit_cnt  <=  3'd0;

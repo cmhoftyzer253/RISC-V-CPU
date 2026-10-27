@@ -96,7 +96,7 @@ module plic(
         end
     endgenerate
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             SRC1_PRIORITY_REG   <=  3'b0;
             SRC2_PRIORITY_REG   <=  3'b0;
@@ -123,7 +123,7 @@ module plic(
         end
     end
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             hsel_d      <=  1'b0;
             haddr_d     <=  26'h0;

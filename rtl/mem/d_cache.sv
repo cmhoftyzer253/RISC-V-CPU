@@ -233,7 +233,7 @@ module d_cache(
         end
     endgenerate
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (~resetn) begin
             validM          <=  1'b0;
             addrM           <=  64'h0;

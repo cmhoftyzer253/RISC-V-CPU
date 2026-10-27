@@ -151,7 +151,7 @@ module csr (
     logic [63:0]        MCYCLE_REG;
     logic [63:0]        MINSTRET_REG;
 
-    always_ff @(posedge clk or negedge resetn) begin
+    always_ff @(posedge clk) begin
         if (!resetn) begin
             priv_level <= M_MODE;
 
@@ -199,7 +199,6 @@ module csr (
         end else begin
             if (trap_en_i) begin
                 if (trap_delegate_i) begin
-                    //TODO: fix - SSTATUS doesn't exist
                     MSTATUS_REG[1]      <=  1'b0;
                     MSTATUS_REG[5]      <=  MSTATUS_REG[1]; 
                     MSTATUS_REG[8]      <=  priv_level[0];

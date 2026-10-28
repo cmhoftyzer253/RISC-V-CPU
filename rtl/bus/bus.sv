@@ -1,5 +1,3 @@
-import cpu_utils::*;
-
 module bus (
     input logic             clk,
     input logic             cpu_resetn,

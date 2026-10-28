@@ -1,7 +1,7 @@
-import cpu_defines::*;
-import cpu_types::*;
-
-module divide (
+module divide 
+    import cpu_defines::*;
+    import cpu_types::*;
+(
     input                   clk,
     input                   resetn,
 

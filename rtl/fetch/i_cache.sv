@@ -1,8 +1,8 @@
-import cpu_defines::*;
-import cpu_utils::*;
-import cpu_types::*;
-
-module i_cache(
+module i_cache
+    import cpu_defines::*;
+    import cpu_utils::*;
+    import cpu_types::*;
+(
     input logic             clk,
     input logic             resetn,
 
@@ -108,9 +108,8 @@ module i_cache(
     logic [63:0]            data_wr_data;
 
     //tag, data RAM
-    genvar w;
     generate
-        for (w=0; w<8; w++) begin : tag_RAM
+        for (genvar w=0; w<8; w++) begin : tag_RAM
             xpm_memory_sdpram #(
                 .MEMORY_SIZE            (64 * 52),
                 .MEMORY_PRIMITIVE       ("auto"),
@@ -146,7 +145,7 @@ module i_cache(
             );
         end
 
-        for (w=0; w<8; w++) begin : data_RAM
+        for (genvar w=0; w<8; w++) begin : data_RAM
             xpm_memory_sdpram #(
                 .MEMORY_SIZE            (512 * 64),
                 .MEMORY_PRIMITIVE       ("block"),

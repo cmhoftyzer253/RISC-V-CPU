@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module clint (
+module clint 
+    import cpu_defines::*;
+(
     input logic             clk,       
     input logic             resetn,
 

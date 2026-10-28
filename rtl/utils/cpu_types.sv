@@ -1,4 +1,4 @@
-package cpu_consts;
+package cpu_types;
 
     // instruction types
     typedef enum logic[6:0] {
@@ -199,7 +199,7 @@ package cpu_consts;
         S_FETCH_RUN,
         S_BROM_HOLD,
         S_FETCH_EXC_HOLD
-    } fetch_state_t;
+    } ifu_state_t;
 
     typedef struct packed {
         logic           valid;
@@ -214,12 +214,12 @@ package cpu_consts;
         S_IC_LOAD_2,
         S_IC_LOAD_3,
         S_IC_LOAD_DONE
-    } i_cache_state_t;
+    } ic_state_t;
 
     typedef enum logic {
         S_MEM_RUN,
         S_MEM_EXC_HOLD
-    } memory_state_t;
+    } lsu_state_t;
 
     typedef struct packed {
         logic           valid;
@@ -241,7 +241,7 @@ package cpu_consts;
         S_DC_LOAD_3,
         S_DC_LOAD_4,
         S_DC_LOAD_DONE
-    } d_cache_state_t;
+    } dc_state_t;
 
     //multiplier states
     typedef enum logic [2:0] {

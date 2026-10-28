@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module ahb_boot_rom(
+module ahb_boot_rom
+    import cpu_defines::*;
+(
     input logic             clk,
     input logic             resetn,
     

@@ -1,5 +1,3 @@
-import cpu_utils::*;
-
 module top (
     input logic             clk_100M_i,
     input logic             resetn_i,

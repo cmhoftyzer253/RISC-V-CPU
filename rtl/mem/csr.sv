@@ -1,6 +1,7 @@
-import cpu_defines::*;
-
-module csr (
+module csr 
+    import cpu_defines::*;
+    import cpu_utils::*;
+(
     input logic             clk,
     input logic             resetn,
 

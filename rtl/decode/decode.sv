@@ -1,6 +1,7 @@
-import cpu_defines::*;
-
-module decode (
+module decode 
+    import cpu_defines::*;
+    import cpu_types::*;
+(
     input logic [31:0]      instr_i,
 
     input logic [1:0]       priv_level_i,

@@ -1,7 +1,7 @@
-import cpu_defines::*;
-import cpu_utils::*;
+module uart
+    import cpu_defines::*;
 
-module uart(
+(
     input logic             clk,
     input logic             resetn,
 

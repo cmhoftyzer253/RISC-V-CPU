@@ -113,6 +113,8 @@ module privileged (
         .mtime_i            (mtime_i),
         .mtip_i             (mtip_i),
         .msip_i             (msip_i),
+        .meip_i             (meip_i),
+        .seip_i             (seip_i),
         .flushM_i           (flushM_i),
         .retire_i           (retire_i),
         .priv_level_o       (priv_level),

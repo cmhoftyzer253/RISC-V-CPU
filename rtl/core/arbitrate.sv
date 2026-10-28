@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module arbitrate (
+module arbitrate 
+    import cpu_defines::*;
+(
     input logic             clk,
     input logic             resetn,
 
@@ -114,8 +114,8 @@ module arbitrate (
 
     always_ff @(posedge clk) begin
         if (~resetn) begin
-            grant_q     <=  GRANT_IDLE;
-        end else if ((grant_q == GRANT_IDLE) || load_done) begin
+            grant_q     <=  ARB_IDLE;
+        end else if ((grant_q == ARB_IDLE) || load_done) begin
             grant_q     <=  nxt_grant;
         end
     end
@@ -144,8 +144,8 @@ module arbitrate (
         lsu_bresp_o     =   bresp_i;
         lsu_bid_o       =   bid_i;
 
-        nxt_grant       =   lsu_arvalid_i ? GRANT_LSU : (ifu_arvalid_i ? GRANT_IFU : GRANT_IDLE);
-        grant           =   (grant_q == GRANT_IDLE) ? nxt_grant : grant_q;
+        nxt_grant       =   lsu_arvalid_i ? GRANT_LSU : (ifu_arvalid_i ? GRANT_IFU : ARB_IDLE);
+        grant           =   (grant_q == ARB_IDLE) ? nxt_grant : grant_q;
 
         case (grant)
             GRANT_IFU: begin

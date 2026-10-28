@@ -2,7 +2,7 @@ package cpu_defines;
 
     localparam logic [63:0] RESET_PC                =   64'h0000_0000_1000_0000;
 
-    `include "cpu_axi_defines.svh"
+    `include "cpu_amba_defines.svh"
     `include "cpu_csr_defines.svh"
     `include "cpu_peripheral_defines.svh"
 
@@ -203,12 +203,12 @@ package cpu_defines;
     localparam logic [1:0] NAPOT                    =   2'b11;
 
     //arbitrate unit grant
-    localparam logic [1:0] GRANT_IDLE               =   2'b00;
+    localparam logic [1:0] ARB_IDLE                 =   2'b00;
     localparam logic [1:0] GRANT_LSU                =   2'b01;
     localparam logic [1:0] GRANT_IFU                =   2'b10;
 
     //AXI control grant
-    localparam logic [1:0] GRANT_IDLE               =   2'b00;
+    localparam logic [1:0] BUS_IDLE                 =   2'b00;
     localparam logic [1:0] GRANT_DDR                =   2'b01;
     localparam logic [1:0] GRANT_AHB                =   2'b10;
 

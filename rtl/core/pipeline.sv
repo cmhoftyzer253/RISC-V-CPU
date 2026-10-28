@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module pipeline (
+module pipeline 
+    import cpu_defines::*;
+(
     input logic             clk,
     input logic             resetn,
 

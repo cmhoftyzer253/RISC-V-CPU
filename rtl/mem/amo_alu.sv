@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module amo_alu (
+module amo_alu 
+    import cpu_defines::*;
+(
     input logic [63:0]      lsu_ld_i,    
     input logic [63:0]      rs2_data_i,    
 

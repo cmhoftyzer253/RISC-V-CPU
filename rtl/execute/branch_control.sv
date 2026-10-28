@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module branch_control (
+module branch_control 
+    import cpu_defines::*;
+(
     input logic [63:0]  opr_a_i,
     input logic [63:0]  opr_b_i,
 

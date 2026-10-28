@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module i_pma (
+module i_pma 
+    import cpu_defines::*;
+(
     input logic [63:0]  pc_i,
 
     output logic        pma_cacheable_o,

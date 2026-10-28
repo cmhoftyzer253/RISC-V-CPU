@@ -1,7 +1,7 @@
-import cpu_defines::*;
-import cpu_utils::*;
-
-module i_pmp (
+module i_pmp 
+    import cpu_defines::*;
+    import cpu_utils::*;
+(
     input logic [63:0]  pc_i,
 
     input logic [1:0]   priv_level_i,
@@ -46,7 +46,7 @@ module i_pmp (
 
         pmpaddr     =   {pmpaddr15_i, pmpaddr14_i, pmpaddr13_i, pmpaddr12_i, 
                         pmpaddr11_i, pmpaddr10_i, pmpaddr9_i, pmpaddr8_i,
-                        pmpaddr7_i, pmpaddr6_i, pmpaddr5_i, pmpaddr4_i 
+                        pmpaddr7_i, pmpaddr6_i, pmpaddr5_i, pmpaddr4_i,
                         pmpaddr3_i, pmpaddr2_i, pmpaddr1_i, pmpaddr0_i};
 
         for (int i=0; i<16; i++) begin

@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module ahb_ctrl(
+module ahb_ctrl
+    import cpu_defines::*;
+(
     input logic             clk,
     input logic             resetn,
 

@@ -1,7 +1,8 @@
-import cpu_defines::*;
-import cpu_utils::*;
 
-module plic(
+
+module plic
+    import cpu_defines::*;
+(
     input logic             clk,
     input logic             resetn,
 

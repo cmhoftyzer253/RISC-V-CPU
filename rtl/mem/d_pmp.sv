@@ -1,7 +1,7 @@
-import cpu_defines::*;
-import cpu_utils::*;
-
-module d_pmp (
+module d_pmp 
+    import cpu_defines::*;
+    import cpu_utils::*;
+(   
     input logic         lsu_valid_i,
 
     input logic [63:0]  lsu_addr_i,
@@ -117,10 +117,10 @@ module d_pmp (
         enforce     =   (priv_level_eff != M_MODE) || pmpcfg_uw[7] || pmpcfg_base[7];
 
         case (lsu_ls_i)
-            LOAD: pmp_fault_o       =   lsu_valid_i && enforce && (straddle || !pmpcfg_base[0]);
-            STORE: pmp_fault_o      =   lsu_valid_i && enforce && (straddle || !pmpcfg_base[1]);
-            ATOMIC: pmp_fault_o     =   lsu_valid_i && enforce && (straddle || ~&pmpcfg_base[1:0]);
-            default: pmp_fault_o    =   1'b0;
+            LSU_LOAD: pmp_fault_o       =   lsu_valid_i && enforce && (straddle || !pmpcfg_base[0]);
+            LSU_STORE: pmp_fault_o      =   lsu_valid_i && enforce && (straddle || !pmpcfg_base[1]);
+            LSU_ATOMIC: pmp_fault_o     =   lsu_valid_i && enforce && (straddle || ~&pmpcfg_base[1:0]);
+            default: pmp_fault_o        =   1'b0;
         endcase
     end
 

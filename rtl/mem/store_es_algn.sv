@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module store_es_algn (
+module store_es_algn 
+    import cpu_defines::*;
+(
     input logic [63:0]      raw_data_i,
     input logic [2:0]       addr_algn_i,
     input logic [1:0]       store_size_i,

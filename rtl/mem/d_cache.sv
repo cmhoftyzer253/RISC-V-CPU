@@ -1,8 +1,8 @@
-import cpu_defines::*;
-import cpu_types::*;
-import cpu_utils::*;
-
-module d_cache(
+module d_cache
+    import cpu_defines::*;
+    import cpu_types::*;
+    import cpu_utils::*;
+(
 
     input logic             clk,
     input logic             resetn,
@@ -137,7 +137,7 @@ module d_cache(
 
     logic [6:0]             PLRU_tree [63:0];
 
-    logic [4:0]             state;
+    dc_state_t              state;
 
     logic [7:0][51:0]       tag_rd;
     logic [7:0][63:0]       data_rd;
@@ -158,9 +158,8 @@ module d_cache(
     logic [63:0]            data_wr_data;
 
     //tag, data RAM
-    genvar w;
     generate
-        for (w=0; w<8; w++) begin : tag_RAM
+        for (genvar w=0; w<8; w++) begin : tag_RAM
             xpm_memory_sdpram #(
                 .MEMORY_SIZE            (64 * 52),
                 .MEMORY_PRIMITIVE       ("auto"),
@@ -196,7 +195,7 @@ module d_cache(
             );
         end
 
-        for (w=0; w<8; w++) begin : data_RAM
+        for (genvar w=0; w<8; w++) begin : data_RAM
             xpm_memory_sdpram #(
                 .MEMORY_SIZE            (512 * 64),
                 .MEMORY_PRIMITIVE       ("block"),

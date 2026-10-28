@@ -1,7 +1,7 @@
-import cpu_defines::*;
-import cpu_types::*;
-
-module multiply (
+module multiply 
+    import cpu_defines::*;
+    import cpu_types::*;
+(
     input logic             clk,
     input logic             resetn,
 
@@ -18,7 +18,7 @@ module multiply (
 
     input logic             stallM_i,
     output logic            mul_res_valid_o,
-    output logic [63:0]     mul_res_o,
+    output logic [63:0]     mul_res_o
 );
 
     logic [31:0]            a_high_q;

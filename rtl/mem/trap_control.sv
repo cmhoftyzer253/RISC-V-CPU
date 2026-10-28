@@ -16,7 +16,7 @@ module trap_control (
     input logic [15:0]      medeleg_i,
 
     //pipeline interface
-    input logic             validM_i
+    input logic             validM_i,
 
     input logic             exc_validM_i,
     input logic [4:0]       exc_codeM_i,

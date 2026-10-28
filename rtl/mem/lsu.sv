@@ -1,7 +1,7 @@
-import cpu_defines::*;
-import cpu_types::*;
-
-module lsu (
+module lsu 
+    import cpu_defines::*;
+    import cpu_types::*;
+(
     input logic             clk,
     input logic             resetn,
 
@@ -260,6 +260,7 @@ module lsu (
         .store_size_i       (store_size), 
         .priv_level_i       (priv_level_i),
         .mstatus_mpp_i      (mstatus_mpp_i),
+        .mstatus_mprv_i     (mstatus_mprv_i),
         .mstatus_mbe_i      (mstatus_mbe_i),
         .mstatus_sbe_i      (mstatus_sbe_i),
         .mstatus_ube_i      (mstatus_ube_i),

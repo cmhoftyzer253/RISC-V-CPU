@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module csr_addr_decode (
+module csr_addr_decode 
+    import cpu_defines::*;
+(
     
     input logic [11:0]  csr_addr_i,
     input logic [2:0]   funct3_i,

@@ -1,6 +1,6 @@
-import cpu_consts::*;
-
-module alu (
+module alu 
+    import cpu_defines::*;
+(
         input logic [63:0]      opr_a_i,
         input logic [63:0]      opr_b_i,
 
@@ -8,7 +8,7 @@ module alu (
         input logic             word_op_i,
 
         output logic [63:0]     alu_res_o
-    );
+);
 
     logic [63:0]                alu_res;
 

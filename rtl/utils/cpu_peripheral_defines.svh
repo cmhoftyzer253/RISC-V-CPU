@@ -49,7 +49,7 @@
     localparam logic [11:0] UART_DIV_OFFSET                 =   12'h018;
 
     localparam logic [18:0] UART_TXCTRL_WMASK               =   19'h70003;
-    localparam logic [18:0] UART_TXCTRL_WMASK               =   19'h70001;
+    localparam logic [18:0] UART_RXCTRL_WMASK               =   19'h70001;
 
     //spi addresses
     localparam logic [11:0] SPI_SCKDIV_OFFSET               =   12'h000;
@@ -75,3 +75,4 @@
     localparam logic [1:0] SPI_AUTO_CSMODE                  =   2'b00;
     localparam logic [1:0] SPI_HOLD_CSMODE                  =   2'b10;
     localparam logic [1:0] SPI_OFF_CSMODE                   =   2'b11;
+        

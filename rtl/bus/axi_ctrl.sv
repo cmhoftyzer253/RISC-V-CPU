@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module axi_ctrl(
+module axi_ctrl
+    import cpu_defines::*;
+(
     input logic             clk,
     input logic             resetn,
 
@@ -91,19 +91,19 @@ module axi_ctrl(
 
     always_ff @(posedge clk) begin
         if (!resetn) begin
-            load_grant_q    <=  GRANT_IDLE;
-            store_grant_q   <=  GRANT_IDLE;
+            load_grant_q    <=  BUS_IDLE;
+            store_grant_q   <=  BUS_IDLE;
         end else begin
             if (set_load_grant) begin
                 load_grant_q    <=  nxt_load_grant;
             end else if (clear_load_grant) begin
-                load_grant_q    <=  GRANT_IDLE;
+                load_grant_q    <=  BUS_IDLE;
             end
 
             if (set_store_grant) begin
                 store_grant_q   <=  nxt_store_grant;
             end else if (clear_store_grant) begin
-                store_grant_q   <=  GRANT_IDLE;
+                store_grant_q   <=  BUS_IDLE;
             end
         end
     end
@@ -118,17 +118,17 @@ module axi_ctrl(
         ahb_load_sel        =   arvalid_i && !ahb_load_addr;
         ahb_store_sel       =   awvalid_i && !ahb_store_addr;
 
-        nxt_load_grant      =   ddr_load_sel ? GRANT_DDR : (ahb_load_sel ? GRANT_AHB : GRANT_IDLE);
-        nxt_store_grant     =   ddr_store_sel ? GRANT_DDR : (ahb_store_sel ? GRANT_AHB : GRANT_IDLE);
+        nxt_load_grant      =   ddr_load_sel ? GRANT_DDR : (ahb_load_sel ? GRANT_AHB : BUS_IDLE);
+        nxt_store_grant     =   ddr_store_sel ? GRANT_DDR : (ahb_store_sel ? GRANT_AHB : BUS_IDLE);
 
-        set_load_grant      =   (load_grant_q == GRANT_IDLE) && arvalid_i && arready_o;
-        set_store_grant     =   (store_grant_q == GRANT_IDLE) && awvalid_i && awready_o;
+        set_load_grant      =   (load_grant_q == BUS_IDLE) && arvalid_i && arready_o;
+        set_store_grant     =   (store_grant_q == BUS_IDLE) && awvalid_i && awready_o;
 
         clear_load_grant    =   rready_i && rvalid_o && rlast_o;
         clear_store_grant   =   bvalid_o && bready_i;
 
-        load_grant          =   (load_grant_q == GRANT_IDLE) ? nxt_load_grant : load_grant_q;
-        store_grant         =   (store_grant_q == GRANT_IDLE) ? nxt_store_grant : store_grant_q;
+        load_grant          =   (load_grant_q == BUS_IDLE) ? nxt_load_grant : load_grant_q;
+        store_grant         =   (store_grant_q == BUS_IDLE) ? nxt_store_grant : store_grant_q;
 
         ahb_arvalid_o = 1'b0;
         ahb_rready_o = 1'b0;

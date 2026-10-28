@@ -284,6 +284,12 @@ module core (
     logic [3:0]             lsu_bid;
     logic                   lsu_bready;
 
+    logic                   resetn_q = 1'b0;
+
+    always_ff @(posedge clk) begin
+        resetn_q <= resetn;
+    end 
+
     pipeline u_pipeline (
         .clk                    (clk),
         .resetn                 (resetn),
@@ -392,6 +398,7 @@ module core (
     ifu u_ifu (
         .clk                    (clk),
         .resetn                 (resetn),
+        .resetn_q_i             (resetn_q),
         .pc_i                   (nxt_pcF),
         .ifu_ready_o            (ifu_ready),
         .stallD_i               (stallD),
@@ -481,6 +488,8 @@ module core (
     );
 
     register_file u_register_file (
+        .clk                    (clk),
+        .resetn                 (resetn),
         .rs1_addr_i             (rs1D),
         .rs2_addr_i             (rs2D),
         .rs1_data_o             (rs1_dataD),

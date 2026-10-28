@@ -1,7 +1,7 @@
-import cpu_defines::*;
-import cpu_types::*;
-
-module spi_tx (
+module spi_tx 
+    import cpu_defines::*;
+    import cpu_types::*;
+(
     input logic             clk,
     input logic             resetn,
 

@@ -1,9 +1,11 @@
-import cpu_defines::*;
-import cpu_types::*;
-
-module ifu (
+module ifu 
+    import cpu_defines::*;
+    import cpu_types::*;
+(
     input logic             clk,
     input logic             resetn,
+
+    input logic             resetn_q_i,
 
     input logic [63:0]      pc_i,
     output logic            ifu_ready_o,
@@ -146,6 +148,7 @@ module ifu (
     i_cache u_i_cache (
         .clk                (clk),
         .resetn             (resetn),
+        .resetn_q_i         (resetn_q_i),
         .ic_ready_o         (ic_ready),
         .pc_i               (pc_i),
         .ifu_ready_i        (ifu_ready),

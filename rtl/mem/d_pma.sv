@@ -1,6 +1,6 @@
-import cpu_defines::*;
-
-module d_pma (
+module d_pma 
+    import cpu_defines::*;
+(
     input logic         lsu_valid_i,
 
     input logic [63:0]  lsu_addr_i,
@@ -17,7 +17,7 @@ module d_pma (
     logic               qspi_sel;
     logic               gpio_sel;
     logic               dram_sel;
-    logic               brom_valid
+    logic               brom_valid;
     logic               clint_valid;
     logic               plic_valid;
     logic               uart_valid;

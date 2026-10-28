@@ -281,7 +281,7 @@ module csr
                 MCYCLE_REG      <=  MCYCLE_REG + 64'd1;
 
             if (!write_minstret && !MCOUNTINHIBIT_REG[2])
-                MINSTRET_REG    <=  MINSTRET_REG + retire_i;
+                MINSTRET_REG    <=  MINSTRET_REG + 64'(retire_i);
         end
     end
 
@@ -349,8 +349,10 @@ module csr
         write_mcycle        =   csr_wr_en_i && (csr_addr_i == MCYCLE_ADDR);
         write_minstret      =   csr_wr_en_i && (csr_addr_i == MINSTRET_ADDR);
 
-        PMPCFG0_WMASK       =   pmpcfg_wmask(PMPCFG_REG[7:0]);
-        PMPCFG2_WMASK       =   pmpcfg_wmask(PMPCFG_REG[15:8]);
+        for (int i=0; i<8; i++) begin
+            PMPCFG0_WMASK[i*8 +: 8] = pmpcfg_wmask(PMPCFG_REG[i]);
+            PMPCFG2_WMASK[i*8 +: 8] = pmpcfg_wmask(PMPCFG_REG[i]);
+        end
 
         for (int i=0; i<16; i++) begin
             PMPADDR_WMASK[i] = pmpaddr_wmask(PMPCFG_REG[i], (i<15 ? PMPCFG_REG[i+1] : 8'b0));
@@ -358,9 +360,9 @@ module csr
 
         case (csr_addr_i)
             SSTATUS_ADDR: csr_data_o        =   MSTATUS_REG & SSTATUS_RDMASK;
-            SIE_ADDR: csr_data_o            =   MIE_REG & MIDELEG_REG;
+            SIE_ADDR: csr_data_o            =   {52'h0, MIE_REG & MIDELEG_REG};
             STVEC_ADDR: csr_data_o          =   STVEC_REG;
-            SCOUNTEREN_ADDR: csr_data_o     =   SCOUNTEREN_REG;
+            SCOUNTEREN_ADDR: csr_data_o     =   {32'h0, SCOUNTEREN_REG};
             SENVCFG_ADDR: csr_data_o        =   {63'h0, SENVCFG_REG};
             SSCRATCH_ADDR: csr_data_o       =   SSCRATCH_REG;
             SEPC_ADDR: csr_data_o           =   SEPC_REG;
@@ -370,7 +372,7 @@ module csr
             MSTATUS_ADDR: csr_data_o        =   MSTATUS_REG;
             MISA_ADDR: csr_data_o           =   MISA_RO;
             MEDELEG_ADDR: csr_data_o        =   {48'h0, MEDELEG_REG};
-            MIDELEG_ADDR: csr_data_o        =   {48'h0, MIDELEG_REG};
+            MIDELEG_ADDR: csr_data_o        =   {52'h0, MIDELEG_REG};
             MIE_ADDR: csr_data_o            =   {52'h0, MIE_REG};
             MTVEC_ADDR: csr_data_o          =   MTVEC_REG;
             MCOUNTEREN_ADDR: csr_data_o     =   {32'h0, MCOUNTEREN_REG};

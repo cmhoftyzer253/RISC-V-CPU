@@ -26,7 +26,7 @@ module amo_alu
             AMOMIN: amo_res_o       =   ($signed(lsu_ld_eff) <= $signed(rs2_data_eff)) ? lsu_ld_eff : rs2_data_eff;
             AMOMAX: amo_res_o       =   ($signed(lsu_ld_eff) <= $signed(rs2_data_eff)) ? rs2_data_eff : lsu_ld_eff;
             AMOMINU: amo_res_o      =   (lsu_ld_eff <= rs2_data_eff) ? lsu_ld_eff : rs2_data_eff;
-            AMOMAXU: amo_res_o      =   (lsu_ld_eff <= rs2_data_eff) ? rs2_ld_eff : lsu_ld_eff;
+            AMOMAXU: amo_res_o      =   (lsu_ld_eff <= rs2_data_eff) ? rs2_data_eff : lsu_ld_eff;
             default: amo_res_o      =   rs2_data_eff;
         endcase
     end

@@ -84,7 +84,7 @@ module privileged (
     logic [11:0]            mip;
     logic [11:0]            mie;
     logic [11:0]            mideleg;
-    logic [11:0]            medeleg;
+    logic [15:0]            medeleg;
 
     csr u_csr (
         .clk                (clk),

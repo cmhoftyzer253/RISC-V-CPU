@@ -91,7 +91,7 @@ module trap_control
         exc_xepc        =   pcM_i;
         exc_xtval       =   exc_xtvalM_i;
 
-        exc_deleg       =   (priv_level_i != M_MODE) && medeleg_i[exc_codeM_i];
+        exc_deleg       =   (priv_level_i != M_MODE) && medeleg_i[exc_codeM_i[3:0]];
     end
 
     always_comb begin : output_sel

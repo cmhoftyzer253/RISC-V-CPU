@@ -193,22 +193,22 @@ module core (
     logic [63:0]            pmpcfg0;
     logic [63:0]            pmpcfg2;
 
-    logic [63:0]            pmpaddr0;
-    logic [63:0]            pmpaddr1;
-    logic [63:0]            pmpaddr2;
-    logic [63:0]            pmpaddr3;
-    logic [63:0]            pmpaddr4;
-    logic [63:0]            pmpaddr5;
-    logic [63:0]            pmpaddr6;
-    logic [63:0]            pmpaddr7;
-    logic [63:0]            pmpaddr8;
-    logic [63:0]            pmpaddr9;
-    logic [63:0]            pmpaddr10;
-    logic [63:0]            pmpaddr11;
-    logic [63:0]            pmpaddr12;
-    logic [63:0]            pmpaddr13;
-    logic [63:0]            pmpaddr14;
-    logic [63:0]            pmpaddr15;
+    logic [53:0]            pmpaddr0;
+    logic [53:0]            pmpaddr1;
+    logic [53:0]            pmpaddr2;
+    logic [53:0]            pmpaddr3;
+    logic [53:0]            pmpaddr4;
+    logic [53:0]            pmpaddr5;
+    logic [53:0]            pmpaddr6;
+    logic [53:0]            pmpaddr7;
+    logic [53:0]            pmpaddr8;
+    logic [53:0]            pmpaddr9;
+    logic [53:0]            pmpaddr10;
+    logic [53:0]            pmpaddr11;
+    logic [53:0]            pmpaddr12;
+    logic [53:0]            pmpaddr13;
+    logic [53:0]            pmpaddr14;
+    logic [53:0]            pmpaddr15;
 
     logic [4:0]             rdW;
     logic                   rf_wr_enW;

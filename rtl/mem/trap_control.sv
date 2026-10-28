@@ -1,4 +1,6 @@
-module trap_control (
+module trap_control 
+    import cpu_defines::*;
+(
     //csr interface
     input logic [1:0]       priv_level_i,
 

@@ -34,12 +34,12 @@ module d_pma
         gpio_sel            =   &((lsu_addr_i ~^ GPIO_ADDR_BASE)  | GPIO_PMA_ADDR_MASK);
         dram_sel            =   &((lsu_addr_i ~^ DRAM_ADDR_BASE)  | DRAM_PMA_ADDR_MASK);
 
-        brom_valid          =   brom_sel && (lsu_ls_i == LOAD);
-        clint_valid         =   clint_sel && ((lsu_ls_i == LOAD) || (lsu_ls_i == STORE)) && ((lsu_size_i == WORD) || (lsu_size_i == DOUBLE_WORD));
-        plic_valid          =   plic_sel && ((lsu_ls_i == LOAD) || (lsu_ls_i == STORE)) && (lsu_size_i == WORD);
-        uart_valid          =   uart_sel && ((lsu_ls_i == LOAD) || (lsu_ls_i == STORE)) && (lsu_size_i == WORD);
-        qspi_valid          =   qspi_sel && ((lsu_ls_i == LOAD) || (lsu_ls_i == STORE)) && (lsu_size_i == WORD);
-        gpio_valid          =   gpio_sel && ((lsu_ls_i == LOAD) || (lsu_ls_i == STORE)) && (lsu_size_i == WORD);
+        brom_valid          =   brom_sel && (lsu_ls_i == LSU_LOAD);
+        clint_valid         =   clint_sel && ((lsu_ls_i == LSU_LOAD) || (lsu_ls_i == LSU_STORE)) && ((lsu_size_i == WORD) || (lsu_size_i == DOUBLE_WORD));
+        plic_valid          =   plic_sel && ((lsu_ls_i == LSU_LOAD) || (lsu_ls_i == LSU_STORE)) && (lsu_size_i == WORD);
+        uart_valid          =   uart_sel && ((lsu_ls_i == LSU_LOAD) || (lsu_ls_i == LSU_STORE)) && (lsu_size_i == WORD);
+        qspi_valid          =   qspi_sel && ((lsu_ls_i == LSU_LOAD) || (lsu_ls_i == LSU_STORE)) && (lsu_size_i == WORD);
+        gpio_valid          =   gpio_sel && ((lsu_ls_i == LSU_LOAD) || (lsu_ls_i == LSU_STORE)) && (lsu_size_i == WORD);
         dram_valid          =   dram_sel;
 
         pma_cacheable_o     =   lsu_valid_i && (brom_valid || dram_valid);

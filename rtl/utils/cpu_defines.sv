@@ -43,7 +43,7 @@ package cpu_defines;
     localparam logic [63:0] GPIO_ADDR_BASE          =   64'h0000_0000_1006_0000;
     localparam logic [63:0] GPIO_PMA_ADDR_MASK      =   64'h0000_0000_0000_0FFF;
 
-    localparam logic [63:0] DRAM_ADDR_LOW           =   64'h0000_0000_8000_0000;
+    localparam logic [63:0] DRAM_ADDR_BASE          =   64'h0000_0000_8000_0000;
     localparam logic [63:0] DRAM_PMA_ADDR_MASK      =   64'h0000_0000_1FFF_FFFF;
 
     //opcodes
@@ -54,6 +54,7 @@ package cpu_defines;
     localparam logic [6:0] I_TYPE_2                 =   7'h67;
     localparam logic [6:0] I_TYPE_3                 =   7'h1B;
     localparam logic [6:0] S_TYPE                   =   7'h23;
+    localparam logic [6:0] B_TYPE                   =   7'h63;
     localparam logic [6:0] U_TYPE_0                 =   7'h37;
     localparam logic [6:0] U_TYPE_1                 =   7'h17;
     localparam logic [6:0] J_TYPE                   =   7'h6F;

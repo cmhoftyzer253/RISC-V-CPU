@@ -624,7 +624,6 @@ module core (
         .mret_i                 (mretM),                 
         .sret_i                 (sretM),
         .validM_i               (validM),
-        .committedM_i           (lsu_committed),
         .retire_i               (retire),
         .exc_validM_i           (exc_valid),                 
         .exc_codeM_i            (exc_code),                

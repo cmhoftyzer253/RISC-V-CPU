@@ -5,7 +5,7 @@ package cpu_utils;
         napot_mask[0] = 1'b1;
 
         for (int k=1; k<54; k++) begin
-            napot_mask[k] = addr[k-1] && napot_mask[j-1];
+            napot_mask[k] = addr[k-1] && napot_mask[k-1];
         end
 
         return napot_mask;
@@ -44,6 +44,8 @@ package cpu_utils;
     endfunction : pmpcfg_wmask
 
     function automatic logic [53:0] pmpaddr_wmask (input logic [7:0] pmpcfg, input logic [7:0] pmpcfg_above);
+        logic lock_above;
+
         lock_above      =   pmpcfg_above[7] && (pmpcfg_above[4:3] == TOR);
         pmpaddr_wmask   =   (pmpcfg[7] || lock_above) ? 54'h0 : {54{1'b1}};
     endfunction : pmpaddr_wmask

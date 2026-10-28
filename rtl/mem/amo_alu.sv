@@ -11,14 +11,14 @@ module amo_alu
 );
 
     logic [63:0]            lsu_ld_eff;
-    logic [63:0]            rs2_ld_eff;
+    logic [63:0]            rs2_data_eff;
 
     always_comb begin
         lsu_ld_eff        =   amo_word_op_i ? {{32{lsu_ld_i[31]}}, lsu_ld_i[31:0]} : lsu_ld_i;
         rs2_data_eff      =   amo_word_op_i ? {{32{rs2_data_i[31]}}, rs2_data_i[31:0]} : rs2_data_i;
 
         case (atomic_op_i)
-            AMOSWAP: amo_res_o      =   rs2_ld_i;
+            AMOSWAP: amo_res_o      =   rs2_data_i;
             AMOADD: amo_res_o       =   lsu_ld_i + rs2_data_i;
             AMOXOR: amo_res_o       =   lsu_ld_i ^ rs2_data_i;
             AMOAND: amo_res_o       =   lsu_ld_i & rs2_data_i;
@@ -26,7 +26,7 @@ module amo_alu
             AMOMIN: amo_res_o       =   ($signed(lsu_ld_eff) <= $signed(rs2_data_eff)) ? lsu_ld_eff : rs2_data_eff;
             AMOMAX: amo_res_o       =   ($signed(lsu_ld_eff) <= $signed(rs2_data_eff)) ? rs2_data_eff : lsu_ld_eff;
             AMOMINU: amo_res_o      =   (lsu_ld_eff <= rs2_data_eff) ? lsu_ld_eff : rs2_data_eff;
-            AMOMAXU: amo_res_o      =   (lsu_ld_eff <= rs2_data_eff) ? rs2_ld_eff : lsu_data_eff;
+            AMOMAXU: amo_res_o      =   (lsu_ld_eff <= rs2_data_eff) ? rs2_ld_eff : lsu_ld_eff;
             default: amo_res_o      =   rs2_data_eff;
         endcase
     end

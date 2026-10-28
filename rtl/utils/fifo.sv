@@ -16,7 +16,7 @@ module fifo #(
     output logic [$clog2(DEPTH):0]  count_o
 );
 
-    localparam PTR_W = $clog2(DEPTH) + 1;
+    localparam int PTR_W = $clog2(DEPTH) + 1;
 
     logic [WIDTH-1:0] fifo_ff [DEPTH-1:0];
     logic [PTR_W-1:0] rd_ptr;

@@ -10,7 +10,6 @@ module csr_addr_decode
     input logic [31:0]  mcounteren_i,
     input logic [31:0]  scounteren_i,
     input logic         mstatus_tvm_i,
-    input logic         menvcfg_stce_i,
 
     output logic        csr_addr_valid_o
 );

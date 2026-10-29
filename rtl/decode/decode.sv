@@ -8,9 +8,7 @@ module decode
     input logic [31:0]      mcounteren_i,
     input logic [31:0]      scounteren_i,
     input logic             mstatus_tsr_i,
-    input logic             mstatus_tw_i,
     input logic             mstatus_tvm_i,
-    input logic             menvcfg_stce_i,
 
     output logic [4:0]      rs1_o,
     output logic [4:0]      rs2_o,
@@ -25,7 +23,6 @@ module decode
     output logic            rs1_used_o,
     output logic            rs2_used_o,     
     output logic            word_op_o,
-    output logic            alu_en_o,
     output logic            md_en_o,
     output logic [3:0]      exu_op_o,
     output logic [2:0]      branch_op_o,
@@ -82,7 +79,6 @@ module decode
         .mcounteren_i       (mcounteren_i),
         .scounteren_i       (scounteren_i),
         .mstatus_tvm_i      (mstatus_tvm_i),
-        .menvcfg_stce_i     (menvcfg_stce_i),
         .csr_addr_valid_o   (csr_addr_valid)
     );
 
@@ -227,7 +223,6 @@ module decode
             r_type_controls.exu_op  =   {1'b0, funct3};
             r_type_controls.rf_sel  =   RF_MDU_SRC;
         end else begin
-            r_type_controls.alu_en  =   1'b1;
             r_type_controls.exu_op  =   {funct7[5], funct3};
         end
     end
@@ -237,7 +232,6 @@ module decode
 
         i_type_controls.opb_sel     =   IMM;
         i_type_controls.rs1_used    =   1'b1;
-        i_type_controls.alu_en      =   1'b1;
         i_type_controls.rf_wr_en    =   1'b1;
 
         if (opcode == I_TYPE_0) begin
@@ -285,7 +279,6 @@ module decode
         s_type_controls.opb_sel     =   IMM;
         s_type_controls.rs1_used    =   1'b1;
         s_type_controls.rs2_used    =   1'b1;
-        s_type_controls.alu_en      =   1'b1;
         s_type_controls.lsu_en      =   1'b1;
         s_type_controls.lsu_ls      =   LSU_STORE;
         s_type_controls.lsu_size    =   funct3[1:0];
@@ -300,7 +293,6 @@ module decode
         b_type_controls.opb_sel     =   IMM;
         b_type_controls.rs1_used    =   1'b1;
         b_type_controls.rs2_used    =   1'b1;
-        b_type_controls.alu_en      =   1'b1;
         b_type_controls.branch_op   =   funct3;
     end
 
@@ -309,7 +301,6 @@ module decode
         u_type_controls                     =   '0;
 
         u_type_controls.opb_sel             =   IMM;
-        u_type_controls.alu_en              =   1'b1;
         u_type_controls.rf_wr_en            =   1'b1;
         case (opcode)
             LUI: u_type_controls.opa_sel    =   ZERO;
@@ -324,7 +315,6 @@ module decode
         j_type_controls.pc_sel      =   ALU_RES;
         j_type_controls.opa_sel     =   PC;
         j_type_controls.opb_sel     =   IMM;
-        j_type_controls.alu_en      =   1'b1;
         j_type_controls.rf_wr_en    =   1'b1;
         j_type_controls.rf_sel      =   RF_PC_INCR_SRC;
     end
@@ -336,7 +326,6 @@ module decode
         a_type_controls.opb_sel     =   IMM;
         a_type_controls.rs1_used    =   1'b1;
         a_type_controls.rs2_used    =   (funct7[6:2] != LR);
-        a_type_controls.alu_en      =   1'b1;
         a_type_controls.lsu_en      =   1'b1;
         a_type_controls.lsu_ls      =   LSU_ATOMIC;
         a_type_controls.lsu_size    =   (funct3 == 3'b011) ? DOUBLE_WORD : WORD;
@@ -428,7 +417,6 @@ module decode
     assign rs1_used_o       =   controls.rs1_used;
     assign rs2_used_o       =   controls.rs2_used;
     assign word_op_o        =   controls.word_op;
-    assign alu_en_o         =   controls.alu_en;
     assign md_en_o          =   controls.md_en;
     assign exu_op_o         =   controls.exu_op;
     assign branch_op_o      =   controls.branch_op;

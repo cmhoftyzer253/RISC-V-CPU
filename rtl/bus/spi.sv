@@ -169,9 +169,9 @@ module spi
                 SPI_CSID_OFFSET: CSID_REG           <=  hwdata_i[1:0];
                 SPI_CSDEF_OFFSET: CSDEF_REG         <=  hwdata_i[3:0];
                 SPI_CSMODE_OFFSET: CSMODE_REG       <=  hwdata_i[1:0];
-                SPI_DELAY0_OFFSET: DELAY0_REG       <=  hwdata_i[23:0] & DELAY0_WMASK;
-                SPI_DELAY1_OFFSET: DELAY1_REG       <=  hwdata_i[23:0] & DELAY1_WMASK;
-                SPI_FMT_OFFSET: FMT_REG             <=  hwdata_i[19:0] & FMT_WMASK;
+                SPI_DELAY0_OFFSET: DELAY0_REG       <=  hwdata_i[23:0] & SPI_DELAY0_WMASK;
+                SPI_DELAY1_OFFSET: DELAY1_REG       <=  hwdata_i[23:0] & SPI_DELAY1_WMASK;
+                SPI_FMT_OFFSET: FMT_REG             <=  hwdata_i[19:0] & SPI_FMT_WMASK;
                 SPI_TXMARK_OFFSET: TXMARK_REG       <=  hwdata_i[2:0];
                 SPI_RXMARK_OFFSET: RXMARK_REG       <=  hwdata_i[2:0];
                 SPI_IE_OFFSET: IE_REG               <=  hwdata_i[1:0];

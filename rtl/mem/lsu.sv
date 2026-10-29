@@ -104,7 +104,7 @@ module lsu
 
     logic [1:0]             sizeM;
     logic                   seM;
-    logic [3:0]             atomic_opM;
+    logic [4:0]             atomic_opM;
     logic [1:0]             lsM;
 
     logic                   dc_ready;
@@ -346,7 +346,7 @@ module lsu
             sizeM           <=  2'b0;
             seM             <=  1'b0;
             lsM             <=  2'b0;
-            atomic_opM      <=  4'b0;
+            atomic_opM      <=  5'b0;
 
             amo_load        <=  1'b0;
             amo_load_data   <=  64'h0;

@@ -81,7 +81,6 @@ module core (
     logic                   rs2_usedD;
 
     logic                   word_opD;
-    logic                   alu_enD;
     logic                   md_enD;
 
     logic [3:0]             exu_opD;
@@ -187,8 +186,6 @@ module core (
     logic                   mstatus_tsr;
     logic                   mstatus_sbe;
     logic                   mstatus_mbe;
-
-    logic                   menvcfg_stce;
 
     logic [63:0]            pmpcfg0;
     logic [63:0]            pmpcfg2;
@@ -314,7 +311,6 @@ module core (
         .rs1_usedD_i            (rs1_usedD),
         .rs2_usedD_i            (rs2_usedD),
         .word_opD_i             (word_opD),
-        .alu_enD_i              (alu_enD),
         .md_enD_i               (md_enD),
         .exu_opD_i              (exu_opD),
         .branch_opD_i           (branch_opD),
@@ -454,9 +450,7 @@ module core (
         .mcounteren_i           (mcounteren),
         .scounteren_i           (scounteren),
         .mstatus_tsr_i          (mstatus_tsr),
-        .mstatus_tw_i           (mstatus_tw),
         .mstatus_tvm_i          (mstatus_tvm),
-        .menvcfg_stce_i         (menvcfg_stce),
         .rs1_o                  (rs1D),
         .rs2_o                  (rs2D),
         .rd_o                   (rdD),
@@ -468,7 +462,6 @@ module core (
         .rs1_used_o             (rs1_usedD),
         .rs2_used_o             (rs2_usedD),
         .word_op_o              (word_opD),
-        .alu_en_o               (alu_enD),
         .md_en_o                (md_enD),
         .exu_op_o               (exu_opD),
         .branch_op_o            (branch_opD),
@@ -651,7 +644,6 @@ module core (
         .mstatus_tsr_o          (mstatus_tsr),
         .mstatus_sbe_o          (mstatus_sbe),
         .mstatus_mbe_o          (mstatus_mbe),
-        .menvcfg_stce_o         (menvcfg_stce),
         .pmpcfg0_o              (pmpcfg0),
         .pmpcfg2_o              (pmpcfg2),
         .pmpaddr0_o             (pmpaddr0),

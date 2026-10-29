@@ -66,8 +66,6 @@ module ifu
     input logic [3:0]       rid_i,
     output logic            rready_o
 );
-
-    logic [63:0]    ifu_pc;
     
     logic           ifu_ready;
     logic           uncacheable;
@@ -92,7 +90,6 @@ module ifu
     logic [63:0]    pcF;
 
     logic           ic_exc_valid;
-    logic [4:0]     ic_exc_code;
 
     logic [63:0]    ic_araddr;
     logic [7:0]     ic_arlen;
@@ -176,8 +173,7 @@ module ifu
         .stop_fillline_i    (stop_fillline),
         .invalidate_i       (ic_invalidate_i),
         .invalidate_done_o  (ic_invalidate_done_o),
-        .exc_valid_o        (ic_exc_valid),
-        .exc_code_o         (ic_exc_code)
+        .exc_valid_o        (ic_exc_valid)
     );
 
     always_ff @(posedge clk) begin

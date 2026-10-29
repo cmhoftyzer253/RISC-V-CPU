@@ -77,11 +77,9 @@ module d_cache
     output logic            exc_valid_o
 );
 
-    logic [51:0]            tag;
     logic [51:0]            tagM;
     logic [5:0]             index;
     logic [5:0]             indexM;
-    logic [2:0]             offset;
     logic [2:0]             offsetM;
     logic [8:0]             data_index;
     logic [8:0]             data_indexM;
@@ -413,10 +411,8 @@ module d_cache
 
     //load/store logic 
     always_comb begin
-        tag                 =   dc_addr_i[63:12];
         index               =   dc_addr_i[11:6];
         data_index          =   dc_addr_i[11:3];
-        offset              =   dc_addr_i[5:3];
 
         tagM                =   addrM[63:12];
         indexM              =   addrM[11:6];

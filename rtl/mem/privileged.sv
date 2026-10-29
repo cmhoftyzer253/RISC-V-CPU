@@ -45,7 +45,6 @@ module privileged (
     output logic            mstatus_tsr_o,
     output logic            mstatus_sbe_o,
     output logic            mstatus_mbe_o,
-    output logic            menvcfg_stce_o,
 
     output logic [63:0]     pmpcfg0_o,
     output logic [63:0]     pmpcfg2_o,
@@ -127,7 +126,6 @@ module privileged (
         .mstatus_tsr_o      (mstatus_tsr_o),
         .mstatus_sbe_o      (mstatus_sbe_o),
         .mstatus_mbe_o      (mstatus_mbe_o),
-        .menvcfg_stce_o     (menvcfg_stce_o),
         .pmpcfg0_o          (pmpcfg0_o),
         .pmpcfg2_o          (pmpcfg2_o),
         .pmpaddr0_o         (pmpaddr0_o),

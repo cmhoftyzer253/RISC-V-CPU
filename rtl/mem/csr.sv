@@ -59,7 +59,6 @@ module csr
     output logic            mstatus_tsr_o,
     output logic            mstatus_sbe_o,
     output logic            mstatus_mbe_o,
-    output logic            menvcfg_stce_o,
 
     output logic [63:0]     pmpcfg0_o,
     output logic [63:0]     pmpcfg2_o,
@@ -314,8 +313,6 @@ module csr
         mstatus_mbe_o       =   MSTATUS_REG[37];
         mstatus_sbe_o       =   MSTATUS_REG[36];
         mstatus_ube_o       =   MSTATUS_REG[6];
-        
-        menvcfg_stce_o      =   MENVCFG_REG[63];
 
         pmpcfg0_o           =   PMPCFG_REG[7:0];
         pmpcfg2_o           =   PMPCFG_REG[15:8];

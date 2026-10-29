@@ -8,7 +8,6 @@ package cpu_types;
         logic           rs1_used;
         logic           rs2_used;
         logic           word_op;
-        logic           alu_en;
         logic           md_en;
         logic [3:0]     exu_op;
         logic [2:0]     branch_op;

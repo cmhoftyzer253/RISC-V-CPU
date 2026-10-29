@@ -34,7 +34,6 @@ module pipeline
     input logic             rs1_usedD_i,
     input logic             rs2_usedD_i,
     input logic             word_opD_i,
-    input logic             alu_enD_i,
     input logic             md_enD_i,
     input logic [3:0]       exu_opD_i,
     input logic [2:0]       branch_opD_i,
@@ -212,8 +211,6 @@ module pipeline
 
     logic [63:0]            immE;
 
-    logic [4:0]             rs1E;
-    logic [4:0]             rs2E;
     logic [4:0]             rdE;
 
     logic [11:0]            csr_addrE;
@@ -222,11 +219,7 @@ module pipeline
     logic [1:0]             opa_selE;
     logic                   opb_selE;
 
-    logic                   rs1_usedE;
-    logic                   rs2_usedE;
-
     logic                   word_opE;
-    logic                   alu_enE;
     logic                   md_enE;
 
     logic [3:0]             exu_opE;
@@ -264,16 +257,12 @@ module pipeline
 
     logic [4:0]             rdM;
 
-    logic [2:0]             pc_selM;
-
     logic [11:0]            csr_addrM;
     logic                   csr_wr_enM;
     logic [1:0]             csr_opM;
 
     logic                   mctrl_enM;
     logic [1:0]             mctrl_opM;
-
-    logic                   lsu_enM;
 
     logic                   rf_wr_enM;
     logic [2:0]             rf_selM;
@@ -462,18 +451,13 @@ module pipeline
             instrE      <=  32'h0;
             pcE         <=  64'h0;
             pc_incrE    <=  64'h0;
-            rs1E        <=  5'd0;
-            rs2E        <=  5'd0;
             rdE         <=  5'd0;
             immE        <=  64'h0;
             csr_addrE   <=  12'h0;
             pc_selE     <=  3'b0;
             opa_selE    <=  2'b0;
             opb_selE    <=  1'b0;
-            rs1_usedE   <=  1'b0;
-            rs2_usedE   <=  1'b0;
             word_opE    <=  1'b0;
-            alu_enE     <=  1'b0;
             md_enE      <=  1'b0;
             exu_opE     <=  4'b0;
             branch_opE  <=  3'b0;
@@ -497,18 +481,13 @@ module pipeline
             instrE      <=  instrD;
             pcE         <=  pcD;
             pc_incrE    <=  pc_incrD;
-            rs1E        <=  rs1D_i;
-            rs2E        <=  rs2D_i;
             rdE         <=  rdD_i;
             immE        <=  immD_i;
             csr_addrE   <=  csr_addrD_i;
             pc_selE     <=  pc_selD_i;
             opa_selE    <=  opa_selD_i;
             opb_selE    <=  opb_selD_i;
-            rs1_usedE   <=  rs1_usedD_i;
-            rs2_usedE   <=  rs2_usedD_i;
             word_opE    <=  word_opD_i;
-            alu_enE     <=  alu_enD_i;
             md_enE      <=  md_enD_i;
             exu_opE     <=  exu_opD_i;
             branch_opE  <=  branch_opD_i;
@@ -537,7 +516,7 @@ module pipeline
         end else begin
             case (exc_codeD_i)
                 ILLEGAL_INSTR: nxt_exc_xtvalE   =   {32'h0, instrD};
-                EBREAK: nxt_exc_xtvalE          =   pcD;
+                EBREAK_EXC: nxt_exc_xtvalE      =   pcD;
                 default: nxt_exc_xtvalE         =   64'h0;
             endcase
         end
@@ -605,12 +584,10 @@ module pipeline
             nxt_pcM         <=  64'h0;
             rdM             <=  5'd0;
             csr_addrM       <=  12'h0;
-            pc_selM         <=  3'b0;
             csr_wr_enM      <=  1'b0;
             csr_opM         <=  2'b0;
             mctrl_enM       <=  1'b0;
             mctrl_opM       <=  2'b0;
-            lsu_enM         <=  1'b0;
             rf_wr_enM       <=  1'b0;
             rf_selM         <=  3'b0;            
             exu_resM        <=  64'h0;
@@ -624,12 +601,10 @@ module pipeline
             nxt_pcM         <=  redirect_bjE ? alu_resE_i : pc_incrE;
             rdM             <=  rdE;
             csr_addrM       <=  csr_addrE;
-            pc_selM         <=  pc_selE;
             csr_wr_enM      <=  csr_wr_enE;
             csr_opM         <=  csr_opE;
             mctrl_enM       <=  mctrl_enE;
             mctrl_opM       <=  mctrl_opE;
-            lsu_enM         <=  lsu_enE;
             rf_wr_enM       <=  rf_wr_enE;
             rf_selM         <=  rf_selE;
             exu_resM        <=  md_enE ? mdu_resE_i : alu_resE_i;
@@ -668,7 +643,7 @@ module pipeline
 
         pcM_o           =   pcM;
         nxt_pcM_o       =   mretM ? mepc_i : (sretM ? sepc_i : nxt_pcM);
-        exc_xtvalM_o    =   exc_validM ? exc_xtvalM : (exc_validM_i ? addrM_i : instrM);
+        exc_xtvalM_o    =   exc_validM ? exc_xtvalM : (exc_validM_i ? addrM_i : {32'h0, instrM});
 
         mretM_o         =   mretM;
         sretM_o         =   sretM;

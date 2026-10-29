@@ -106,9 +106,9 @@ module arbitrate
     output logic            bready_o
 );
 
-    logic [2:0]             nxt_grant;
-    logic [2:0]             grant_q;
-    logic [2:0]             grant;
+    logic [1:0]             nxt_grant;
+    logic [1:0]             grant_q;
+    logic [1:0]             grant;
 
     logic                   load_done;
 
@@ -207,7 +207,7 @@ module arbitrate
                 arlen_o         =   8'b0;
                 arsize_o        =   3'b0;
                 arburst_o       =   2'b0;
-                arlock_o        =   4'b0;
+                arlock_o        =   1'b0;
                 arid_o          =   4'b0;
                 arcache_o       =   4'b0;
                 arprot_o        =   3'b0;

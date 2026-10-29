@@ -42,15 +42,12 @@ module i_cache
     input logic             invalidate_i,
     output logic            invalidate_done_o,
 
-    output logic            exc_valid_o,
-    output logic [4:0]      exc_code_o
+    output logic            exc_valid_o
 );
 
-    logic [51:0]            tag;
     logic [51:0]            tagF;
     logic [5:0]             index;
     logic [5:0]             indexF;
-    logic [3:0]             offset;
     logic [3:0]             offsetF;
     logic [8:0]             data_index;
     logic                   data_sel;
@@ -271,10 +268,8 @@ module i_cache
 
     //load/store logic 
     always_comb begin
-        tag                 =   pc_i[63:12];
         index               =   pc_i[11:6];
         data_index          =   pc_i[11:3];
-        offset              =   pc_i[5:2];
 
         tagF                =   pcF[63:12];
         indexF              =   pcF[11:6];
@@ -361,7 +356,6 @@ module i_cache
         invalidate_done_o   =   1'b0;
 
         exc_valid_o         =   1'b0;
-        exc_code_o          =   5'd0;
 
         flush               =   flush_ff || flush_i;
         exc                 =   rvalid_i && ((rresp_i != AXI_OKAY) || (rid_i != ID_IFU) || (rlast_i ^ (beat_cnt == 3'd7)));
@@ -418,7 +412,6 @@ module i_cache
                     instr_valid_o       =   1'b1;
 
                     exc_valid_o         =   exc_ff;
-                    exc_code_o          =   I_ACC_FAULT;
                 end
             end
         endcase

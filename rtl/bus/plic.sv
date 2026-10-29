@@ -211,13 +211,13 @@ module plic
         s_complete                  =   '0;
 
         for (int i=1; i<4; i++) begin
-            m_claim[i] = hread_en && (haddr_d == M_CLAIM_COMPLETE) && (m_claim_complete == i[1:0]);
-            s_claim[i] = hread_en && (haddr_d == S_CLAIM_COMPLETE) && (s_claim_complete == i[1:0]);
+            m_claim[i] = hread_en && (haddr_d == PLIC_M_CLAIM_COMPLETE) && (m_claim_complete == i[1:0]);
+            s_claim[i] = hread_en && (haddr_d == PLIC_S_CLAIM_COMPLETE) && (s_claim_complete == i[1:0]);
         end
 
         for (int i=1; i<4; i++) begin
-            m_complete[i] = hwrite_en && (haddr_d == M_CLAIM_COMPLETE) && (hwdata_i == i[1:0]);
-            s_complete[i] = hwrite_en && (haddr_d == S_CLAIM_COMPLETE) && (hwdata_i == i[1:0]);
+            m_complete[i] = hwrite_en && (haddr_d == PLIC_M_CLAIM_COMPLETE) && (hwdata_i == i[1:0]);
+            s_complete[i] = hwrite_en && (haddr_d == PLIC_S_CLAIM_COMPLETE) && (hwdata_i == i[1:0]);
         end
 
         claim                       =   m_claim | s_claim;

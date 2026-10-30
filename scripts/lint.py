@@ -31,7 +31,7 @@ def parse_args():
 
     parser.add_argument("target", nargs="?", default="core", choices=sorted(TARGETS), help="override default lint target")
     parser.add_argument("--top", help="override target default module top module")
-    parser.add_argument("--strict", action="strict linting")
+    parser.add_argument("--strict", action="store_true", help="strict linting")
     parser.add_argument("--verilator", default="verilator", help="override default verilator executable")
     parser.add_argument("extra", nargs="*", help="extra verilator arguments")
 

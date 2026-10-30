@@ -1,10 +1,10 @@
 `verilator_config
 
 lint_off -rule EOFNEWLINE
-line_off -rule PINCONNECTEMPTY
-line_off -rule UNUSEDPARAM
+lint_off -rule PINCONNECTEMPTY
+lint_off -rule UNUSEDPARAM
 lint_off -rule CASEINCOMPLETE
 
-lintoff -rule UNUSEDSIGNAL -file "*" -match "*Bits of signal are not used*"
-lintoff -rule UNUSEDSIGNAL -file "*/d_cache.sv" -match "*'bresp_i'*"
-lintoff -rule UNUSEDSIGNAL -file "*/d_cache.sv" -match "*'bid_i'*"
+lint_off -rule UNUSEDSIGNAL -file "*" -match "*Bits of signal are not used*"
+lint_off -rule UNUSEDSIGNAL -file "*/d_cache.sv" -match "*'bresp_i'*"
+lint_off -rule UNUSEDSIGNAL -file "*/d_cache.sv" -match "*'bid_i'*"

@@ -252,7 +252,7 @@ module d_cache
             valid           <=  '0;
             dirty           <=  '0;
 
-            PLRU_tree       <=  '0;
+            PLRU_tree       <=  '{default: '0};
 
             state           <=  DC_RUN;
         end else begin

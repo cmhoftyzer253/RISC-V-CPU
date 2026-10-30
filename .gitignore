@@ -1,0 +1,5 @@
+# Verilator build output
+obj_dir/
+
+# Python
+__pycache__/

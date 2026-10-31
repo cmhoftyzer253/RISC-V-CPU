@@ -10,8 +10,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 TARGETS = {
     "core": {
-        "filelist": "rtl/core.f",
+        "filelist": "rtl/rtl.f",
         "top": "core",
+    },
+    "bus": {
+        "filelist": "rtl/rtl.f",
+        "top": "bus",
     },
 }
 
@@ -19,6 +23,11 @@ INCLUDE_DIRS = ["rtl/utils"]
 
 VERILATOR_FILES = [
     "sim/verilator/lint.vlt",
+    "sim/verilator/axi_ahb_bridge.sv",
+    "sim/verilator/axi_cdc.sv",
+    "sim/verilator/boot_rom.sv",
+    "sim/verilator/clk_gen.sv",
+    "sim/verilator/ddr_mig_controller.sv",
     "sim/verilator/xpm_memory_sdpram.sv",
 ]
 
@@ -27,10 +36,10 @@ TESTED_VERSION = "5.034"
 MESSAGE_RE = re.compile(r"^%(Error|Warning)(?:-(\w+))?:")
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Lint the RTL with Verilator")
+    parser = argparse.ArgumentParser(description="Lint RTL with Verilator")
 
     parser.add_argument("target", nargs="?", default="core", choices=sorted(TARGETS), help="override default lint target")
-    parser.add_argument("--top", help="override target default module top module")
+    parser.add_argument("--top", help="override target default module top")
     parser.add_argument("--strict", action="store_true", help="strict linting")
     parser.add_argument("--verilator", default="verilator", help="override default verilator executable")
     parser.add_argument("extra", nargs="*", help="extra verilator arguments")

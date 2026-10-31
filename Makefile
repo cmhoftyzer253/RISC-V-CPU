@@ -2,11 +2,17 @@ VERILATOR ?= verilator
 
 .PHONY: lint lint-strict lint-core lint-bus
 
-lint: lint-core
+lint: lint-top
 
 lint-strict:
-	lint-strict-core
+	lint-strict-top
 
+lint-top:
+	python3 scripts/lint.py top --verilator $(VERILATOR)
+
+lint-strict-top:
+	python3 scripts/lint.py top --strict --verilator $(VERILATOR)
+	
 lint-core:
 	python3 scripts/lint.py core --verilator $(VERILATOR)
 

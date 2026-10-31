@@ -7,7 +7,7 @@ module resetn_sync (
     (* ASYNC_REG = "TRUE" *) logic  aresetn_2q;
 
     always_ff @(posedge clk or negedge aresetn_i) begin
-        if (!areset_n_i) begin
+        if (!aresetn_i) begin
             aresetn_q   <=  1'b0;
             aresetn_2q  <=  1'b0;
         end else begin

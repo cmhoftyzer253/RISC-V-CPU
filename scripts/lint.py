@@ -9,10 +9,16 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 TARGETS = {
+    "top": {
+        "filelist": "rtl/rtl.f",
+        "top": "top",
+    },
+
     "core": {
         "filelist": "rtl/rtl.f",
         "top": "core",
     },
+
     "bus": {
         "filelist": "rtl/rtl.f",
         "top": "bus",

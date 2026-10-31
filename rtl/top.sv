@@ -101,7 +101,7 @@ module top (
     );
 
     //clock generation
-    clk_wiz_0 u_clk_wiz (
+    clk_gen u_clk_gen (
         .clk_100M               (clk_100M),
         .clk_200M               (clk_200M),
         .clk_cpu                (clk_cpu),

@@ -48,7 +48,6 @@ rtl/bus/ahb_boot_rom.sv
 rtl/bus/clint.sv
 rtl/bus/plic.sv
 rtl/bus/uart.sv
-rtl/bus/uart.sv
 rtl/bus/uart_rx.sv
 rtl/bus/uart_tx.sv
 rtl/bus/spi.sv

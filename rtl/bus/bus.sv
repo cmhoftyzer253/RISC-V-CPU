@@ -250,7 +250,7 @@ module bus (
 
     //S: CPU clock domain
     //M: MIG DDR clock domain
-    axi_clock_converter_0 u_axi_clock_converter (
+    axi_cdc u_axi_cdc (
         .s_axi_aclk             (clk),
         .s_axi_aresetn          (cpu_resetn),
         .s_axi_awid             (awid_i),
@@ -408,7 +408,7 @@ module bus (
     assign init_calib_complete_o    =   init_calib_complete;
     assign mmcm_locked_o            =   mmcm_locked;
 
-    axi_ahblite_bridge_0 u_axi_ahblite_bridge (
+    axi_ahblite_bridge u_axi_ahblite_bridge (
         .s_axi_aclk             (clk),
         .s_axi_aresetn          (cpu_resetn),
         .s_axi_awid             (awid_i),

@@ -409,11 +409,16 @@ module d_cache
         end
     end
 
-    //load/store logic 
+    //load/store E stage logic 
     always_comb begin
         index               =   dc_addr_i[11:6];
         data_index          =   dc_addr_i[11:3];
 
+        nxt_bypass_active   =   dc_valid_i && (lsM == DC_STORE) && hit && (addrM[63:3] == dc_addr_i[63:3]);
+    end
+
+    //load/store M stage logic 
+    always_comb begin
         tagM                =   addrM[63:12];
         indexM              =   addrM[11:6];
         data_indexM         =   addrM[11:3];
@@ -431,8 +436,6 @@ module d_cache
         hit_raw             =   |hit_1h;
         hit                 =   hit_raw && validM && !stop_cacheop_i;
         miss                =   !hit_raw && validM && !stop_cacheop_i;
-
-        nxt_bypass_active   =   dc_valid_i && (lsM == DC_STORE) && hit && (addrM[63:3] == dc_addr_i[63:3]);
 
         load_data           =   data_rd[hit_way];
 
@@ -506,6 +509,7 @@ module d_cache
             if (cur_way_dirty[i]) clean_line = i[5:0];
     end
 
+    //cache control
     always_comb begin
         validM_o            =   validM;
         dataM_o             =   dataM;

@@ -83,13 +83,9 @@ module decode
     );
 
     always_comb begin
-        exc_valid_o     =   1'b0;
-        exc_code_o      =   ILLEGAL_INSTR;
-
         rs1_o           =   instr_i[19:15];
         rs2_o           =   instr_i[24:20];
         rd_o            =   instr_i[11:7];
-        imm_o           =   64'h0;
         csr_addr_o      =   instr_i[31:20];
 
         opcode          =   instr_i[6:0];
@@ -106,6 +102,11 @@ module decode
         a_type          =   (opcode == A_TYPE);
         fence           =   (opcode == FENCE);
         privileged      =   (opcode == PRIVILEGED);
+    end
+
+    always_comb begin
+        exc_valid_o     =   1'b0;
+        exc_code_o      =   ILLEGAL_INSTR;
 
         //exceptions
         case (opcode)
@@ -250,7 +251,7 @@ module decode
                 LD: begin
                     i_type_controls.lsu_size    =   DOUBLE_WORD;
                     i_type_controls.lsu_se      =   1'b1;
-                end
+                end                                                     
                 LHU: i_type_controls.lsu_size    =   HALF_WORD;
                 LWU: i_type_controls.lsu_size    =   WORD;  
             endcase

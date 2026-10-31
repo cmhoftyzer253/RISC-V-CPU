@@ -662,19 +662,19 @@ module pipeline
         endcase
     end
 
-    //M flush behind/stall logic
+    //detect special instruction cases
     always_comb begin
         mretM               =   validM && !exc_validM && mctrl_enM && (mctrl_opM == MRET_OP);
         sretM               =   validM && !exc_validM && mctrl_enM && (mctrl_opM == SRET_OP);
-
         csr_wrM             =   validM && !exc_validM && csr_wr_enM;
-        redirect_serialize  =   csr_wrM || fencei_done;
-
-        redirect_trap       =   trap_en_i;
-
         wfiM                =   validM && !exc_validM && mctrl_enM && (mctrl_opM == WFI_OP);
         fenceiM             =   validM && !exc_validM && mctrl_enM && (mctrl_opM == FENCE_I);
+    end
 
+    //M flush behind/stall logic
+    always_comb begin
+        redirect_serialize  =   csr_wrM || fencei_done;
+        redirect_trap       =   trap_en_i;
         stall_wfiM          =   wfiM && !wfi_wakeup_i && !wfi_timeout;
         stall_fenceiM       =   fenceiM && !fencei_done;
     end                      

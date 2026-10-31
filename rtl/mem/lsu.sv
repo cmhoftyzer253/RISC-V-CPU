@@ -126,87 +126,87 @@ module lsu
 
     logic                   stop_cacheop;
 
-    logic [63:0]        dc_araddr;
-    logic [7:0]         dc_arlen;
-    logic [2:0]         dc_arsize;
-    logic [1:0]         dc_arburst;
-    logic               dc_arlock;
-    logic [3:0]         dc_arid;
-    logic [3:0]         dc_arcache;
-    logic [2:0]         dc_arprot;
-    logic [3:0]         dc_arqos;
-    logic               dc_arvalid;
-    logic               dc_rready;
-    logic [63:0]        dc_awaddr;
-    logic               dc_awvalid;
-    logic [2:0]         dc_awsize;
-    logic [7:0]         dc_awlen;
-    logic [1:0]         dc_awburst;
-    logic               dc_awlock;
-    logic [3:0]         dc_awid;
-    logic [3:0]         dc_awcache;
-    logic [2:0]         dc_awprot;
-    logic [3:0]         dc_awqos;
-    logic [63:0]        dc_wdata;
-    logic [7:0]         dc_wstrb;
-    logic               dc_wvalid;
-    logic               dc_wlast;
-    logic               dc_bready;
+    logic [63:0]            dc_araddr;
+    logic [7:0]             dc_arlen;
+    logic [2:0]             dc_arsize;
+    logic [1:0]             dc_arburst;
+    logic                   dc_arlock;
+    logic [3:0]             dc_arid;
+    logic [3:0]             dc_arcache;
+    logic [2:0]             dc_arprot;
+    logic [3:0]             dc_arqos;
+    logic                   dc_arvalid;
+    logic                   dc_rready;
+    logic [63:0]            dc_awaddr;
+    logic                   dc_awvalid;
+    logic [2:0]             dc_awsize;
+    logic [7:0]             dc_awlen;
+    logic [1:0]             dc_awburst;
+    logic                   dc_awlock;
+    logic [3:0]             dc_awid;
+    logic [3:0]             dc_awcache;
+    logic [2:0]             dc_awprot;
+    logic [3:0]             dc_awqos;
+    logic [63:0]            dc_wdata;
+    logic [7:0]             dc_wstrb;
+    logic                   dc_wvalid;
+    logic                   dc_wlast;
+    logic                   dc_bready;
 
-    logic               pma_cacheable;
-    logic               pma_fault;
-    logic               pmp_fault;
+    logic                   pma_cacheable;
+    logic                   pma_fault;
+    logic                   pmp_fault;
 
-    logic [63:0]        store_raw_data;
-    logic [2:0]         store_addr_algn;
-    logic [1:0]         store_size;
-    logic [63:0]        load_raw_data;
-    logic [63:0]        load_data;
+    logic [63:0]            store_raw_data;
+    logic [2:0]             store_addr_algn;
+    logic [1:0]             store_size;
+    logic [63:0]            load_raw_data;
+    logic [63:0]            load_data;
 
-    logic [63:0]        amo_res;
-    logic               amo_word_opM;
-    logic               amo_store;
-    logic               amo_store_ready;
-    logic               amo_load_fault;
-    logic               amo_load;
-    logic [63:0]        amo_load_data;
+    logic [63:0]            amo_res;
+    logic                   amo_word_opM;
+    logic                   amo_store;
+    logic                   amo_store_ready;
+    logic                   amo_load_fault;
+    logic                   amo_load;
+    logic [63:0]            amo_load_data;
 
-    logic               LR_valid;
-    logic [63:0]        LR_addr;
-    logic [1:0]         LR_size;
+    logic                   LR_valid;
+    logic [63:0]            LR_addr;
+    logic [1:0]             LR_size;
     
-    logic               LR_set;
-    logic               LR_invalidate;
+    logic                   LR_set;
+    logic                   LR_invalidate;
 
-    logic               lrM;
-    logic               scM;
+    logic                   lrM;
+    logic                   scM;
 
-    logic               sc_lr_miss;
-    logic               sc_fail;
+    logic                   sc_lr_miss;
+    logic                   sc_fail;
 
-    logic               lr_addr_match;
+    logic                   lr_addr_match;
 
-    logic               lsu_store;
+    logic                   lsu_store;
 
-    logic               misaligned_addr;
-    logic               misaligned_exc;
-    logic               exc;
+    logic                   misaligned_addr;
+    logic                   misaligned_exc;
+    logic                   exc;
 
-    logic               uncacheable_load;
-    logic               uncacheable_store;
+    logic                   uncacheable_load;
+    logic                   uncacheable_store;
 
-    logic [63:0]        mem_load_data;
+    logic [63:0]            mem_load_data;
     
-    logic               aw_done;
-    logic               w_done;
+    logic                   aw_done;
+    logic                   w_done;
 
-    logic               store_req_done;
+    logic                   store_req_done;
 
-    logic               exc_load;
-    logic               exc_store;
-    logic               exc_ff;
+    logic                   exc_load;
+    logic                   exc_store;
+    logic                   exc_ff;
 
-    lsu_state_t         state;
+    lsu_state_t             state;
 
     d_pma u_d_pma (
         .lsu_valid_i        (validM),
@@ -464,6 +464,51 @@ module lsu
         end
     end
 
+    //M stage combinational logic 
+    always_comb begin
+        amo_word_opM        =   (sizeM == WORD);
+
+        case (sizeM)
+            BYTE: misaligned_addr           =   1'b0;
+            HALF_WORD: misaligned_addr      =   addrM[0];
+            WORD: misaligned_addr           =   |addrM[1:0];
+            DOUBLE_WORD: misaligned_addr    =   |addrM[2:0];
+        endcase
+
+        exc                 =   validM && (pma_fault || pmp_fault || misaligned_addr);
+
+        scM                 =   validM && !exc && (lsM == LSU_ATOMIC) && (atomic_opM == SC);
+        sc_lr_miss          =   !LR_valid || (LR_addr != addrM) || (LR_size != sizeM);
+        sc_fail             =   scM && sc_lr_miss;
+
+        stop_cacheop        =   !pma_cacheable || sc_fail || exc;
+
+        lsu_store           =   (lsM == LSU_STORE) || ((lsM == LSU_ATOMIC) && (atomic_opM != LR));
+        misaligned_exc      =   misaligned_addr && (lsM != LSU_ATOMIC);
+    end
+
+    //exception generation
+    always_comb begin
+        exc_valid_o             =   1'b0;
+        exc_code_o              =   5'd0;
+
+        case (state)
+            LSU_DC_RUN: begin
+                exc_valid_o     =   exc || dc_exc_valid;
+                exc_code_o      =   misaligned_exc ?    (lsu_store ? S_AMO_ADDR_MISALIGNED : L_ADDR_MISALIGNED) : (lsu_store ? S_AMO_ACC_FAULT : L_ACC_FAULT);
+            end
+            LSU_MEM_LOAD_DONE: begin
+                exc_valid_o     =   exc_ff;
+                exc_code_o      =   L_ACC_FAULT;
+            end
+            LSU_MEM_STORE_DONE: begin
+                exc_valid_o     =   exc_ff;
+                exc_code_o      =   S_AMO_ACC_FAULT;
+            end
+        endcase
+    end
+
+    //lsu control
     always_comb begin
         lsu_ready_o         =   1'b0;
         lsu_ldata_o         =   load_data;
@@ -506,9 +551,6 @@ module lsu
 
         bready_o            =   1'b0;
 
-        exc_valid_o         =   1'b0;
-        exc_code_o          =   5'd0;
-
         exc_load            =   rvalid_i && ((rid_i != ID_LSU) || (rresp_i != AXI_OKAY) || !rlast_i);
         exc_store           =   bvalid_i && ((bresp_i != 2'b00) || (bid_i != ID_LSU));
 
@@ -519,23 +561,6 @@ module lsu
         store_size          =   lsu_size_i;
 
         load_raw_data       =   dc_ldata;
-
-        amo_word_opM        =   (sizeM == WORD);
-
-        case (sizeM)
-            BYTE: misaligned_addr           =   1'b0;
-            HALF_WORD: misaligned_addr      =   addrM[0];
-            WORD: misaligned_addr           =   |addrM[1:0];
-            DOUBLE_WORD: misaligned_addr    =   |addrM[2:0];
-        endcase
-
-        exc                 =   validM && (pma_fault || pmp_fault || misaligned_addr);
-
-        scM                 =   validM && !exc && (lsM == LSU_ATOMIC) && (atomic_opM == SC);
-        sc_lr_miss          =   !LR_valid || (LR_addr != addrM) || (LR_size != sizeM);
-        sc_fail             =   scM && sc_lr_miss;
-
-        stop_cacheop        =   !pma_cacheable || sc_fail || exc;
 
         uncacheable_load    =   1'b0;
         uncacheable_store   =   1'b0;
@@ -549,9 +574,6 @@ module lsu
         lrM                 =   1'b0;
         lr_addr_match       =   1'b0;
 
-        lsu_store           =   (lsM == LSU_STORE) || ((lsM == LSU_ATOMIC) && (atomic_opM != LR));
-        misaligned_exc      =   misaligned_addr && (lsM != LSU_ATOMIC);
-
         case (state)
             LSU_DC_RUN: begin
                 arvalid_o           =   dc_arvalid;
@@ -559,9 +581,6 @@ module lsu
                 awvalid_o           =   dc_awvalid;
                 wvalid_o            =   dc_wvalid;
                 bready_o            =   dc_bready;
-
-                exc_valid_o         =   exc || dc_exc_valid;
-                exc_code_o          =   misaligned_exc ? (lsu_store ? S_AMO_ADDR_MISALIGNED : L_ADDR_MISALIGNED) : (lsu_store ? S_AMO_ACC_FAULT : L_ACC_FAULT);
 
                 lsu_ldata_o         =   amo_load ? amo_load_data : (scM ? {63'h0, sc_lr_miss} : load_data);
 
@@ -601,9 +620,6 @@ module lsu
                 load_raw_data       =   mem_load_data;
 
                 dc_advance          =   1'b1;
-                
-                exc_valid_o         =   exc_ff;
-                exc_code_o          =   L_ACC_FAULT;
             end
             LSU_MEM_STORE_REQ: begin
                 awvalid_o           =   !aw_done;
@@ -631,9 +647,6 @@ module lsu
                 lsu_ready_o         =   1'b1;
 
                 dc_advance          =   1'b1;
-
-                exc_valid_o         =   exc_ff;
-                exc_code_o          =   S_AMO_ACC_FAULT;
             end
             LSU_AMO_STORE: begin
                 arvalid_o           =   dc_arvalid;

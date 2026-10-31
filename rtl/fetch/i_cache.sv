@@ -322,6 +322,17 @@ module i_cache
         nxt_way_fill        =   way_fill_evict ? way_fill_PLRU : way_fill_invalid;
     end
 
+    //invalidate logic 
+    assign invalidate = invalidate_ff || invalidate_i;
+
+    always_comb begin
+        case (state)
+            IC_RUN: invalidate_done_o           =   invalidate_i;
+            IC_REFILL_DONE: invalidate_done_o   =   invalidate;
+            default: invalidate_done_o          =   1'b0;
+        endcase
+    end
+
     always_comb begin
         ic_ready_o          =   1'b0;
         instr_valid_o       =   1'b0;
@@ -353,13 +364,10 @@ module i_cache
 
         rready_o            =   1'b0;
 
-        invalidate_done_o   =   1'b0;
-
         exc_valid_o         =   1'b0;
 
         flush               =   flush_ff || flush_i;
         exc                 =   rvalid_i && ((rresp_i != AXI_OKAY) || (rid_i != ID_IFU) || (rlast_i ^ (beat_cnt == 3'd7)));
-        invalidate          =   invalidate_ff || invalidate_i;
 
         case (state)
             IC_RUN: begin
@@ -371,8 +379,6 @@ module i_cache
                 tag_rd_addr         =   index;
                 data_rd_en          =   !miss && ifu_ready_i;
                 data_rd_addr        =   data_index;
-
-                invalidate_done_o   =   invalidate_i;
             end
             IC_REFILL_REQ: begin
                 araddr_o    =   {pcF[63:6], 6'b0};
@@ -404,8 +410,6 @@ module i_cache
                 tag_rd_addr             =   index;
                 data_rd_en              =   invalidate || flush || ifu_ready_i;
                 data_rd_addr            =   data_index;
-
-                invalidate_done_o       =   invalidate;
 
                 if (!(flush || invalidate)) begin
                     instr_o             =   instr_hold;

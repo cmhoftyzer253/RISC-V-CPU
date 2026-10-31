@@ -96,7 +96,7 @@ package cpu_types;
         SPI_IDLE,
         SPI_CSSCK,
         SPI_DATA,
-        SPI_CSKCS,
+        SPI_SCKCS,
         SPI_INTERCS,
         SPI_INTERXFR,
         SPI_HOLD

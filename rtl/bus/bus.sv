@@ -121,7 +121,7 @@ module bus (
     logic                   ddr_bready;
 
     logic [3:0]             m_ddr_awid;
-    logic [63:0]            m_ddr_awaddr;
+    logic [28:0]            m_ddr_awaddr;
     logic [7:0]             m_ddr_awlen;
     logic [2:0]             m_ddr_awsize;
     logic [1:0]             m_ddr_awburst;
@@ -144,7 +144,7 @@ module bus (
     logic                   m_ddr_bready;
 
     logic [3:0]             m_ddr_arid;
-    logic [63:0]            m_ddr_araddr;
+    logic [28:0]            m_ddr_araddr;
     logic [7:0]             m_ddr_arlen;
     logic [2:0]             m_ddr_arsize;
     logic [1:0]             m_ddr_arburst;
@@ -166,7 +166,6 @@ module bus (
     logic                   hwrite;
     logic [2:0]             hsize;
     logic [2:0]             hburst;
-    logic [3:0]             hprot;
     logic [1:0]             htrans;
     logic [63:0]            hwdata;
     logic                   hready;
@@ -254,7 +253,7 @@ module bus (
         .s_axi_aclk             (clk),
         .s_axi_aresetn          (cpu_resetn),
         .s_axi_awid             (awid_i),
-        .s_axi_awaddr           (awaddr_i),
+        .s_axi_awaddr           (awaddr_i[28:0]),
         .s_axi_awlen            (awlen_i),
         .s_axi_awsize           (awsize_i),
         .s_axi_awburst          (awburst_i),
@@ -275,7 +274,7 @@ module bus (
         .s_axi_bvalid           (ddr_bvalid),
         .s_axi_bready           (ddr_bready),
         .s_axi_arid             (arid_i),
-        .s_axi_araddr           (araddr_i),
+        .s_axi_araddr           (araddr_i[28:0]),
         .s_axi_arlen            (arlen_i),
         .s_axi_arsize           (arsize_i),
         .s_axi_arburst          (arburst_i),
@@ -408,7 +407,7 @@ module bus (
     assign init_calib_complete_o    =   init_calib_complete;
     assign mmcm_locked_o            =   mmcm_locked;
 
-    axi_ahblite_bridge u_axi_ahblite_bridge (
+    axi_ahb_bridge u_axi_ahb_bridge (
         .s_axi_aclk             (clk),
         .s_axi_aresetn          (cpu_resetn),
         .s_axi_awid             (awid_i),
@@ -450,7 +449,7 @@ module bus (
         .m_ahb_hwrite           (hwrite),
         .m_ahb_hsize            (hsize),
         .m_ahb_hburst           (hburst),
-        .m_ahb_hprot            (hprot),
+        .m_ahb_hprot            (),
         .m_ahb_htrans           (htrans),
         .m_ahb_hmastlock        (),
         .m_ahb_hwdata           (hwdata),
@@ -474,7 +473,6 @@ module bus (
 
     ahb_boot_rom u_ahb_boot_rom (
         .clk                    (clk),
-        .resetn                 (cpu_resetn),
         .hsel_i                 (hsel[0]),
         .hready_i               (hready),
         .haddr_i                (haddr),

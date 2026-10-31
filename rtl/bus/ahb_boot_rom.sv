@@ -2,7 +2,6 @@ module ahb_boot_rom
     import cpu_defines::*;
 (
     input logic             clk,
-    input logic             resetn,
     
     input logic             hsel_i,
     input logic             hready_i,

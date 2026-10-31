@@ -1,10 +1,12 @@
-module uart_tx (
+module uart_tx 
+    import cpu_types::*;
+(
     input logic         clk,
     input logic         resetn,
 
     input logic         txen_i,
     input logic         nstop_i,
-    input logic [31:0]  div_i,
+    input logic [19:0]  div_i,
 
     input logic         tx_fifo_empty_i,
     output logic        tx_fifo_pop_o,
@@ -13,7 +15,7 @@ module uart_tx (
     output logic        tx_o
 );
 
-    logic [31:0]        tick_cnt;
+    logic [19:0]        tick_cnt;
     logic               tick;
 
     logic [2:0]         tx_bit_cnt;
@@ -25,7 +27,7 @@ module uart_tx (
         if (!resetn) begin
             tx_data     <=  8'b0;
 
-            tick_cnt    <=  32'h0;
+            tick_cnt    <=  20'h0;
             tx_bit_cnt  <=  3'd0;
 
             state       <=  UART_TX_IDLE;
@@ -46,7 +48,7 @@ module uart_tx (
 
                         state       <=  UART_TX_DATA;
                     end else begin
-                        tick_cnt    <=  tick_cnt - 32'h1;
+                        tick_cnt    <=  tick_cnt - 20'h1;
                     end
                 end
                 UART_TX_DATA: begin
@@ -58,7 +60,7 @@ module uart_tx (
                         if (tx_bit_cnt == 3'd7)
                             state   <=  UART_TX_STOP;
                     end else begin
-                        tick_cnt    <=  tick_cnt - 32'h1;
+                        tick_cnt    <=  tick_cnt - 20'h1;
                     end
                 end
                 UART_TX_STOP: begin
@@ -66,15 +68,15 @@ module uart_tx (
                         tick_cnt    <=  div_i;
                         state       <=  nstop_i ? UART_TX_STOP_2 : UART_TX_IDLE;
                     end else begin
-                        tick_cnt    <=  tick_cnt - 32'h1;
+                        tick_cnt    <=  tick_cnt - 20'h1;
                     end
                 end
                 UART_TX_STOP_2: begin
                     if (tick) begin
-                        tick_cnt    <=  32'h0;
+                        tick_cnt    <=  20'h0;
                         state       <=  UART_TX_IDLE;
                     end else begin
-                        tick_cnt    <=  tick_cnt - 32'h1;
+                        tick_cnt    <=  tick_cnt - 20'h1;
                     end
                 end
             endcase
@@ -85,7 +87,7 @@ module uart_tx (
         tx_o            =   1'b1;
         tx_fifo_pop_o   =   1'b0;
 
-        tick            =   (tick_cnt == 32'h0);
+        tick            =   (tick_cnt == 20'h0);
 
         case (state)
             UART_TX_IDLE: begin

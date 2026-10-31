@@ -84,9 +84,9 @@ module plic
     assign gw_request[0] = 1'b0;
 
     generate
-        for (genvar i=1; i<4; i++) begin
+        for (genvar i=1; i<4; i++) begin : gateway
             gateway_level #(
-                .req_level(1'b1)
+                .REQ_LEVEL(1'b1)
             ) u_gateway (
                 .clk            (clk),
                 .resetn         (resetn),
@@ -178,13 +178,13 @@ module plic
         source[PLIC_SPI_SOURCE_ID]  =   spi_interrupt_i;
         source[PLIC_GPIO_SOURCE_ID] =   gpio_interrupt_i;
 
-        PRIORITY_REG                =   '0;
+        PRIORITY_REG                =   '{default: 0};
         PRIORITY_REG[1]             =   SRC1_PRIORITY_REG;
         PRIORITY_REG[2]             =   SRC2_PRIORITY_REG;
         PRIORITY_REG[3]             =   SRC3_PRIORITY_REG;
 
-        m_priority_eff              =   '0;
-        s_priority_eff              =   '0;
+        m_priority_eff              =   '{default: 0};
+        s_priority_eff              =   '{default: 0};
         for (int i=1; i<4; i++) begin
             m_priority_eff[i] = (PENDING_REG[i] && M_ENABLE_REG[i]) ? PRIORITY_REG[i] : 3'b0;
             s_priority_eff[i] = (PENDING_REG[i] && S_ENABLE_REG[i]) ? PRIORITY_REG[i] : 3'b0;
@@ -211,13 +211,13 @@ module plic
         s_complete                  =   '0;
 
         for (int i=1; i<4; i++) begin
-            m_claim[i] = hread_en && (haddr_d == PLIC_M_CLAIM_COMPLETE) && (m_claim_complete == i[1:0]);
-            s_claim[i] = hread_en && (haddr_d == PLIC_S_CLAIM_COMPLETE) && (s_claim_complete == i[1:0]);
+            m_claim[i] = hread_en && (haddr_d == PLIC_M_CLAIM_COMPLETE_OFFSET) && (m_claim_complete == i[1:0]);
+            s_claim[i] = hread_en && (haddr_d == PLIC_S_CLAIM_COMPLETE_OFFSET) && (s_claim_complete == i[1:0]);
         end
 
         for (int i=1; i<4; i++) begin
-            m_complete[i] = hwrite_en && (haddr_d == PLIC_M_CLAIM_COMPLETE) && (hwdata_i == i[1:0]);
-            s_complete[i] = hwrite_en && (haddr_d == PLIC_S_CLAIM_COMPLETE) && (hwdata_i == i[1:0]);
+            m_complete[i] = hwrite_en && (haddr_d == PLIC_M_CLAIM_COMPLETE_OFFSET) && (hwdata_i[31:0] == 32'(i));
+            s_complete[i] = hwrite_en && (haddr_d == PLIC_S_CLAIM_COMPLETE_OFFSET) && (hwdata_i[31:0] == 32'(i));
         end
 
         claim                       =   m_claim | s_claim;

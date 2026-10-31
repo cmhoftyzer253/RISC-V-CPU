@@ -93,6 +93,7 @@ module clint
         hwrite_mask[1]  =   (hsize_d == AMBA_DOUBLE_WORD) ||  haddr_d[2];
         hwrite_mask[0]  =   (hsize_d == AMBA_DOUBLE_WORD) || !haddr_d[2];
 
+        mtime_o         =   MTIME_REG;
         msip_o          =   MSIP_REG;
         mtip_o          =   (MTIME_REG >= MTIMECMP_REG);
 

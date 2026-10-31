@@ -36,7 +36,7 @@ module axi_ctrl
     input logic             ahb_awready_i,
     input logic             ahb_wready_i,
     input logic [1:0]       ahb_bresp_i,
-    input logic             ahb_valid_i,
+    input logic             ahb_bvalid_i,
     input logic [3:0]       ahb_bid_i,
 
     output logic            ahb_arvalid_o,
@@ -109,27 +109,6 @@ module axi_ctrl
     end
 
     always_comb begin
-        ddr_store_addr      =   (awaddr_i[63:29] == 35'h0_0000_0004);
-        ddr_load_addr       =   (araddr_i[63:29] == 35'h0_0000_0004);
-
-        ddr_load_sel        =   arvalid_i && ddr_load_addr;
-        ddr_store_sel       =   awvalid_i && ddr_store_addr;
-
-        ahb_load_sel        =   arvalid_i && !ahb_load_addr;
-        ahb_store_sel       =   awvalid_i && !ahb_store_addr;
-
-        nxt_load_grant      =   ddr_load_sel ? GRANT_DDR : (ahb_load_sel ? GRANT_AHB : BUS_IDLE);
-        nxt_store_grant     =   ddr_store_sel ? GRANT_DDR : (ahb_store_sel ? GRANT_AHB : BUS_IDLE);
-
-        set_load_grant      =   (load_grant_q == BUS_IDLE) && arvalid_i && arready_o;
-        set_store_grant     =   (store_grant_q == BUS_IDLE) && awvalid_i && awready_o;
-
-        clear_load_grant    =   rready_i && rvalid_o && rlast_o;
-        clear_store_grant   =   bvalid_o && bready_i;
-
-        load_grant          =   (load_grant_q == BUS_IDLE) ? nxt_load_grant : load_grant_q;
-        store_grant         =   (store_grant_q == BUS_IDLE) ? nxt_store_grant : store_grant_q;
-
         ahb_arvalid_o = 1'b0;
         ahb_rready_o = 1'b0;
         ahb_awvalid_o = 1'b0;
@@ -154,6 +133,27 @@ module axi_ctrl
         bresp_o = 2'b0;
         bvalid_o = 1'b0;
         bid_o = 4'b0;
+
+        ddr_store_addr      =   (awaddr_i[63:29] == 35'h0_0000_0004);
+        ddr_load_addr       =   (araddr_i[63:29] == 35'h0_0000_0004);
+
+        ddr_load_sel        =   arvalid_i && ddr_load_addr;
+        ddr_store_sel       =   awvalid_i && ddr_store_addr;
+
+        ahb_load_sel        =   arvalid_i && !ddr_load_addr;
+        ahb_store_sel       =   awvalid_i && !ddr_store_addr;
+
+        nxt_load_grant      =   ddr_load_sel ? GRANT_DDR : (ahb_load_sel ? GRANT_AHB : BUS_IDLE);
+        nxt_store_grant     =   ddr_store_sel ? GRANT_DDR : (ahb_store_sel ? GRANT_AHB : BUS_IDLE);
+
+        set_load_grant      =   (load_grant_q == BUS_IDLE) && arvalid_i && arready_o;
+        set_store_grant     =   (store_grant_q == BUS_IDLE) && awvalid_i && awready_o;
+
+        clear_load_grant    =   rready_i && rvalid_o && rlast_o;
+        clear_store_grant   =   bvalid_o && bready_i;
+
+        load_grant          =   (load_grant_q == BUS_IDLE) ? nxt_load_grant : load_grant_q;
+        store_grant         =   (store_grant_q == BUS_IDLE) ? nxt_store_grant : store_grant_q;
 
         case (load_grant)
             GRANT_DDR: begin
@@ -196,7 +196,7 @@ module axi_ctrl
                 awready_o = ahb_awready_i;
                 wready_o = ahb_wready_i;
                 bresp_o = ahb_bresp_i;
-                bvalid_o = ahb_valid_i;
+                bvalid_o = ahb_bvalid_i;
                 bid_o = ahb_bid_i;
             end
         endcase

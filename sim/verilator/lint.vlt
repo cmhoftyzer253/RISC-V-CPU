@@ -8,3 +8,10 @@ lint_off -rule CASEINCOMPLETE
 lint_off -rule UNUSEDSIGNAL -file "*" -match "*Bits of signal are not used*"
 lint_off -rule UNUSEDSIGNAL -file "*/d_cache.sv" -match "*'bresp_i'*"
 lint_off -rule UNUSEDSIGNAL -file "*/d_cache.sv" -match "*'bid_i'*"
+
+lint_off -rule UNUSEDSIGNAL -file "*/pin_arbitrate.sv" -match "*'iof_sel_i'*"
+
+lint_off -rule UNUSEDSIGNAL -file "*rtl/bus/*" -match "*'hsize_i'*"
+lint_off -rule UNUSEDSIGNAL -file "*rtl/bus/*" -match "*'hburst_i'*"
+
+lint_off -rule UNUSEDSIGNAL -file "*/ahb_boot_rom.sv" -match "*'hwdata_i'*"

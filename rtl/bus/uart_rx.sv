@@ -1,9 +1,11 @@
-module uart_rx (
+module uart_rx 
+    import cpu_types::*;
+(
     input logic             clk,
     input logic             resetn,
 
     input logic             rxen_i,
-    input logic [31:0]      div_i,
+    input logic [19:0]      div_i,
 
     output logic            rx_fifo_push_o,
     output logic [7:0]      rx_fifo_push_data_o,
@@ -11,15 +13,15 @@ module uart_rx (
     input logic             rx_i
 );
 
-    logic [31:0]            tick_cnt;
+    logic [19:0]            tick_cnt;
     logic                   tick;
 
-    logic [31:0]            div_half;
-    logic [31:0]            div_sixteenth;
+    logic [19:0]            div_half;
+    logic [19:0]            div_sixteenth;
 
-    logic [31:0]            rx_sample1;
-    logic [31:0]            rx_sample2;
-    logic [31:0]            rx_sample3;
+    logic [19:0]            rx_sample1;
+    logic [19:0]            rx_sample2;
+    logic [19:0]            rx_sample3;
     logic                   rx_bit_sample;
 
     logic [2:0]             rx_bit_cnt;
@@ -33,7 +35,7 @@ module uart_rx (
 
     always_ff @(posedge clk) begin
         if (!resetn) begin
-            tick_cnt    <=  32'h0;
+            tick_cnt    <=  20'h0;
             rx_bit_cnt  <=  3'd0;
 
             sample_sum  <=  2'd0;
@@ -57,7 +59,7 @@ module uart_rx (
                 end
                 UART_RX_START: begin
                     if ((tick_cnt == div_half) && rx_2q) begin
-                        tick_cnt    <=  32'h0;
+                        tick_cnt    <=  20'h0;
 
                         state       <=  UART_RX_IDLE;
                     end else if (tick) begin
@@ -69,7 +71,7 @@ module uart_rx (
 
                         state <= UART_RX_DATA;
                     end else begin
-                        tick_cnt    <=  tick_cnt - 32'h1;
+                        tick_cnt    <=  tick_cnt - 20'h1;
                     end
                 end
                 UART_RX_DATA: begin
@@ -83,18 +85,18 @@ module uart_rx (
                             state   <=  UART_RX_STOP;
                     end else if (rx_bit_sample) begin
                         sample_sum  <=  sample_sum + rx_2q;
-                        tick_cnt    <=  tick_cnt - 32'h1;
+                        tick_cnt    <=  tick_cnt - 20'h1;
                     end else begin
-                        tick_cnt    <=  tick_cnt - 32'h1;
+                        tick_cnt    <=  tick_cnt - 20'h1;
                     end
                 end
                 UART_RX_STOP: begin
                     if (tick) begin
-                        tick_cnt    <=  32'h0;
+                        tick_cnt    <=  20'h0;
 
                         state       <=  UART_RX_IDLE;
                     end else begin
-                        tick_cnt    <=  tick_cnt - 32'h1;
+                        tick_cnt    <=  tick_cnt - 20'h1;
                     end
                 end
             endcase
@@ -105,7 +107,7 @@ module uart_rx (
         rx_fifo_push_o          =   1'b0;
         rx_fifo_push_data_o     =   rx_data;
 
-        tick                    =   (tick_cnt == 32'h0);
+        tick                    =   (tick_cnt == 20'h0);
 
         div_half                =   (div_i >> 1);
         div_sixteenth           =   (div_i >> 4);

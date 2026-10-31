@@ -1,6 +1,5 @@
 module uart
     import cpu_defines::*;
-
 (
     input logic             clk,
     input logic             resetn,
@@ -43,10 +42,10 @@ module uart
     logic                   tx_wm_ip;
     logic                   rx_wm_ip;
 
-    logic [18:0]            TXCTRL_REG;
-    logic [18:0]            RXCTRL_REG;
-    logic [1:0]             IE_REG;
-    logic [19:0]            DIV_REG;
+    logic [18:0]            UART_TXCTRL_REG;
+    logic [18:0]            UART_RXCTRL_REG;
+    logic [1:0]             UART_IE_REG;
+    logic [19:0]            UART_DIV_REG;
 
     logic [31:0]            TXDATA_RD;
     logic [31:0]            RXDATA_RD;
@@ -105,7 +104,7 @@ module uart
         .clk                    (clk),
         .resetn                 (resetn),
         .rxen_i                 (rxen),
-        .div_i                  (DIV_REG),
+        .div_i                  (UART_DIV_REG),
         .rx_fifo_push_o         (rx_fifo_push),
         .rx_fifo_push_data_o    (rx_fifo_push_data),
         .rx_i                   (rx_i)
@@ -116,7 +115,7 @@ module uart
         .resetn                 (resetn),
         .txen_i                 (txen),
         .nstop_i                (nstop),
-        .div_i                  (DIV_REG),
+        .div_i                  (UART_DIV_REG),
         .tx_fifo_empty_i        (tx_fifo_empty),
         .tx_fifo_pop_o          (tx_fifo_pop),
         .tx_fifo_pop_data_i     (tx_fifo_pop_data),
@@ -125,16 +124,16 @@ module uart
 
     always_ff @(posedge clk) begin
         if (!resetn) begin
-            TXCTRL_REG  <=  19'h0;
-            RXCTRL_REG  <=  19'h0;
-            IE_REG      <=  2'b0;
-            DIV_REG     <=  20'h0;
+            UART_TXCTRL_REG     <=  19'h0;
+            UART_RXCTRL_REG     <=  19'h0;
+            UART_IE_REG         <=  2'b0;
+            UART_DIV_REG        <=  20'h0;
         end else if (hwrite_en) begin
             case (haddr_d)
-                UART_TXCTRL_OFFSET: TXCTRL_REG   <=  hwdata_i[18:0] & UART_TXCTRL_WMASK;
-                UART_RXCTRL_OFFSET: RXCTRL_REG   <=  hwdata_i[18:0] & UART_RXCTRL_WMASK;
-                UART_IE_OFFSET: IE_REG           <=  hwdata_i[1:0];
-                UART_DIV_OFFSET: DIV_REG         <=  hwdata_i[19:0];
+                UART_TXCTRL_OFFSET: UART_TXCTRL_REG     <=  hwdata_i[18:0] & UART_TXCTRL_WMASK;
+                UART_RXCTRL_OFFSET: UART_RXCTRL_REG     <=  hwdata_i[18:0] & UART_RXCTRL_WMASK;
+                UART_IE_OFFSET: UART_IE_REG             <=  hwdata_i[1:0];
+                UART_DIV_OFFSET: UART_DIV_REG           <=  hwdata_i[19:0];
             endcase
         end
     end
@@ -168,26 +167,26 @@ module uart
         tx_fifo_push        =   hwrite_en && (haddr_d == UART_TXDATA_OFFSET);
         tx_fifo_push_data   =   hwdata_i[7:0];
 
-        rxen                =   RXCTRL_REG[0];
+        rxen                =   UART_RXCTRL_REG[0];
 
-        txen                =   TXCTRL_REG[0];
-        nstop               =   TXCTRL_REG[1];
+        txen                =   UART_TXCTRL_REG[0];
+        nstop               =   UART_TXCTRL_REG[1];
 
-        txmark              =   {1'b0, TXCTRL_REG[18:16]};
+        txmark              =   {1'b0, UART_TXCTRL_REG[18:16]};
         tx_wm_ip            =   (tx_fifo_count < txmark);
 
-        rxmark              =   {1'b0, RXCTRL_REG[18:16]};
+        rxmark              =   {1'b0, UART_RXCTRL_REG[18:16]};
         rx_wm_ip            =   (rx_fifo_count > rxmark);
 
-        uart_interrupt_o    =   (tx_wm_ip && IE_REG[0]) || (rx_wm_ip && IE_REG[1]);
+        uart_interrupt_o    =   (tx_wm_ip && UART_IE_REG[0]) || (rx_wm_ip && UART_IE_REG[1]);
 
         TXDATA_RD           =   {tx_fifo_full, 31'h0};
         RXDATA_RD           =   {rx_fifo_empty, 23'h0, rx_fifo_pop_data};
-        TXCTRL_RD           =   {13'h0, TXCTRL_REG};
-        RXCTRL_RD           =   {13'h0, RXCTRL_REG};
-        IE_RD               =   {30'h0, IE_REG};
+        TXCTRL_RD           =   {13'h0, UART_TXCTRL_REG};
+        RXCTRL_RD           =   {13'h0, UART_RXCTRL_REG};
+        IE_RD               =   {30'h0, UART_IE_REG};
         IP_RD               =   {30'h0, rx_wm_ip, tx_wm_ip};
-        DIV_RD              =   {12'h0, DIV_REG};
+        DIV_RD              =   {12'h0, UART_DIV_REG};
 
         case (haddr_d[11:3])
             UART_TXDATA_OFFSET[11:3]: hrdata_o  =   {RXDATA_RD, TXDATA_RD};

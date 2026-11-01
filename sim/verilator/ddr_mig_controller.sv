@@ -1,6 +1,3 @@
-/* verilator lint_off UNUSEDSIGNAL */
-/* verilator lint_off UNDRIVEN */
-
 module ddr_mig_controller (
     output logic [14:0]     ddr3_addr,
     output logic [2:0]      ddr3_ba,

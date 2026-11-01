@@ -1,7 +1,3 @@
-/* verilator lint_off UNUSEDPARAM */
-/* verilator lint_off UNUSEDSIGNAL */
-/* verilator lint_off UNDRIVEN */
-
 module IOBUF #(
     parameter int DRIVE             =   12,
     parameter string IBUF_LOW_PWR   =   "TRUE",

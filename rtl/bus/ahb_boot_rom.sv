@@ -27,7 +27,7 @@ module ahb_boot_rom
         .ADDR_WIDTH_A       (9),
         .READ_DATA_WIDTH_A  (64),
         .READ_LATENCY_A     (1),
-        .READ_RESET_VALUE   ("0"),
+        .READ_RESET_VALUE_A ("0"),
         .MEMORY_INIT_FILE   ("boot_rom.mem"),
         .MEMORY_INIT_PARAM  (""),
         .USE_MEM_INIT       (1),

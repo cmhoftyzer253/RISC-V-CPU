@@ -1,7 +1,3 @@
-/* verilator lint_off UNUSEDPARAM */
-/* verilator lint_off UNUSEDSIGNAL */
-/* verilator lint_off UNDRIVEN */
-
 module xpm_memory_sprom #(
     parameter int MEMORY_SIZE               =   2048,
     parameter string MEMORY_PRIMITIVE       =   "auto",

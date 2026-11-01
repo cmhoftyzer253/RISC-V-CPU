@@ -348,7 +348,7 @@ module csr
 
         for (int i=0; i<8; i++) begin
             PMPCFG0_WMASK[i*8 +: 8] = pmpcfg_wmask(PMPCFG_REG[i]);
-            PMPCFG2_WMASK[i*8 +: 8] = pmpcfg_wmask(PMPCFG_REG[i]);
+            PMPCFG2_WMASK[i*8 +: 8] = pmpcfg_wmask(PMPCFG_REG[i+8]);
         end
 
         for (int i=0; i<16; i++) begin

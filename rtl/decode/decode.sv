@@ -207,6 +207,7 @@ module decode
             U_TYPE_1:       imm_o   =   {{32{instr_i[31]}}, instr_i[31:12], 12'h0};
             J_TYPE:         imm_o   =   {{43{instr_i[31]}}, instr_i[31], instr_i[19:12], instr_i[20], instr_i[30:21], 1'b0};
             PRIVILEGED:     imm_o   =   {59'h0, instr_i[19:15]};
+            default:        imm_o   =   64'h0;
         endcase
     end
 

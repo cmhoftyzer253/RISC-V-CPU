@@ -1,4 +1,0 @@
-#define DIV 0x04
-#define DIVU 0x05
-#define REM 0x06
-#define REMU 0x07

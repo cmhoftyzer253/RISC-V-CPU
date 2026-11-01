@@ -21,13 +21,6 @@ module ahb_boot_rom
 
     logic                   hread_en;
 
-    boot_rom u_boot_rom(
-        .clka       (clk),
-        .ena        (hread_en),
-        .addra      (haddr_i[11:3]),
-        .douta      (hrdata_o)
-    );
-
     xpm_memory_sprom #(
         .MEMORY_SIZE        (512 * 64),
         .MEMORY_PRIMITIVE   ("block"),

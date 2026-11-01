@@ -3,3 +3,9 @@ obj_dir/
 
 # Python
 __pycache__/
+
+#Vivado
+build/
+vivado*.jou
+vivado*.log
+.Xil/

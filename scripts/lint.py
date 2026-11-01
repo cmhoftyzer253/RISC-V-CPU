@@ -31,11 +31,11 @@ VERILATOR_FILES = [
     "sim/verilator/lint.vlt",
     "sim/verilator/axi_ahb_bridge.sv",
     "sim/verilator/axi_cdc.sv",
-    "sim/verilator/boot_rom.sv",
     "sim/verilator/clk_gen.sv",
     "sim/verilator/ddr_mig_controller.sv",
     "sim/verilator/IOBUF.sv",
     "sim/verilator/xpm_memory_sdpram.sv",
+    "sim/verilator/xpm_memory_sprom.sv"
 ]
 
 TESTED_VERSION = "5.034"

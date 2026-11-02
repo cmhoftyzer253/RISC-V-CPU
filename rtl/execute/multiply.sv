@@ -249,7 +249,7 @@ module multiply
                 if (word_op) begin
                     mul_res_correct         =   negate_res ? ~p0_q + 64'b1 : p0_q;
                     mul_res_o               =   {{32{mul_res_correct[31]}}, mul_res_correct[31:0]};
-                    mul_res_valid_o         =   !flushE_i;
+                    mul_res_valid_o         =   1'b1;
                 end
             end
             M_RUN_3: begin

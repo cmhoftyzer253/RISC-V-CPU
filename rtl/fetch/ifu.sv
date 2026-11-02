@@ -265,10 +265,10 @@ module ifu
                 uncacheable     =   !pma_cacheable && !pma_fault && !pmp_fault && !flushF_i && resetn_q_i;
 
                 instr_o         =   ic_instr;
-                instr_valid_o   =   ((ic_instr_valid && pma_cacheable) || pma_fault || pmp_fault) && !flushF_i && resetn_q_i;
+                instr_valid_o   =   ((ic_instr_valid && pma_cacheable) || pma_fault || pmp_fault) && resetn_q_i;
                 ifu_ready       =   !stallD_i && !uncacheable;
 
-                exc_valid_o     =   (pma_fault || pmp_fault || ic_exc_valid) && !flushF_i && resetn_q_i;
+                exc_valid_o     =   (pma_fault || pmp_fault || ic_exc_valid) && resetn_q_i;
                 exc_code_o      =   I_ACC_FAULT;
             end
             IFU_MEM_REQ: begin
@@ -303,10 +303,10 @@ module ifu
                 flush           =   flush_ff || flushF_i;
 
                 instr_o         =   instr_hold;
-                instr_valid_o   =   !flush;
+                instr_valid_o   =   !flush_ff;
                 ifu_ready       =   !stallD_i || flush;
 
-                exc_valid_o     =   exc_ff && !flush;
+                exc_valid_o     =   exc_ff && !flush_ff;
                 exc_code_o      =   I_ACC_FAULT;
             end
         endcase

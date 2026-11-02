@@ -197,7 +197,7 @@ module i_cache
         end else begin
             case (state) 
                 IC_RUN: begin
-                    if (hit) begin
+                    if (hit && !flush_i) begin
                         PLRU_tree[indexF]               <=  nxt_PLRU_hit;
                     end
                     if (!miss && ifu_ready_i) begin
@@ -285,7 +285,7 @@ module i_cache
             if (hit_1h[w]) hit_way = w[2:0];
 
         hit_raw             =   |hit_1h;
-        hit                 =   hit_raw && !stop_fillline_i && !flush_i && !invalidate_i && resetn_q_i;
+        hit                 =   hit_raw && !stop_fillline_i && !invalidate_i && resetn_q_i;
         miss                =   !hit_raw && !stop_fillline_i && !flush_i && !invalidate_i && resetn_q_i;
 
         instr_sel           =   data_sel ? data_rd[hit_way][63:32] : data_rd[hit_way][31:0];

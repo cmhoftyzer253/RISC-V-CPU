@@ -364,7 +364,7 @@ module divide
                 div_ready_o         =   1'b1;
 
                 div_res_o           =   div_res_ff;
-                div_res_valid_o     =   !flushE_i;
+                div_res_valid_o     =   1'b1;
             end
             D_RUN: begin
                 nxt_count           =   count_q + 7'd1;
@@ -393,7 +393,7 @@ module divide
 
                 div_ready_o         =   div_done;
 
-                div_res_valid_o     =   div_done;
+                div_res_valid_o     =   1'b1;
                 div_res_o           =   div_res_run;
             end
         endcase

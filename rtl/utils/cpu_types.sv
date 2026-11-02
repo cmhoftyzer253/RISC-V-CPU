@@ -73,8 +73,8 @@ package cpu_types;
 
     typedef enum logic [1:0] {
         D_IDLE,
-        D_RUN,
-        D_SC_OUT
+        D_INIT,
+        D_RUN
     } div_state_t;
 
     typedef enum logic [1:0] {

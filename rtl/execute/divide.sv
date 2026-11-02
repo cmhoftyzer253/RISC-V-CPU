@@ -21,28 +21,25 @@ module divide
     output logic [63:0]     div_res_o
 );
 
-    logic [6:0]             count_q;
+    logic [63:0]            opr_a_ff;
+    logic [63:0]            opr_b_ff;
+    logic [3:0]             div_func_ff;
+
+    logic [6:0]             count_ff;
     logic [6:0]             nxt_count;
 
-    logic [64:0]            m_q;
-    logic [64:0]            mD;
+    logic [64:0]            m_ff;
+    logic [64:0]            m_init;
 
-    logic [64:0]            a_q;
+    logic [64:0]            a_ff;
     logic [64:0]            nxt_a;
-    logic [64:0]            aD;
+    logic [64:0]            a_init;
 
-    logic [64:0]            q_q;
+    logic [64:0]            q_ff;
     logic [64:0]            nxt_q;
-    logic [64:0]            qD;
+    logic [64:0]            q_init;
 
     logic                   word_op_ff;
-    logic                   rem_op_ff;
-    logic                   signed_op_ff;
-
-    logic                   correct_qnt_ff;
-    logic                   correct_rem_ff;
-
-    logic [63:0]            div_res_ff;
 
     logic [64:0]            opr_a_mask;
     logic [64:0]            opr_b_mask;
@@ -60,9 +57,6 @@ module divide
 
     logic [3:0]             div_flags;
 
-    logic                   loop_en;
-    logic                   sc_output_en;
-
     logic                   div_done;
 
     logic                   rem_correct;
@@ -71,7 +65,8 @@ module divide
 
     logic [63:0]            q_correct;
     logic [63:0]            a_correct;
-    logic [63:0]            div_resD;
+    logic                   sc_en;
+    logic [63:0]            sc_res;
     logic [63:0]            div_res_run;
 
     logic [2:0]             a_pos;
@@ -85,11 +80,11 @@ module divide
     logic [63:0]            small_op_qnt;
     logic [63:0]            small_op_rem;
 
-    logic                   dividend_neg_in;
-    logic                   divisor_neg_in;
+    logic                   dividend_neg;
+    logic                   divisor_neg;
 
-    logic                   rem_op_in;
-    logic                   signed_op_in;
+    logic                   rem_op;
+    logic                   signed_op;
 
     logic                   correct_qnt;
     logic                   correct_rem;
@@ -98,70 +93,54 @@ module divide
 
     always_ff @(posedge clk) begin
         if (!resetn) begin
+            opr_a_ff                        <=  64'h0;
+            opr_b_ff                        <=  64'h0;
+            div_func_ff                     <=  4'b0;
             word_op_ff                      <=  1'b0;
-            rem_op_ff                       <=  1'b0;
-            signed_op_ff                    <=  1'b0;
 
-            correct_qnt_ff                  <=  1'b0;
-            correct_rem_ff                  <=  1'b0;
+            count_ff                        <=  7'd0;
 
-            count_q                         <=  7'd0;
-
-            m_q                             <=  65'h0;
-            a_q                             <=  65'h0;
-            q_q                             <=  65'h0;
-
-            div_res_ff                      <=  64'h0;
+            m_ff                            <=  65'h0;
+            a_ff                            <=  65'h0;
+            q_ff                            <=  65'h0;
 
             state                           <=  D_IDLE;
         end else begin
             case (state)
                 D_IDLE: begin
-                    if (sc_output_en) begin
-                        div_res_ff          <=  div_resD;
+                    if (div_valid_i && !stallE_i) begin
+                        opr_a_ff        <=  opr_a_i;
+                        opr_b_ff        <=  opr_b_i;
+                        div_func_ff     <=  div_func_i;
+                        word_op_ff      <=  word_op_i;
 
-                        state               <=  D_SC_OUT;
-                    end else if (loop_en) begin
-                        word_op_ff          <=  word_op_i;
-                        rem_op_ff           <=  rem_op_in;
-                        signed_op_ff        <=  signed_op_in;
-
-                        correct_qnt_ff      <=  correct_qnt;
-                        correct_rem_ff      <=  correct_rem;
-
-                        m_q                 <=  mD;
-                        a_q                 <=  aD;
-                        q_q                 <=  qD;
-
-                        count_q             <=  {1'b0, shift_amnt};
-
-                        state               <=  D_RUN;
+                        state           <=  D_INIT;
                     end
                 end
-                D_SC_OUT: begin
+                D_INIT: begin
                     if (flushE_i) begin
-                        state               <=  D_IDLE;
-                    end else if (!stallM_i) begin
-                        if (sc_output_en) begin
-                            div_res_ff      <=  div_resD;
-                        end else if (loop_en) begin
-                            word_op_ff      <=  word_op_i;
-                            rem_op_ff       <=  rem_op_in;
-                            signed_op_ff    <=  signed_op_in;
+                        state                   <=  D_IDLE;
+                    end else if (sc_en) begin
+                        if (!stallM_i) begin
+                            if (div_valid_i && !stallE_i) begin
+                                opr_a_ff        <=  opr_a_i;
+                                opr_b_ff        <=  opr_b_i;
+                                div_func_ff     <=  div_func_i;
+                                word_op_ff      <=  word_op_i;
 
-                            correct_qnt_ff  <=  correct_qnt;
-                            correct_rem_ff  <=  correct_rem;
-
-                            m_q             <=  mD;
-                            a_q             <=  aD;
-                            q_q             <=  qD;
-
-                            count_q         <=  {1'b0, shift_amnt};
-
-                            state           <=  D_RUN;
-                        end else begin
-                            state           <=  D_IDLE;
+                                state           <=  D_INIT;
+                            end else begin
+                                state           <=  D_IDLE;
+                            end
                         end
+                    end else begin
+                        m_ff                    <=  m_init;
+                        a_ff                    <=  a_init;
+                        q_ff                    <=  q_init;
+
+                        count_ff                <=  {1'b0, shift_amnt};
+
+                        state                   <=  D_RUN;
                     end
                 end
                 D_RUN: begin
@@ -169,34 +148,22 @@ module divide
                         state                   <=  D_IDLE; 
                     end else if (div_done) begin            
                         if (!stallM_i) begin
-                            if (sc_output_en) begin
-                                div_res_ff      <=  div_resD;
-
-                                state           <=  D_SC_OUT;
-                            end else if (loop_en) begin
+                            if (div_valid_i && !stallE_i) begin
+                                opr_a_ff        <=  opr_a_i;
+                                opr_b_ff        <=  opr_b_i;
+                                div_func_ff     <=  div_func_i;
                                 word_op_ff      <=  word_op_i;
-                                rem_op_ff       <=  rem_op_in;
-                                signed_op_ff    <=  signed_op_in;
 
-                                correct_qnt_ff  <=  correct_qnt;
-                                correct_rem_ff  <=  correct_rem;
-
-                                m_q             <=  mD;
-                                a_q             <=  aD;
-                                q_q             <=  qD;
-
-                                count_q         <=  {1'b0, shift_amnt};
-
-                                state           <=  D_RUN;
+                                state           <=  D_INIT;
                             end else begin
                                 state           <=  D_IDLE;
                             end
                         end
                     end else begin                          
-                        count_q             <= nxt_count;
+                        count_ff            <= nxt_count;
 
-                        a_q                 <= nxt_a;
-                        q_q                 <= nxt_q;
+                        a_ff                <= nxt_a;
+                        q_ff                <= nxt_q;
                     end
                 end
             endcase
@@ -220,60 +187,60 @@ module divide
         q_correct               =   64'h0;
         a_correct               =   64'h0;
 
-        nxt_count               =   count_q;
+        nxt_count               =   count_ff;
 
-        nxt_a                   =   a_q;
-        nxt_q                   =   q_q;
+        nxt_a                   =   a_ff;
+        nxt_q                   =   q_ff;
 
-        rem_op_in               =   (div_func_i == REM || div_func_i == REMU);
-        signed_op_in            =   (div_func_i == DIV || div_func_i == REM);
-        dividend_neg_in         =   signed_op_in && (word_op_i ? opr_a_i[31] : opr_a_i[63]);
-        divisor_neg_in          =   signed_op_in && (word_op_i ? opr_b_i[31] : opr_b_i[63]);
+        rem_op                  =   (div_func_ff == REM) || (div_func_ff == REMU);
+        signed_op               =   (div_func_ff == DIV) || (div_func_ff == REM);
+        dividend_neg            =   signed_op && (word_op_ff ? opr_a_ff[31] : opr_a_ff[63]);
+        divisor_neg             =   signed_op && (word_op_ff ? opr_b_ff[31] : opr_b_ff[63]);
 
-        opr_a_mask[63:0]        =   ({64{!word_op_i}}                  & opr_a_i)                            | 
-                                    ({64{ word_op_i && !signed_op_in}} & {32'h0, opr_a_i[31:0]})             | 
-                                    ({64{ word_op_i &&  signed_op_in}} & {{32{opr_a_i[31]}}, opr_a_i[31:0]}); 
+        opr_a_mask[63:0]        =   ({64{!word_op_ff}}              & opr_a_ff)                                 | 
+                                    ({64{ word_op_ff && !signed_op}} & {32'h0, opr_a_ff[31:0]})                 | 
+                                    ({64{ word_op_ff &&  signed_op}} & {{32{opr_a_ff[31]}}, opr_a_ff[31:0]}); 
 
-        opr_b_mask[63:0]        =   ({64{!word_op_i}}                  & opr_b_i[63:0])                      |
-                                    ({64{ word_op_i && !signed_op_in}} & {32'h0, opr_b_i[31:0]})             |
-                                    ({64{ word_op_i &&  signed_op_in}} & {{32{opr_b_i[31]}}, opr_b_i[31:0]});
+        opr_b_mask[63:0]        =   ({64{!word_op_ff}}              & opr_b_ff[63:0])                           |
+                                    ({64{ word_op_ff && !signed_op}} & {32'h0, opr_b_ff[31:0]})                 |
+                                    ({64{ word_op_ff &&  signed_op}} & {{32{opr_b_ff[31]}}, opr_b_ff[31:0]});
 
         //zero divisor
-        div_flags[0]            =   (word_op_i && (opr_b_i[31:0] == 32'h0)) || (!word_op_i && (opr_b_i == 64'h0));
+        div_flags[0]            =   (word_op_ff && (opr_b_ff[31:0] == 32'h0)) || (!word_op_ff && (opr_b_ff == 64'h0));
 
         //overflow
-        div_flags[1]            =   ( word_op_i && signed_op_in && (opr_a_i[31:0] == 32'h8000_0000) && (opr_b_i[31:0] == 32'hFFFF_FFFF)) || 
-                                    (!word_op_i && signed_op_in && (opr_a_i == 64'h8000_0000_0000_0000) && (opr_b_i == 64'hFFFF_FFFF_FFFF_FFFF));
+        div_flags[1]            =   ( word_op_ff && signed_op && (opr_a_ff[31:0] == 32'h8000_0000) && (opr_b_ff[31:0] == 32'hFFFF_FFFF)) || 
+                                    (!word_op_ff && signed_op && (opr_a_ff == 64'h8000_0000_0000_0000) && (opr_b_ff == 64'hFFFF_FFFF_FFFF_FFFF));
 
         //zero dividend
-        div_flags[2]            =   (word_op_i && (opr_a_i[31:0] == 32'h0)) || (!word_op_i && (opr_a_i == 64'h0));
+        div_flags[2]            =   (word_op_ff && (opr_a_ff[31:0] == 32'h0)) || (!word_op_ff && (opr_a_ff == 64'h0));
 
         //short circuit division
-        div_flags[3]            =   ( word_op_i && ~|opr_a_i[31:4] && ~|opr_b_i[31:4]) || 
-                                    (!word_op_i && ~|opr_a_i[63:4] && ~|opr_b_i[63:4]);
+        div_flags[3]            =   ( word_op_ff && ~|opr_a_ff[31:4] && ~|opr_b_ff[31:4]) || 
+                                    (!word_op_ff && ~|opr_a_ff[63:4] && ~|opr_b_ff[63:4]);
 
-        sc_output_en            =   div_valid_i && !stallE_i && |div_flags;
+        sc_en                   =   |div_flags;
 
-        small_op_qnt            =   !div_flags[0] ? {60'h0, (opr_a_i[3:0] / opr_b_i[3:0])} : 64'hFFFF_FFFF_FFFF_FFFF;
-        small_op_rem            =   !div_flags[0] ? {60'h0, (opr_a_i[3:0] % opr_b_i[3:0])} : (word_op_i ? {{32{opr_a_i[31]}}, opr_a_i[31:0]} : opr_a_i);
+        small_op_qnt            =   !div_flags[0] ? {60'h0, (opr_a_ff[3:0] / opr_b_ff[3:0])} : 64'hFFFF_FFFF_FFFF_FFFF;
+        small_op_rem            =   !div_flags[0] ? {60'h0, (opr_a_ff[3:0] % opr_b_ff[3:0])} : (word_op_ff ? {{32{opr_a_ff[31]}}, opr_a_ff[31:0]} : opr_a_ff);
 
         if (div_flags[0]) begin
-            div_resD            =   rem_op_in ? 
-                                    (word_op_i ? {{32{opr_a_i[31]}}, opr_a_i[31:0]} : opr_a_i) : 
+            sc_res              =   rem_op ? 
+                                    (word_op_ff ? {{32{opr_a_ff[31]}}, opr_a_ff[31:0]} : opr_a_ff) : 
                                     64'hFFFF_FFFF_FFFF_FFFF;
         end else if (div_flags[1]) begin
-            div_resD            =   rem_op_in ? 64'h0 : 
-                                    (word_op_i ? {{32{opr_a_i[31]}}, opr_a_i[31:0]} : opr_a_i);
+            sc_res              =   rem_op ? 64'h0 : 
+                                    (word_op_ff ? {{32{opr_a_ff[31]}}, opr_a_ff[31:0]} : opr_a_ff);
         end else if (div_flags[2]) begin
-            div_resD            =   64'h0;
+            sc_res              =   64'h0;
         end else if (div_flags[3]) begin
-            div_resD            =   rem_op_in ? small_op_rem : small_op_qnt;
+            sc_res              =   rem_op ? small_op_rem : small_op_qnt;
         end else begin
-            div_resD            =   64'h0;
+            sc_res              =   64'h0;
         end
 
-        opr_a_mask[64]          =   opr_a_mask[63] && signed_op_in;
-        opr_b_mask[64]          =   opr_b_mask[63] && signed_op_in;
+        opr_a_mask[64]          =   opr_a_mask[63] && signed_op;
+        opr_b_mask[64]          =   opr_b_mask[63] && signed_op;
 
         a_vals[6]               =   (!opr_a_mask[64] && (opr_a_mask[63:56] != 8'h0)) || (opr_a_mask[64] && (opr_a_mask[63:55] != 9'h1FF));
         a_vals[5]               =   (!opr_a_mask[64] && (opr_a_mask[55:48] != 8'h0)) || (opr_a_mask[64] && (opr_a_mask[54:47] != 8'hFF));
@@ -328,8 +295,6 @@ module divide
             default: shift_1h[7]    =   1'b1;
         endcase
 
-        loop_en                 =   div_valid_i && !stallE_i && ~|div_flags;
-
         case (shift_1h)
             8'b1000_0000: shift_amnt        =   6'd63;
             8'b0100_0000: shift_amnt        =   6'd56;
@@ -342,16 +307,16 @@ module divide
             default: shift_amnt             =   6'd0;
         endcase
 
-        correct_qnt             =   signed_op_in && (dividend_neg_in ^ divisor_neg_in); 
-        correct_rem             =   signed_op_in && dividend_neg_in;
+        correct_qnt             =   signed_op && (dividend_neg ^ divisor_neg);
+        correct_rem             =   signed_op && dividend_neg;
 
-        dividend_abs            =   dividend_neg_in ? ~opr_a_mask + 65'b1 : opr_a_mask;
+        dividend_abs            =   dividend_neg ? ~opr_a_mask + 65'b1 : opr_a_mask;
 
         a_shift                 =   {65'b0, dividend_abs[63:0]} << shift_amnt;
 
-        mD                      =   opr_b_mask;
-        aD                      =   a_shift[128:64];
-        qD                      =   dividend_abs << shift_amnt;
+        m_init                  =   opr_b_mask;
+        a_init                  =   a_shift[128:64];
+        q_init                  =   dividend_abs << shift_amnt;
 
         div_ready_o             =   1'b0;
 
@@ -363,40 +328,39 @@ module divide
             D_IDLE: begin
                 div_ready_o         =   1'b1;
             end
-            D_SC_OUT: begin
-                div_ready_o         =   1'b1;
-
-                div_res_o           =   div_res_ff;
-                div_res_valid_o     =   1'b1;
+            D_INIT: begin
+                div_ready_o         =   sc_en;
+                div_res_valid_o     =   sc_en;
+                div_res_o           =   sc_res;
             end
             D_RUN: begin
-                nxt_count           =   count_q + 7'd1;
+                nxt_count           =   count_ff + 7'd1;
 
-                rem_correct         =   (count_q[6:0] == 7'd64) && rem_op_ff && a_q[64];
-                m_neg               =   (signed_op_ff && ((word_op_ff && m_q[31]) || (!word_op_ff && m_q[63])));
-                add                 =   (a_q[64] || rem_correct) ^ m_neg;
+                rem_correct         =   (count_ff[6:0] == 7'd64) && rem_op && a_ff[64];
+                m_neg               =   (signed_op && ((word_op_ff && m_ff[31]) || (!word_op_ff && m_ff[63])));
+                add                 =   (a_ff[64] || rem_correct) ^ m_neg;
 
-                m_abs               =   add ? m_q : ~m_q;
+                m_abs               =   add ? m_ff : ~m_ff;
 
-                a_pshift            =   rem_correct ? a_q : {a_q[63:0], q_q[63]};
+                a_pshift            =   rem_correct ? a_ff : {a_ff[63:0], q_ff[63]};
                 nxt_a               =   a_pshift + m_abs + {64'b0, !add};
 
-                nxt_q               =   {q_q[63:0], !nxt_a[64]};   
+                nxt_q               =   {q_ff[63:0], !nxt_a[64]};   
 
-                div_done            =   !flushE_i && ((rem_op_ff && (count_q == 7'd65)) || (!rem_op_ff && (count_q == 7'd64)));
+                div_done            =   !flushE_i && ((rem_op && (count_ff == 7'd65)) || (!rem_op && (count_ff == 7'd64)));
 
-                q_correct           =   correct_qnt_ff ? ~q_q[63:0] + 64'b1 : q_q[63:0];
-                a_correct           =   correct_rem_ff ? ~a_q[63:0] + 64'b1 : a_q[63:0];
+                q_correct           =   correct_qnt ? ~q_ff[63:0] + 64'b1 : q_ff[63:0];
+                a_correct           =   correct_rem ? ~a_ff[63:0] + 64'b1 : a_ff[63:0];
 
 
-                div_res_run         =   ({64{ rem_op_ff &&  word_op_ff}} & {{32{a_correct[31]}}, a_correct[31:0]})   | 
-                                        ({64{!rem_op_ff &&  word_op_ff}} & {{32{q_correct[31]}}, q_correct[31:0]})   | 
-                                        ({64{ rem_op_ff && !word_op_ff}} & a_correct[63:0])                          |
-                                        ({64{!rem_op_ff && !word_op_ff}} & q_correct[63:0]);
+                div_res_run         =   ({64{ rem_op &&  word_op_ff}} & {{32{a_correct[31]}}, a_correct[31:0]})   | 
+                                        ({64{!rem_op &&  word_op_ff}} & {{32{q_correct[31]}}, q_correct[31:0]})   | 
+                                        ({64{ rem_op && !word_op_ff}} & a_correct[63:0])                          |
+                                        ({64{!rem_op && !word_op_ff}} & q_correct[63:0]);
 
                 div_ready_o         =   div_done;
 
-                div_res_valid_o     =   (rem_op_ff && (count_q == 7'd65)) || (!rem_op_ff && (count_q == 7'd64));
+                div_res_valid_o     =   (rem_op && (count_ff == 7'd65)) || (!rem_op && (count_ff == 7'd64));
                 div_res_o           =   div_res_run;
             end
         endcase

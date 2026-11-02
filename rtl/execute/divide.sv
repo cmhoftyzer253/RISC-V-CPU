@@ -360,6 +360,9 @@ module divide
         div_done                =   1'b0;   
 
         case (state)
+            D_IDLE: begin
+                div_ready_o         =   1'b1;
+            end
             D_SC_OUT: begin
                 div_ready_o         =   1'b1;
 
@@ -393,7 +396,7 @@ module divide
 
                 div_ready_o         =   div_done;
 
-                div_res_valid_o     =   1'b1;
+                div_res_valid_o     =   (rem_op_ff && (count_q == 7'd65)) || (!rem_op_ff && (count_q == 7'd64));
                 div_res_o           =   div_res_run;
             end
         endcase

@@ -411,7 +411,7 @@ module i_cache
                 data_rd_en              =   invalidate || flush || ifu_ready_i;
                 data_rd_addr            =   data_index;
 
-                if (!(flush || invalidate)) begin
+                if (!(flush_ff || invalidate)) begin
                     instr_o             =   instr_hold;
                     instr_valid_o       =   1'b1;
 

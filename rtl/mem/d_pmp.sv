@@ -114,12 +114,12 @@ module d_pmp
         end
 
         straddle    =   (first_match_base != first_match_uw);
-        enforce     =   (priv_level_eff != M_MODE) || pmpcfg_uw[7] || pmpcfg_base[7];
+        enforce     =   (priv_level_eff != M_MODE) || pmpcfg_base[7];
 
         case (lsu_ls_i)
-            LSU_LOAD: pmp_fault_o       =   lsu_valid_i && enforce && (straddle || !pmpcfg_base[0]);
-            LSU_STORE: pmp_fault_o      =   lsu_valid_i && enforce && (straddle || !pmpcfg_base[1]);
-            LSU_ATOMIC: pmp_fault_o     =   lsu_valid_i && enforce && (straddle || ~&pmpcfg_base[1:0]);
+            LSU_LOAD: pmp_fault_o       =   lsu_valid_i && (straddle || (enforce && !pmpcfg_base[0]));
+            LSU_STORE: pmp_fault_o      =   lsu_valid_i && (straddle || (enforce && !pmpcfg_base[1]));
+            LSU_ATOMIC: pmp_fault_o     =   lsu_valid_i && (straddle || (enforce && (~&pmpcfg_base[1:0])));
             default: pmp_fault_o        =   1'b0;
         endcase
     end

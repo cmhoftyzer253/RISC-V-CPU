@@ -2,343 +2,317 @@ module lsu
     import cpu_defines::*;
     import cpu_types::*;
 (
-    input logic             clk,
-    input logic             resetn,
+    input logic                 clk,
+    input logic                 resetn,
 
-    input logic             lsu_valid_i,
-    input logic [63:0]      lsu_data_i,
-    input logic [1:0]       lsu_ls_i,
-    input logic [63:0]      lsu_addr_i,
-    input logic [1:0]       lsu_size_i,
-    input logic             lsu_se_i,
-    output logic            lsu_ready_o,
+    input logic                 lsu_valid_i,
+    input logic [63:0]          lsu_data_i,
+    input logic [1:0]           lsu_ls_i,
+    input logic [63:0]          lsu_addr_i,
+    input logic [1:0]           lsu_size_i,
+    input logic                 lsu_se_i,
+    output logic                lsu_ready_o,
 
-    input logic [4:0]       atomic_op_i,
+    input logic [4:0]           atomic_op_i,
 
-    output logic [63:0]     addrM_o,
+    output logic [63:0]         addrM_o,
 
-    output logic [63:0]     lsu_ldata_o,
+    output logic [63:0]         lsu_ldata_o,
 
-    input logic [1:0]       priv_level_i,
-    input logic [1:0]       mstatus_mpp_i,
-    input logic             mstatus_mprv_i, 
-    input logic             mstatus_mbe_i,
-    input logic             mstatus_sbe_i,
-    input logic             mstatus_ube_i,
+    input logic [1:0]           priv_level_i,
+    input logic [1:0]           mstatus_mpp_i,
+    input logic                 mstatus_mprv_i, 
+    input logic                 mstatus_mbe_i,
+    input logic                 mstatus_sbe_i,
+    input logic                 mstatus_ube_i,
 
-    input logic [63:0]      rs2_dataM_i,
+    input logic [63:0]          rs2_dataM_i,
 
-    input logic             dc_clean_i,
-    output logic            dc_clean_done_o,
+    input logic                 dc_clean_i,
+    output logic                dc_clean_done_o,
 
-    input logic             trap_en_i,
+    input logic                 trap_en_i,
 
-    output logic            exc_valid_o,
-    output logic [4:0]      exc_code_o,
+    output logic                exc_valid_o,
+    output logic [4:0]          exc_code_o,
 
-    input logic [53:0]      pmpaddr0_i,
-    input logic [53:0]      pmpaddr1_i,
-    input logic [53:0]      pmpaddr2_i,
-    input logic [53:0]      pmpaddr3_i,
-    input logic [53:0]      pmpaddr4_i,
-    input logic [53:0]      pmpaddr5_i,
-    input logic [53:0]      pmpaddr6_i,
-    input logic [53:0]      pmpaddr7_i,
-    input logic [53:0]      pmpaddr8_i,
-    input logic [53:0]      pmpaddr9_i,
-    input logic [53:0]      pmpaddr10_i,
-    input logic [53:0]      pmpaddr11_i,
-    input logic [53:0]      pmpaddr12_i,
-    input logic [53:0]      pmpaddr13_i,
-    input logic [53:0]      pmpaddr14_i,
-    input logic [53:0]      pmpaddr15_i,
-    input logic [63:0]      pmpcfg0_i,
-    input logic [63:0]      pmpcfg2_i,
+    input logic [63:0]          pmpcfg0_i,
+    input logic [63:0]          pmpcfg2_i,
+
+    input logic [15:0][53:0]    pmpaddr_i,
+    input logic [15:0][53:0]    pmpaddr_napot_mask_i,
 
     //AXI interface
     //load address -> bus (AR channel)
-    input logic             arready_i,
-    output logic [63:0]     araddr_o,
-    output logic [7:0]      arlen_o,
-    output logic [2:0]      arsize_o,
-    output logic [1:0]      arburst_o,
-    output logic            arlock_o,
-    output logic [3:0]      arid_o,
-    output logic [3:0]      arcache_o,
-    output logic [2:0]      arprot_o,
-    output logic [3:0]      arqos_o,
-    output logic            arvalid_o,
+    input logic                 arready_i,
+    output logic [63:0]         araddr_o,
+    output logic [7:0]          arlen_o,
+    output logic [2:0]          arsize_o,
+    output logic [1:0]          arburst_o,
+    output logic                arlock_o,
+    output logic [3:0]          arid_o,
+    output logic [3:0]          arcache_o,
+    output logic [2:0]          arprot_o,
+    output logic [3:0]          arqos_o,
+    output logic                arvalid_o,
     
     //load data -> lsu (R channel)
-    input logic             rvalid_i,
-    input logic [63:0]      rdata_i,
-    input logic [1:0]       rresp_i,
-    input logic             rlast_i,
-    input logic [3:0]       rid_i,
-    output logic            rready_o,
+    input logic                 rvalid_i,
+    input logic [63:0]          rdata_i,
+    input logic [1:0]           rresp_i,
+    input logic                 rlast_i,
+    input logic [3:0]           rid_i,
+    output logic                rready_o,
 
     //store request (AW, W channels)
-    input logic             awready_i,
-    input logic             wready_i,
-    output logic [63:0]     awaddr_o,
-    output logic            awvalid_o,
-    output logic [2:0]      awsize_o,
-    output logic [7:0]      awlen_o,
-    output logic [1:0]      awburst_o,
-    output logic            awlock_o,
-    output logic [3:0]      awid_o,
-    output logic [3:0]      awcache_o,
-    output logic [2:0]      awprot_o,
-    output logic [3:0]      awqos_o,
-    output logic [63:0]     wdata_o,
-    output logic [7:0]      wstrb_o,
-    output logic            wvalid_o,
-    output logic            wlast_o,
+    input logic                 awready_i,
+    input logic                 wready_i,
+    output logic [63:0]         awaddr_o,
+    output logic                awvalid_o,
+    output logic [2:0]          awsize_o,
+    output logic [7:0]          awlen_o,
+    output logic [1:0]          awburst_o,
+    output logic                awlock_o,
+    output logic [3:0]          awid_o,
+    output logic [3:0]          awcache_o,
+    output logic [2:0]          awprot_o,
+    output logic [3:0]          awqos_o,
+    output logic [63:0]         wdata_o,
+    output logic [7:0]          wstrb_o,
+    output logic                wvalid_o,
+    output logic                wlast_o,
 
     //store response (B channel)
-    input logic [1:0]       bresp_i,
-    input logic             bvalid_i,
-    input logic [3:0]       bid_i,
-    output logic            bready_o
+    input logic [1:0]           bresp_i,
+    input logic                 bvalid_i,
+    input logic [3:0]           bid_i,
+    output logic                bready_o
 );
 
-    logic [1:0]             sizeM;
-    logic                   seM;
-    logic [4:0]             atomic_opM;
-    logic [1:0]             lsM;
+    logic [1:0]                 sizeM;
+    logic                       seM;
+    logic [4:0]                 atomic_opM;
+    logic [1:0]                 lsM;
 
-    logic                   dc_ready;
-    logic                   dc_resp_valid;
-    logic [63:0]            dc_ldata;
-    logic                   dc_exc_valid;
+    logic                       dc_ready;
+    logic                       dc_resp_valid;
+    logic [63:0]                dc_ldata;
+    logic                       dc_exc_valid;
 
-    logic                   validM;
-    logic [63:0]            dataM;
-    logic [63:0]            addrM;
-    logic [7:0]             maskM;
+    logic                       validM;
+    logic [63:0]                dataM;
+    logic [63:0]                addrM;
+    logic [7:0]                 maskM;
 
-    logic                   dc_valid;
-    logic                   dc_ls;
-    logic [63:0]            dc_addr;
-    logic [63:0]            dc_data;
-    logic [7:0]             dc_mask;
-    logic                   dc_advance;
+    logic                       dc_valid;
+    logic                       dc_ls;
+    logic [63:0]                dc_addr;
+    logic [63:0]                dc_data;
+    logic [7:0]                 dc_mask;
+    logic                       dc_advance;
 
-    logic                   stop_cacheop;
+    logic                       stop_cacheop;
 
-    logic [63:0]            dc_araddr;
-    logic [7:0]             dc_arlen;
-    logic [2:0]             dc_arsize;
-    logic [1:0]             dc_arburst;
-    logic                   dc_arlock;
-    logic [3:0]             dc_arid;
-    logic [3:0]             dc_arcache;
-    logic [2:0]             dc_arprot;
-    logic [3:0]             dc_arqos;
-    logic                   dc_arvalid;
-    logic                   dc_rready;
-    logic [63:0]            dc_awaddr;
-    logic                   dc_awvalid;
-    logic [2:0]             dc_awsize;
-    logic [7:0]             dc_awlen;
-    logic [1:0]             dc_awburst;
-    logic                   dc_awlock;
-    logic [3:0]             dc_awid;
-    logic [3:0]             dc_awcache;
-    logic [2:0]             dc_awprot;
-    logic [3:0]             dc_awqos;
-    logic [63:0]            dc_wdata;
-    logic [7:0]             dc_wstrb;
-    logic                   dc_wvalid;
-    logic                   dc_wlast;
-    logic                   dc_bready;
+    logic [63:0]                dc_araddr;
+    logic [7:0]                 dc_arlen;
+    logic [2:0]                 dc_arsize;
+    logic [1:0]                 dc_arburst;
+    logic                       dc_arlock;
+    logic [3:0]                 dc_arid;
+    logic [3:0]                 dc_arcache;
+    logic [2:0]                 dc_arprot;
+    logic [3:0]                 dc_arqos;
+    logic                       dc_arvalid;
+    logic                       dc_rready;
+    logic [63:0]                dc_awaddr;
+    logic                       dc_awvalid;
+    logic [2:0]                 dc_awsize;
+    logic [7:0]                 dc_awlen;
+    logic [1:0]                 dc_awburst;
+    logic                       dc_awlock;
+    logic [3:0]                 dc_awid;
+    logic [3:0]                 dc_awcache;
+    logic [2:0]                 dc_awprot;
+    logic [3:0]                 dc_awqos;
+    logic [63:0]                dc_wdata;
+    logic [7:0]                 dc_wstrb;
+    logic                       dc_wvalid;
+    logic                       dc_wlast;
+    logic                       dc_bready;
 
-    logic                   pma_cacheable;
-    logic                   pma_fault;
-    logic                   pmp_fault;
+    logic                       pma_cacheable;
+    logic                       pma_fault;
+    logic                       pmp_fault;
 
-    logic [63:0]            store_raw_data;
-    logic [2:0]             store_addr_algn;
-    logic [1:0]             store_size;
-    logic [63:0]            load_raw_data;
-    logic [63:0]            load_data;
+    logic [63:0]                store_raw_data;
+    logic [2:0]                 store_addr_algn;
+    logic [1:0]                 store_size;
+    logic [63:0]                load_raw_data;
+    logic [63:0]                load_data;
 
-    logic [63:0]            amo_res;
-    logic                   amo_word_opM;
-    logic                   amo_store;
-    logic                   amo_store_ready;
-    logic                   amo_load_fault;
-    logic                   amo_load;
-    logic [63:0]            amo_load_data;
+    logic [63:0]                amo_res;
+    logic                       amo_word_opM;
+    logic                       amo_store;
+    logic                       amo_store_ready;
+    logic                       amo_load_fault;
+    logic                       amo_load;
+    logic [63:0]                amo_load_data;
 
-    logic                   LR_valid;
-    logic [63:0]            LR_addr;
-    logic [1:0]             LR_size;
+    logic                       LR_valid;
+    logic [63:0]                LR_addr;
+    logic [1:0]                 LR_size;
     
-    logic                   LR_set;
-    logic                   LR_invalidate;
+    logic                       LR_set;
+    logic                       LR_invalidate;
 
-    logic                   lrM;
-    logic                   scM;
+    logic                       lrM;
+    logic                       scM;
 
-    logic                   sc_lr_miss;
-    logic                   sc_fail;
+    logic                       sc_ldata_sel;
+    logic                       sc_lr_miss;
+    logic                       sc_fail;
 
-    logic                   lr_addr_match;
+    logic                       lr_addr_match;
 
-    logic                   lsu_store;
+    logic                       lsu_store;
 
-    logic                   misaligned_addr;
-    logic                   misaligned_exc;
-    logic                   exc;
+    logic                       misaligned_addr;
+    logic                       misaligned_exc;
+    logic                       exc;
 
-    logic                   uncacheable_load;
-    logic                   uncacheable_store;
+    logic                       uncacheable_load;
+    logic                       uncacheable_store;
 
-    logic [63:0]            mem_load_data;
+    logic [63:0]                mem_load_data;
     
-    logic                   aw_done;
-    logic                   w_done;
+    logic                       aw_done;
+    logic                       w_done;
 
-    logic                   store_req_done;
+    logic                       store_req_done;
 
-    logic                   exc_load;
-    logic                   exc_store;
-    logic                   exc_ff;
+    logic                       exc_load;
+    logic                       exc_store;
+    logic                       exc_ff;
 
-    lsu_state_t             state;
+    lsu_state_t                 state;
 
     d_pma u_d_pma (
-        .lsu_valid_i        (validM),
-        .lsu_addr_i         (addrM),
-        .lsu_ls_i           (lsM),
-        .lsu_size_i         (sizeM),
-        .pma_cacheable_o    (pma_cacheable),
-        .pma_fault_o        (pma_fault)
+        .lsu_valid_i            (validM),
+        .lsu_addr_i             (addrM),
+        .lsu_ls_i               (lsM),
+        .lsu_size_i             (sizeM),
+        .pma_cacheable_o        (pma_cacheable),
+        .pma_fault_o            (pma_fault)
     );
 
     d_pmp u_d_pmp (
-        .lsu_valid_i        (validM),
-        .lsu_addr_i         (addrM),
-        .lsu_ls_i           (lsM),
-        .lsu_size_i         (sizeM),
-        .priv_level_i       (priv_level_i),
-        .mstatus_mpp_i      (mstatus_mpp_i),
-        .mstatus_mprv_i     (mstatus_mprv_i),
-        .pmpaddr0_i         (pmpaddr0_i),
-        .pmpaddr1_i         (pmpaddr1_i),
-        .pmpaddr2_i         (pmpaddr2_i),
-        .pmpaddr3_i         (pmpaddr3_i),
-        .pmpaddr4_i         (pmpaddr4_i),
-        .pmpaddr5_i         (pmpaddr5_i),
-        .pmpaddr6_i         (pmpaddr6_i),
-        .pmpaddr7_i         (pmpaddr7_i),
-        .pmpaddr8_i         (pmpaddr8_i),
-        .pmpaddr9_i         (pmpaddr9_i),
-        .pmpaddr10_i        (pmpaddr10_i),
-        .pmpaddr11_i        (pmpaddr11_i),
-        .pmpaddr12_i        (pmpaddr12_i),
-        .pmpaddr13_i        (pmpaddr13_i),
-        .pmpaddr14_i        (pmpaddr14_i),
-        .pmpaddr15_i        (pmpaddr15_i),
-        .pmpcfg0_i          (pmpcfg0_i),
-        .pmpcfg2_i          (pmpcfg2_i),
-        .pmp_fault_o        (pmp_fault)
+        .lsu_valid_i            (validM),
+        .lsu_addr_i             (addrM),
+        .lsu_ls_i               (lsM),
+        .lsu_size_i             (sizeM),
+        .priv_level_i           (priv_level_i),
+        .mstatus_mpp_i          (mstatus_mpp_i),
+        .mstatus_mprv_i         (mstatus_mprv_i),
+        .pmpcfg0_i              (pmpcfg0_i),
+        .pmpcfg2_i              (pmpcfg2_i),
+        .pmpaddr_i              (pmpaddr_i),
+        .pmpaddr_napot_mask_i   (pmpaddr_napot_mask_i),
+        .pmp_fault_o            (pmp_fault)
     );
 
     amo_alu u_amo_alu (
-        .lsu_ld_i           (load_data),
-        .rs2_data_i         (rs2_dataM_i),
-        .atomic_op_i        (atomic_opM),
-        .amo_word_op_i      (amo_word_opM),
-        .amo_res_o          (amo_res)
+        .lsu_ld_i               (load_data),
+        .rs2_data_i             (rs2_dataM_i),
+        .atomic_op_i            (atomic_opM),
+        .amo_word_op_i          (amo_word_opM),
+        .amo_res_o              (amo_res)
     );
 
     store_es_algn u_store_es_algn (
-        .raw_data_i         (store_raw_data), 
-        .addr_algn_i        (store_addr_algn), 
-        .store_size_i       (store_size), 
-        .priv_level_i       (priv_level_i),
-        .mstatus_mpp_i      (mstatus_mpp_i),
-        .mstatus_mprv_i     (mstatus_mprv_i),
-        .mstatus_mbe_i      (mstatus_mbe_i),
-        .mstatus_sbe_i      (mstatus_sbe_i),
-        .mstatus_ube_i      (mstatus_ube_i),
-        .store_mask_o       (dc_mask),
-        .store_data_o       (dc_data)
+        .raw_data_i             (store_raw_data), 
+        .addr_algn_i            (store_addr_algn), 
+        .store_size_i           (store_size), 
+        .priv_level_i           (priv_level_i),
+        .mstatus_mpp_i          (mstatus_mpp_i),
+        .mstatus_mprv_i         (mstatus_mprv_i),
+        .mstatus_mbe_i          (mstatus_mbe_i),
+        .mstatus_sbe_i          (mstatus_sbe_i),
+        .mstatus_ube_i          (mstatus_ube_i),
+        .store_mask_o           (dc_mask),
+        .store_data_o           (dc_data)
     );
 
     load_es_algn u_load_es_algn (
-        .raw_data_i         (load_raw_data),
-        .addr_algn_i        (addrM[2:0]),
-        .load_size_i        (sizeM),
-        .load_se_i          (seM),
-        .priv_level_i       (priv_level_i),
-        .mstatus_mpp_i      (mstatus_mpp_i),
-        .mstatus_mprv_i     (mstatus_mprv_i),
-        .mstatus_mbe_i      (mstatus_mbe_i),
-        .mstatus_sbe_i      (mstatus_sbe_i),
-        .mstatus_ube_i      (mstatus_ube_i),
-        .load_data_o        (load_data)
+        .raw_data_i             (load_raw_data),
+        .addr_algn_i            (addrM[2:0]),
+        .load_size_i            (sizeM),
+        .load_se_i              (seM),
+        .priv_level_i           (priv_level_i),
+        .mstatus_mpp_i          (mstatus_mpp_i),
+        .mstatus_mprv_i         (mstatus_mprv_i),
+        .mstatus_mbe_i          (mstatus_mbe_i),
+        .mstatus_sbe_i          (mstatus_sbe_i),
+        .mstatus_ube_i          (mstatus_ube_i),
+        .load_data_o            (load_data)
     );
 
     d_cache u_d_cache (
-        .clk                (clk),
-        .resetn             (resetn),
-        .dc_data_i          (dc_data),
-        .dc_ls_i            (dc_ls),
-        .dc_valid_i         (dc_valid),
-        .dc_addr_i          (dc_addr),
-        .dc_mask_i          (dc_mask),
-        .dc_ready_o         (dc_ready),
-        .dc_advance_i       (dc_advance),
-        .dc_rvalid_o        (dc_resp_valid),
-        .dc_ldata_o         (dc_ldata),
-        .validM_o           (validM),
-        .dataM_o            (dataM),
-        .addrM_o            (addrM),
-        .maskM_o            (maskM),
-        .arready_i          (arready_i),
-        .araddr_o           (dc_araddr),
-        .arlen_o            (dc_arlen),
-        .arsize_o           (dc_arsize),
-        .arburst_o          (dc_arburst),
-        .arlock_o           (dc_arlock),
-        .arid_o             (dc_arid),
-        .arcache_o          (dc_arcache),
-        .arprot_o           (dc_arprot),
-        .arqos_o            (dc_arqos),
-        .arvalid_o          (dc_arvalid),
-        .rid_i              (rid_i),
-        .rdata_i            (rdata_i),
-        .rresp_i            (rresp_i),
-        .rlast_i            (rlast_i),
-        .rvalid_i           (rvalid_i),
-        .rready_o           (dc_rready),
-        .awready_i          (awready_i),
-        .wready_i           (wready_i),
-        .awaddr_o           (dc_awaddr),
-        .awvalid_o          (dc_awvalid),
-        .awsize_o           (dc_awsize),
-        .awlen_o            (dc_awlen),
-        .awburst_o          (dc_awburst),
-        .awlock_o           (dc_awlock),
-        .awid_o             (dc_awid),
-        .awcache_o          (dc_awcache),
-        .awprot_o           (dc_awprot),
-        .awqos_o            (dc_awqos),
-        .wdata_o            (dc_wdata),
-        .wstrb_o            (dc_wstrb),
-        .wvalid_o           (dc_wvalid),
-        .wlast_o            (dc_wlast),
-        .bresp_i            (bresp_i),
-        .bvalid_i           (bvalid_i),
-        .bid_i              (bid_i),
-        .bready_o           (dc_bready),
-        .stop_cacheop_i     (stop_cacheop),
-        .clean_i            (dc_clean_i),
-        .clean_done_o       (dc_clean_done_o),
-        .exc_valid_o        (dc_exc_valid)
+        .clk                    (clk),
+        .resetn                 (resetn),
+        .dc_data_i              (dc_data),
+        .dc_ls_i                (dc_ls),
+        .dc_valid_i             (dc_valid),
+        .dc_addr_i              (dc_addr),
+        .dc_mask_i              (dc_mask),
+        .dc_ready_o             (dc_ready),
+        .dc_advance_i           (dc_advance),
+        .dc_rvalid_o            (dc_resp_valid),
+        .dc_ldata_o             (dc_ldata),
+        .validM_o               (validM),
+        .dataM_o                (dataM),
+        .addrM_o                (addrM),
+        .maskM_o                (maskM),
+        .arready_i              (arready_i),
+        .araddr_o               (dc_araddr),
+        .arlen_o                (dc_arlen),
+        .arsize_o               (dc_arsize),
+        .arburst_o              (dc_arburst),
+        .arlock_o               (dc_arlock),
+        .arid_o                 (dc_arid),
+        .arcache_o              (dc_arcache),
+        .arprot_o               (dc_arprot),
+        .arqos_o                (dc_arqos),
+        .arvalid_o              (dc_arvalid),
+        .rid_i                  (rid_i),
+        .rdata_i                (rdata_i),
+        .rresp_i                (rresp_i),
+        .rlast_i                (rlast_i),
+        .rvalid_i               (rvalid_i),
+        .rready_o               (dc_rready),
+        .awready_i              (awready_i),
+        .wready_i               (wready_i),
+        .awaddr_o               (dc_awaddr),
+        .awvalid_o              (dc_awvalid),
+        .awsize_o               (dc_awsize),
+        .awlen_o                (dc_awlen),
+        .awburst_o              (dc_awburst),
+        .awlock_o               (dc_awlock),
+        .awid_o                 (dc_awid),
+        .awcache_o              (dc_awcache),
+        .awprot_o               (dc_awprot),
+        .awqos_o                (dc_awqos),
+        .wdata_o                (dc_wdata),
+        .wstrb_o                (dc_wstrb),
+        .wvalid_o               (dc_wvalid),
+        .wlast_o                (dc_wlast),
+        .bresp_i                (bresp_i),
+        .bvalid_i               (bvalid_i),
+        .bid_i                  (bid_i),
+        .bready_o               (dc_bready),
+        .stop_cacheop_i         (stop_cacheop),
+        .clean_i                (dc_clean_i),
+        .clean_done_o           (dc_clean_done_o),
+        .exc_valid_o            (dc_exc_valid)
     );
 
     always_ff @(posedge clk) begin
@@ -477,6 +451,8 @@ module lsu
 
         exc                 =   validM && (pma_fault || pmp_fault || misaligned_addr);
 
+        sc_ldata_sel        =   (lsM == LSU_ATOMIC) && (atomic_opM == SC);
+
         scM                 =   validM && !exc && (lsM == LSU_ATOMIC) && (atomic_opM == SC);
         sc_lr_miss          =   !LR_valid || (LR_addr != addrM) || (LR_size != sizeM);
         sc_fail             =   scM && sc_lr_miss;
@@ -582,7 +558,7 @@ module lsu
                 wvalid_o            =   dc_wvalid;
                 bready_o            =   dc_bready;
 
-                lsu_ldata_o         =   amo_load ? amo_load_data : (scM ? {63'h0, sc_lr_miss} : load_data);
+                lsu_ldata_o         =   amo_load ? amo_load_data : (sc_ldata_sel ? {63'h0, sc_lr_miss} : load_data);
 
                 uncacheable_load    =   validM && !pma_cacheable && !exc && (lsM == LSU_LOAD);
                 uncacheable_store   =   validM && !pma_cacheable && !exc && (lsM == LSU_STORE);

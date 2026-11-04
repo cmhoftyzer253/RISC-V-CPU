@@ -190,22 +190,8 @@ module core (
     logic [63:0]            pmpcfg0;
     logic [63:0]            pmpcfg2;
 
-    logic [53:0]            pmpaddr0;
-    logic [53:0]            pmpaddr1;
-    logic [53:0]            pmpaddr2;
-    logic [53:0]            pmpaddr3;
-    logic [53:0]            pmpaddr4;
-    logic [53:0]            pmpaddr5;
-    logic [53:0]            pmpaddr6;
-    logic [53:0]            pmpaddr7;
-    logic [53:0]            pmpaddr8;
-    logic [53:0]            pmpaddr9;
-    logic [53:0]            pmpaddr10;
-    logic [53:0]            pmpaddr11;
-    logic [53:0]            pmpaddr12;
-    logic [53:0]            pmpaddr13;
-    logic [53:0]            pmpaddr14;
-    logic [53:0]            pmpaddr15;
+    logic [15:0][53:0]      pmpaddr;
+    logic [15:0][53:0]      pmpaddr_napot_mask;
 
     logic [4:0]             rdW;
     logic                   rf_wr_enW;
@@ -407,24 +393,10 @@ module core (
         .exc_valid_o            (exc_validF),
         .exc_code_o             (exc_codeF),
         .priv_level_i           (priv_level),
-        .pmpaddr0_i             (pmpaddr0),
-        .pmpaddr1_i             (pmpaddr1),
-        .pmpaddr2_i             (pmpaddr2),
-        .pmpaddr3_i             (pmpaddr3),
-        .pmpaddr4_i             (pmpaddr4),
-        .pmpaddr5_i             (pmpaddr5),
-        .pmpaddr6_i             (pmpaddr6),
-        .pmpaddr7_i             (pmpaddr7),
-        .pmpaddr8_i             (pmpaddr8),
-        .pmpaddr9_i             (pmpaddr9),
-        .pmpaddr10_i            (pmpaddr10),
-        .pmpaddr11_i            (pmpaddr11),
-        .pmpaddr12_i            (pmpaddr12),
-        .pmpaddr13_i            (pmpaddr13),
-        .pmpaddr14_i            (pmpaddr14),
-        .pmpaddr15_i            (pmpaddr15),
         .pmpcfg0_i              (pmpcfg0),
         .pmpcfg2_i              (pmpcfg2),
+        .pmpaddr_i              (pmpaddr),
+        .pmpaddr_napot_mask_i   (pmpaddr_napot_mask),
         .arready_i              (ifu_arready),
         .araddr_o               (ifu_araddr),
         .arlen_o                (ifu_arlen),
@@ -549,24 +521,10 @@ module core (
         .trap_en_i              (trap_en),
         .exc_valid_o            (exc_validM),
         .exc_code_o             (exc_codeM),
-        .pmpaddr0_i             (pmpaddr0),
-        .pmpaddr1_i             (pmpaddr1),
-        .pmpaddr2_i             (pmpaddr2),
-        .pmpaddr3_i             (pmpaddr3),
-        .pmpaddr4_i             (pmpaddr4),
-        .pmpaddr5_i             (pmpaddr5),
-        .pmpaddr6_i             (pmpaddr6),
-        .pmpaddr7_i             (pmpaddr7),
-        .pmpaddr8_i             (pmpaddr8),
-        .pmpaddr9_i             (pmpaddr9),
-        .pmpaddr10_i            (pmpaddr10),
-        .pmpaddr11_i            (pmpaddr11),
-        .pmpaddr12_i            (pmpaddr12),
-        .pmpaddr13_i            (pmpaddr13),
-        .pmpaddr14_i            (pmpaddr14),
-        .pmpaddr15_i            (pmpaddr15),
         .pmpcfg0_i              (pmpcfg0),
         .pmpcfg2_i              (pmpcfg2),
+        .pmpaddr_i              (pmpaddr),
+        .pmpaddr_napot_mask_i   (pmpaddr_napot_mask),
         .arready_i              (lsu_arready),
         .araddr_o               (lsu_araddr),
         .arlen_o                (lsu_arlen),
@@ -646,22 +604,8 @@ module core (
         .mstatus_mbe_o          (mstatus_mbe),
         .pmpcfg0_o              (pmpcfg0),
         .pmpcfg2_o              (pmpcfg2),
-        .pmpaddr0_o             (pmpaddr0),
-        .pmpaddr1_o             (pmpaddr1),
-        .pmpaddr2_o             (pmpaddr2),
-        .pmpaddr3_o             (pmpaddr3),
-        .pmpaddr4_o             (pmpaddr4),
-        .pmpaddr5_o             (pmpaddr5),
-        .pmpaddr6_o             (pmpaddr6),
-        .pmpaddr7_o             (pmpaddr7),
-        .pmpaddr8_o             (pmpaddr8),
-        .pmpaddr9_o             (pmpaddr9),
-        .pmpaddr10_o            (pmpaddr10),
-        .pmpaddr11_o            (pmpaddr11),
-        .pmpaddr12_o            (pmpaddr12),
-        .pmpaddr13_o            (pmpaddr13),
-        .pmpaddr14_o            (pmpaddr14),
-        .pmpaddr15_o            (pmpaddr15)
+        .pmpaddr_o              (pmpaddr),
+        .pmpaddr_napot_mask_o   (pmpaddr_napot_mask)
     );
 
     arbitrate u_arbitrate (

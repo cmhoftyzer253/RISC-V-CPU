@@ -2,154 +2,130 @@ module csr
     import cpu_defines::*;
     import cpu_utils::*;
 (
-    input logic             clk,
-    input logic             resetn,
+    input logic                 clk,
+    input logic                 resetn,
 
     //csr rw interface
-    input logic             csr_wr_en_i,
-    input logic [11:0]      csr_addr_i,
-    input logic [63:0]      csr_wr_data_i,
-    input logic [1:0]       csr_op_i,
-    output logic [63:0]     csr_data_o,
+    input logic                 csr_wr_en_i,
+    input logic [11:0]          csr_addr_i,
+    input logic [63:0]          csr_wr_data_i,
+    input logic [1:0]           csr_op_i,
+    output logic [63:0]         csr_data_o,
 
     //trap control interface
-    input logic             trap_en_i,
+    input logic                 trap_en_i,
     //[5]: 1'b1 - interrupt, 1'b0 - exception
     //[4:0] interrupt/exception code
-    input logic             trap_delegate_i,
-    input logic [5:0]       trap_cause_i,
-    input logic [63:0]      trap_xepc_i,
-    input logic [63:0]      trap_xtval_i,
+    input logic                 trap_delegate_i,
+    input logic [5:0]           trap_cause_i,
+    input logic [63:0]          trap_xepc_i,
+    input logic [63:0]          trap_xtval_i,
 
-    input logic             mret_i,
-    input logic             sret_i,
+    input logic                 mret_i,
+    input logic                 sret_i,
 
-    output logic            mstatus_mie_o,
-    output logic            mstatus_sie_o,
-    output logic [11:0]     mip_o,
-    output logic [11:0]     mie_o,
-    output logic [11:0]     mideleg_o,
-    output logic [15:0]     medeleg_o,
+    output logic                mstatus_mie_o,
+    output logic                mstatus_sie_o,
+    output logic [11:0]         mip_o,
+    output logic [11:0]         mie_o,
+    output logic [11:0]         mideleg_o,
+    output logic [15:0]         medeleg_o,
 
-    output logic [63:0]     trap_pc_o,
-    output logic [63:0]     mepc_o,
-    output logic [63:0]     sepc_o,
+    output logic [63:0]         trap_pc_o,
+    output logic [63:0]         mepc_o,
+    output logic [63:0]         sepc_o,
 
     //clint interface 
-    input logic [63:0]      mtime_i,
-    input logic             mtip_i,
-    input logic             msip_i,
+    input logic [63:0]          mtime_i,
+    input logic                 mtip_i,
+    input logic                 msip_i,
 
     //plic interface
-    input logic             meip_i,
-    input logic             seip_i,
+    input logic                 meip_i,
+    input logic                 seip_i,
 
     //pipeline module interface
-    input logic             retire_i,
+    input logic                 retire_i,
 
     //export csr interface
-    output logic [1:0]      priv_level_o,
-    output logic [31:0]     scounteren_o,
-    output logic [31:0]     mcounteren_o,
-    output logic            mstatus_ube_o,
-    output logic [1:0]      mstatus_mpp_o,
-    output logic            mstatus_mprv_o,
-    output logic            mstatus_tvm_o,
-    output logic            mstatus_tw_o,
-    output logic            mstatus_tsr_o,
-    output logic            mstatus_sbe_o,
-    output logic            mstatus_mbe_o,
+    output logic [1:0]          priv_level_o,
+    output logic [31:0]         scounteren_o,
+    output logic [31:0]         mcounteren_o,
+    output logic                mstatus_ube_o,
+    output logic [1:0]          mstatus_mpp_o,
+    output logic                mstatus_mprv_o,
+    output logic                mstatus_tvm_o,
+    output logic                mstatus_tw_o,
+    output logic                mstatus_tsr_o,
+    output logic                mstatus_sbe_o,
+    output logic                mstatus_mbe_o,
 
-    output logic [63:0]     pmpcfg0_o,
-    output logic [63:0]     pmpcfg2_o,
-    output logic [53:0]     pmpaddr0_o,
-    output logic [53:0]     pmpaddr1_o,
-    output logic [53:0]     pmpaddr2_o,
-    output logic [53:0]     pmpaddr3_o,
-    output logic [53:0]     pmpaddr4_o,
-    output logic [53:0]     pmpaddr5_o,
-    output logic [53:0]     pmpaddr6_o,
-    output logic [53:0]     pmpaddr7_o,
-    output logic [53:0]     pmpaddr8_o,
-    output logic [53:0]     pmpaddr9_o,
-    output logic [53:0]     pmpaddr10_o,
-    output logic [53:0]     pmpaddr11_o,
-    output logic [53:0]     pmpaddr12_o,
-    output logic [53:0]     pmpaddr13_o,
-    output logic [53:0]     pmpaddr14_o,
-    output logic [53:0]     pmpaddr15_o
+    output logic [63:0]         pmpcfg0_o,
+    output logic [63:0]         pmpcfg2_o,
+
+    output logic [15:0][53:0]   pmpaddr_o,
+    output logic [15:0][53:0]   pmpaddr_napot_mask_o
 );
 
-    logic [63:0]        csr_wr_data;
+    logic [63:0]                csr_wr_data;
 
-    logic               s_mode_vectored;
-    logic               m_mode_vectored;
+    logic                       s_mode_vectored;
+    logic                       m_mode_vectored;
 
-    logic               write_mcycle;
-    logic               write_minstret;
+    logic                       write_mcycle;
+    logic                       write_minstret;
 
-    logic [63:0]        mstatus_wr_legal;
+    logic [63:0]                mstatus_wr_legal;
     
-    logic [7:0]         pmpcfg_raw;
-    logic [63:0]        pmpcfg_wr_legal;
+    logic [7:0]                 pmpcfg_raw;
+    logic [63:0]                pmpcfg_wr_legal;
+
+    logic [15:0][53:0]          pmpaddr_wr_data;
     
-    logic               MIP_MEIP;
-    logic               MIP_SEIP;
-    logic               MIP_MTIP;
-    logic               MIP_STIP;
-    logic               MIP_MSIP;
-    logic               MIP_SSIP;
+    logic                       MIP_MEIP;
+    logic                       MIP_SEIP;
+    logic                       MIP_MTIP;
+    logic                       MIP_STIP;
+    logic                       MIP_MSIP;
+    logic                       MIP_SSIP;
 
-    logic [11:0]        MIP_RD;
+    logic [11:0]                MIP_RD;
 
-    logic [63:0]        PMPCFG0_WMASK;
-    logic [63:0]        PMPCFG2_WMASK;
-    logic [15:0][53:0]  PMPADDR_WMASK;
+    logic [63:0]                PMPCFG0_WMASK;
+    logic [63:0]                PMPCFG2_WMASK;
+    logic [15:0][53:0]          PMPADDR_WMASK;
 
-    logic [1:0]         priv_level;
+    logic [1:0]                 priv_level;
 
-    logic [63:0]        STVEC_REG;
-    logic [31:0]        SCOUNTEREN_REG;
-    logic               SENVCFG_REG;
-    logic [63:0]        SSCRATCH_REG;
-    logic [63:0]        SEPC_REG;
-    logic [63:0]        SCAUSE_REG;
-    logic [63:0]        STVAL_REG;
+    logic [63:0]                STVEC_REG;
+    logic [31:0]                SCOUNTEREN_REG;
+    logic                       SENVCFG_REG;
+    logic [63:0]                SSCRATCH_REG;
+    logic [63:0]                SEPC_REG;
+    logic [63:0]                SCAUSE_REG;
+    logic [63:0]                STVAL_REG;
 
-    logic [63:0]        MSTATUS_REG;
-    logic [15:0]        MEDELEG_REG;
-    logic [11:0]        MIDELEG_REG;
-    logic [11:0]        MIE_REG;
-    logic [11:0]        MIP_REG;
-    logic [63:0]        MTVEC_REG;
-    logic [31:0]        MCOUNTEREN_REG;
-    logic [63:0]        MENVCFG_REG;
-    logic [31:0]        MCOUNTINHIBIT_REG;
-    logic [63:0]        MSCRATCH_REG;
-    logic [63:0]        MEPC_REG;
-    logic [63:0]        MCAUSE_REG;
-    logic [63:0]        MTVAL_REG;
+    logic [63:0]                MSTATUS_REG;
+    logic [15:0]                MEDELEG_REG;
+    logic [11:0]                MIDELEG_REG;
+    logic [11:0]                MIE_REG;
+    logic [11:0]                MIP_REG;
+    logic [63:0]                MTVEC_REG;
+    logic [31:0]                MCOUNTEREN_REG;
+    logic [63:0]                MENVCFG_REG;
+    logic [31:0]                MCOUNTINHIBIT_REG;
+    logic [63:0]                MSCRATCH_REG;
+    logic [63:0]                MEPC_REG;
+    logic [63:0]                MCAUSE_REG;
+    logic [63:0]                MTVAL_REG;
 
-    logic [15:0][7:0]   PMPCFG_REG;
-    logic [53:0]        PMPADDR0_REG;
-    logic [53:0]        PMPADDR1_REG;
-    logic [53:0]        PMPADDR2_REG;
-    logic [53:0]        PMPADDR3_REG;
-    logic [53:0]        PMPADDR4_REG;
-    logic [53:0]        PMPADDR5_REG;
-    logic [53:0]        PMPADDR6_REG;
-    logic [53:0]        PMPADDR7_REG;
-    logic [53:0]        PMPADDR8_REG;
-    logic [53:0]        PMPADDR9_REG;
-    logic [53:0]        PMPADDR10_REG;
-    logic [53:0]        PMPADDR11_REG;
-    logic [53:0]        PMPADDR12_REG;
-    logic [53:0]        PMPADDR13_REG;
-    logic [53:0]        PMPADDR14_REG;
-    logic [53:0]        PMPADDR15_REG;
+    logic [15:0][7:0]           PMPCFG_REG;
+    logic [15:0][53:0]          PMPADDR_REG;
 
-    logic [63:0]        MCYCLE_REG;
-    logic [63:0]        MINSTRET_REG;
+    logic [15:0][53:0]          PMPADDR_NAPOT_MASK;
+
+    logic [63:0]                MCYCLE_REG;
+    logic [63:0]                MINSTRET_REG;
 
     always_ff @(posedge clk) begin
         if (!resetn) begin
@@ -178,24 +154,8 @@ module csr
             MIP_REG             <=  12'h0;
 
             PMPCFG_REG          <=  '0;
-            PMPADDR0_REG        <=  54'h0;
-            PMPADDR1_REG        <=  54'h0;
-            PMPADDR2_REG        <=  54'h0;
-            PMPADDR3_REG        <=  54'h0;
-            PMPADDR4_REG        <=  54'h0;
-            PMPADDR5_REG        <=  54'h0;
-            PMPADDR6_REG        <=  54'h0;
-            PMPADDR7_REG        <=  54'h0;
-            PMPADDR8_REG        <=  54'h0;
-            PMPADDR9_REG        <=  54'h0;
-            PMPADDR10_REG       <=  54'h0;
-            PMPADDR11_REG       <=  54'h0;
-            PMPADDR12_REG       <=  54'h0;
-            PMPADDR13_REG       <=  54'h0;
-            PMPADDR14_REG       <=  54'h0;
-            PMPADDR15_REG       <=  54'h0;
-            MCYCLE_REG          <=  64'h0;
-            MINSTRET_REG        <=  64'h0;
+            PMPADDR_REG         <=  '0;
+            PMPADDR_NAPOT_MASK  <=  '{default: 54'h1};
         end else begin
             if (trap_en_i) begin
                 if (trap_delegate_i) begin
@@ -255,22 +215,70 @@ module csr
                     MIP_ADDR: MIP_REG                       <=  csr_wr_data[11:0] & MIP_WMASK;
                     PMPCFG0_ADDR: PMPCFG_REG[7:0]           <=  (pmpcfg_wr_legal & PMPCFG0_WMASK) | (PMPCFG_REG[7:0] & ~PMPCFG0_WMASK);         
                     PMPCFG2_ADDR: PMPCFG_REG[15:8]          <=  (pmpcfg_wr_legal & PMPCFG2_WMASK) | (PMPCFG_REG[15:8] & ~PMPCFG2_WMASK);        
-                    PMPADDR0_ADDR: PMPADDR0_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[0])  | (PMPADDR0_REG  & ~PMPADDR_WMASK[0]); 
-                    PMPADDR1_ADDR: PMPADDR1_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[1])  | (PMPADDR1_REG  & ~PMPADDR_WMASK[1]);
-                    PMPADDR2_ADDR: PMPADDR2_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[2])  | (PMPADDR2_REG  & ~PMPADDR_WMASK[2]);
-                    PMPADDR3_ADDR: PMPADDR3_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[3])  | (PMPADDR3_REG  & ~PMPADDR_WMASK[3]);
-                    PMPADDR4_ADDR: PMPADDR4_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[4])  | (PMPADDR4_REG  & ~PMPADDR_WMASK[4]);
-                    PMPADDR5_ADDR: PMPADDR5_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[5])  | (PMPADDR5_REG  & ~PMPADDR_WMASK[5]);
-                    PMPADDR6_ADDR: PMPADDR6_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[6])  | (PMPADDR6_REG  & ~PMPADDR_WMASK[6]);
-                    PMPADDR7_ADDR: PMPADDR7_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[7])  | (PMPADDR7_REG  & ~PMPADDR_WMASK[7]);
-                    PMPADDR8_ADDR: PMPADDR8_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[8])  | (PMPADDR8_REG  & ~PMPADDR_WMASK[8]);
-                    PMPADDR9_ADDR: PMPADDR9_REG             <=  (csr_wr_data[53:0] & PMPADDR_WMASK[9])  | (PMPADDR9_REG  & ~PMPADDR_WMASK[9]);
-                    PMPADDR10_ADDR: PMPADDR10_REG           <=  (csr_wr_data[53:0] & PMPADDR_WMASK[10]) | (PMPADDR10_REG & ~PMPADDR_WMASK[10]);
-                    PMPADDR11_ADDR: PMPADDR11_REG           <=  (csr_wr_data[53:0] & PMPADDR_WMASK[11]) | (PMPADDR11_REG & ~PMPADDR_WMASK[11]);
-                    PMPADDR12_ADDR: PMPADDR12_REG           <=  (csr_wr_data[53:0] & PMPADDR_WMASK[12]) | (PMPADDR12_REG & ~PMPADDR_WMASK[12]);
-                    PMPADDR13_ADDR: PMPADDR13_REG           <=  (csr_wr_data[53:0] & PMPADDR_WMASK[13]) | (PMPADDR13_REG & ~PMPADDR_WMASK[13]);
-                    PMPADDR14_ADDR: PMPADDR14_REG           <=  (csr_wr_data[53:0] & PMPADDR_WMASK[14]) | (PMPADDR14_REG & ~PMPADDR_WMASK[14]);
-                    PMPADDR15_ADDR: PMPADDR15_REG           <=  (csr_wr_data[53:0] & PMPADDR_WMASK[15]) | (PMPADDR15_REG & ~PMPADDR_WMASK[15]);
+                    PMPADDR0_ADDR: begin
+                        PMPADDR_REG[0]                      <=  pmpaddr_wr_data[0];
+                        PMPADDR_NAPOT_MASK[0]               <=  napot_mask(pmpaddr_wr_data[0]);
+                    end
+                    PMPADDR1_ADDR: begin
+                        PMPADDR_REG[1]                      <=  pmpaddr_wr_data[1];
+                        PMPADDR_NAPOT_MASK[1]               <=  napot_mask(pmpaddr_wr_data[1]);
+                    end
+                    PMPADDR2_ADDR: begin
+                        PMPADDR_REG[2]                      <=  pmpaddr_wr_data[2];
+                        PMPADDR_NAPOT_MASK[2]               <=  napot_mask(pmpaddr_wr_data[2]);
+                    end
+                    PMPADDR3_ADDR: begin
+                        PMPADDR_REG[3]                      <=  pmpaddr_wr_data[3];
+                        PMPADDR_NAPOT_MASK[3]               <=  napot_mask(pmpaddr_wr_data[3]);
+                    end
+                    PMPADDR4_ADDR: begin
+                        PMPADDR_REG[4]                      <=  pmpaddr_wr_data[4];
+                        PMPADDR_NAPOT_MASK[4]               <=  napot_mask(pmpaddr_wr_data[4]);
+                    end
+                    PMPADDR5_ADDR: begin
+                        PMPADDR_REG[5]                      <=  pmpaddr_wr_data[5];
+                        PMPADDR_NAPOT_MASK[5]               <=  napot_mask(pmpaddr_wr_data[5]);
+                    end
+                    PMPADDR6_ADDR: begin
+                        PMPADDR_REG[6]                      <=  pmpaddr_wr_data[6];
+                        PMPADDR_NAPOT_MASK[6]               <=  napot_mask(pmpaddr_wr_data[6]);
+                    end
+                    PMPADDR7_ADDR: begin
+                        PMPADDR_REG[7]                      <=  pmpaddr_wr_data[7];
+                        PMPADDR_NAPOT_MASK[7]               <=  napot_mask(pmpaddr_wr_data[7]);
+                    end
+                    PMPADDR8_ADDR: begin
+                        PMPADDR_REG[8]                      <=  pmpaddr_wr_data[8];
+                        PMPADDR_NAPOT_MASK[8]               <=  napot_mask(pmpaddr_wr_data[8]);
+                    end
+                    PMPADDR9_ADDR: begin
+                        PMPADDR_REG[9]                      <=  pmpaddr_wr_data[9];
+                        PMPADDR_NAPOT_MASK[9]               <=  napot_mask(pmpaddr_wr_data[9]);
+                    end
+                    PMPADDR10_ADDR: begin
+                        PMPADDR_REG[10]                     <=  pmpaddr_wr_data[10];
+                        PMPADDR_NAPOT_MASK[10]              <=  napot_mask(pmpaddr_wr_data[10]);
+                    end
+                    PMPADDR11_ADDR: begin
+                        PMPADDR_REG[11]                     <=  pmpaddr_wr_data[11];
+                        PMPADDR_NAPOT_MASK[11]              <=  napot_mask(pmpaddr_wr_data[11]);
+                    end
+                    PMPADDR12_ADDR: begin
+                        PMPADDR_REG[12]                     <=  pmpaddr_wr_data[12];
+                        PMPADDR_NAPOT_MASK[12]              <=  napot_mask(pmpaddr_wr_data[12]);
+                    end
+                    PMPADDR13_ADDR: begin
+                        PMPADDR_REG[13]                     <=  pmpaddr_wr_data[13];
+                        PMPADDR_NAPOT_MASK[13]              <=  napot_mask(pmpaddr_wr_data[13]);
+                    end
+                    PMPADDR14_ADDR: begin
+                        PMPADDR_REG[14]                     <=  pmpaddr_wr_data[14];
+                        PMPADDR_NAPOT_MASK[14]              <=  napot_mask(pmpaddr_wr_data[14]);
+                    end
+                    PMPADDR15_ADDR: begin
+                        PMPADDR_REG[15]                     <=  pmpaddr_wr_data[15];
+                        PMPADDR_NAPOT_MASK[15]              <=  napot_mask(pmpaddr_wr_data[15]);
+                    end
                     MCYCLE_ADDR: MCYCLE_REG                 <=  csr_wr_data;
                     MINSTRET_ADDR: MINSTRET_REG             <=  csr_wr_data;
                 endcase
@@ -285,66 +293,53 @@ module csr
     end
 
     always_comb begin
-        MIP_MEIP = meip_i;
-        MIP_SEIP = seip_i || MIP_REG[9];
-        MIP_MTIP = mtip_i;
-        MIP_STIP = MIP_REG[5];
-        MIP_MSIP = msip_i;
-        MIP_SSIP = MIP_REG[1];
-        MIP_RD = {MIP_MEIP, 1'b0, MIP_SEIP, 1'b0, MIP_MTIP, 1'b0, MIP_STIP, 1'b0, MIP_MSIP, 1'b0, MIP_SSIP, 1'b0};
+        MIP_MEIP                =   meip_i;
+        MIP_SEIP                =   seip_i || MIP_REG[9];
+        MIP_MTIP                =   mtip_i;
+        MIP_STIP                =   MIP_REG[5];
+        MIP_MSIP                =   msip_i;
+        MIP_SSIP                =   MIP_REG[1];
+        MIP_RD                  =   {MIP_MEIP, 1'b0, MIP_SEIP, 1'b0, MIP_MTIP, 1'b0, MIP_STIP, 1'b0, MIP_MSIP, 1'b0, MIP_SSIP, 1'b0};
         
-        mstatus_mie_o       =   MSTATUS_REG[3];
-        mstatus_sie_o       =   MSTATUS_REG[1];
-        mip_o               =   MIP_RD;
-        mie_o               =   MIE_REG;
-        mideleg_o           =   MIDELEG_REG;
-        medeleg_o           =   MEDELEG_REG;
+        mstatus_mie_o           =   MSTATUS_REG[3];
+        mstatus_sie_o           =   MSTATUS_REG[1];
+        mip_o                   =   MIP_RD;
+        mie_o                   =   MIE_REG;
+        mideleg_o               =   MIDELEG_REG;
+        medeleg_o               =   MEDELEG_REG;
 
-        priv_level_o        =   priv_level;
+        priv_level_o            =   priv_level;
 
-        mcounteren_o        =   MCOUNTEREN_REG;
-        scounteren_o        =   SCOUNTEREN_REG; 
+        mcounteren_o            =   MCOUNTEREN_REG;
+        scounteren_o            =   SCOUNTEREN_REG; 
 
-        mstatus_tsr_o       =   MSTATUS_REG[22];
-        mstatus_tw_o        =   MSTATUS_REG[21];
-        mstatus_tvm_o       =   MSTATUS_REG[20];
-        mstatus_mpp_o       =   MSTATUS_REG[12:11];
-        mstatus_mprv_o      =   MSTATUS_REG[17];
-        mstatus_mbe_o       =   MSTATUS_REG[37];
-        mstatus_sbe_o       =   MSTATUS_REG[36];
-        mstatus_ube_o       =   MSTATUS_REG[6];
+        mstatus_tsr_o           =   MSTATUS_REG[22];
+        mstatus_tw_o            =   MSTATUS_REG[21];
+        mstatus_tvm_o           =   MSTATUS_REG[20];
+        mstatus_mpp_o           =   MSTATUS_REG[12:11];
+        mstatus_mprv_o          =   MSTATUS_REG[17];
+        mstatus_mbe_o           =   MSTATUS_REG[37];
+        mstatus_sbe_o           =   MSTATUS_REG[36];
+        mstatus_ube_o           =   MSTATUS_REG[6];
 
-        pmpcfg0_o           =   PMPCFG_REG[7:0];
-        pmpcfg2_o           =   PMPCFG_REG[15:8];
-        pmpaddr0_o          =   PMPADDR0_REG;
-        pmpaddr1_o          =   PMPADDR1_REG;
-        pmpaddr2_o          =   PMPADDR2_REG;
-        pmpaddr3_o          =   PMPADDR3_REG;
-        pmpaddr4_o          =   PMPADDR4_REG;
-        pmpaddr5_o          =   PMPADDR5_REG;
-        pmpaddr6_o          =   PMPADDR6_REG;
-        pmpaddr7_o          =   PMPADDR7_REG;
-        pmpaddr8_o          =   PMPADDR8_REG;
-        pmpaddr9_o          =   PMPADDR9_REG;
-        pmpaddr10_o         =   PMPADDR10_REG;
-        pmpaddr11_o         =   PMPADDR11_REG;
-        pmpaddr12_o         =   PMPADDR12_REG;
-        pmpaddr13_o         =   PMPADDR13_REG;
-        pmpaddr14_o         =   PMPADDR14_REG;
-        pmpaddr15_o         =   PMPADDR15_REG;
+        pmpcfg0_o               =   PMPCFG_REG[7:0];
+        pmpcfg2_o               =   PMPCFG_REG[15:8];
 
-        s_mode_vectored     =   trap_cause_i[5] && (STVEC_REG[1:0] == 2'b01);
-        m_mode_vectored     =   trap_cause_i[5] && (MTVEC_REG[1:0] == 2'b01);
+        pmpaddr_o               =   PMPADDR_REG;
+        pmpaddr_napot_mask_o    =   PMPADDR_NAPOT_MASK;
 
-        trap_pc_o           =   trap_delegate_i ? 
-                                ({STVEC_REG[63:2], 2'b00} + (s_mode_vectored ? ({59'h0, trap_cause_i[4:0]} << 2) : 64'h0)) :  
-                                ({MTVEC_REG[63:2], 2'b00} + (m_mode_vectored ? ({59'h0, trap_cause_i[4:0]} << 2) : 64'h0));
+        s_mode_vectored         =   trap_cause_i[5] && (STVEC_REG[1:0] == 2'b01);
+        m_mode_vectored         =   trap_cause_i[5] && (MTVEC_REG[1:0] == 2'b01);
 
-        mepc_o              =   MEPC_REG;
-        sepc_o              =   SEPC_REG;
+        trap_pc_o               =   trap_delegate_i ? 
+                                    ({STVEC_REG[63:2], 2'b00} + (s_mode_vectored ? ({59'h0, trap_cause_i[4:0]} << 2) : 64'h0)) :  
+                                    ({MTVEC_REG[63:2], 2'b00} + (m_mode_vectored ? ({59'h0, trap_cause_i[4:0]} << 2) : 64'h0));
 
-        write_mcycle        =   csr_wr_en_i && (csr_addr_i == MCYCLE_ADDR);
-        write_minstret      =   csr_wr_en_i && (csr_addr_i == MINSTRET_ADDR);
+        mepc_o                  =   MEPC_REG;
+        sepc_o                  =   SEPC_REG;
+
+        write_mcycle            =   csr_wr_en_i && (csr_addr_i == MCYCLE_ADDR);
+        write_minstret          =   csr_wr_en_i && (csr_addr_i == MINSTRET_ADDR);
 
         for (int i=0; i<8; i++) begin
             PMPCFG0_WMASK[i*8 +: 8] = pmpcfg_wmask(PMPCFG_REG[i]);
@@ -382,22 +377,22 @@ module csr
             MIP_ADDR: csr_data_o            =   {52'h0, MIP_RD};
             PMPCFG0_ADDR: csr_data_o        =   PMPCFG_REG[7:0];
             PMPCFG2_ADDR: csr_data_o        =   PMPCFG_REG[15:8];
-            PMPADDR0_ADDR: csr_data_o       =   {10'h0, PMPADDR0_REG};
-            PMPADDR1_ADDR: csr_data_o       =   {10'h0, PMPADDR1_REG};
-            PMPADDR2_ADDR: csr_data_o       =   {10'h0, PMPADDR2_REG};
-            PMPADDR3_ADDR: csr_data_o       =   {10'h0, PMPADDR3_REG};
-            PMPADDR4_ADDR: csr_data_o       =   {10'h0, PMPADDR4_REG};
-            PMPADDR5_ADDR: csr_data_o       =   {10'h0, PMPADDR5_REG};
-            PMPADDR6_ADDR: csr_data_o       =   {10'h0, PMPADDR6_REG};
-            PMPADDR7_ADDR: csr_data_o       =   {10'h0, PMPADDR7_REG};
-            PMPADDR8_ADDR: csr_data_o       =   {10'h0, PMPADDR8_REG};
-            PMPADDR9_ADDR: csr_data_o       =   {10'h0, PMPADDR9_REG};
-            PMPADDR10_ADDR: csr_data_o      =   {10'h0, PMPADDR10_REG};
-            PMPADDR11_ADDR: csr_data_o      =   {10'h0, PMPADDR11_REG};
-            PMPADDR12_ADDR: csr_data_o      =   {10'h0, PMPADDR12_REG};
-            PMPADDR13_ADDR: csr_data_o      =   {10'h0, PMPADDR13_REG};
-            PMPADDR14_ADDR: csr_data_o      =   {10'h0, PMPADDR14_REG};
-            PMPADDR15_ADDR: csr_data_o      =   {10'h0, PMPADDR15_REG};
+            PMPADDR0_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[0]};
+            PMPADDR1_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[1]};
+            PMPADDR2_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[2]};
+            PMPADDR3_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[3]};
+            PMPADDR4_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[4]};
+            PMPADDR5_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[5]};
+            PMPADDR6_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[6]};
+            PMPADDR7_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[7]};
+            PMPADDR8_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[8]};
+            PMPADDR9_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[9]};
+            PMPADDR10_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[10]};
+            PMPADDR11_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[11]};
+            PMPADDR12_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[12]};
+            PMPADDR13_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[13]};
+            PMPADDR14_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[14]};
+            PMPADDR15_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[15]};
             MCYCLE_ADDR: csr_data_o         =   MCYCLE_REG;
             MINSTRET_ADDR: csr_data_o       =   MINSTRET_REG;
             CYCLE_ADDR: csr_data_o          =   MCYCLE_REG;
@@ -412,6 +407,10 @@ module csr
             CSRRC_OP: csr_wr_data   =   csr_data_o & ~csr_wr_data_i;
             default: csr_wr_data    =   64'h0;
         endcase
+
+        for (int i=0; i<16; i++) begin
+            pmpaddr_wr_data[i] = (csr_wr_data[53:0] & PMPADDR_WMASK[i]) | (PMPADDR_REG[i] & ~PMPADDR_WMASK[i]);
+        end  
 
         mstatus_wr_legal    =   {csr_wr_data[63:13], mpp_wr_legal(csr_wr_data[12:11]), csr_wr_data[10:0]};
 

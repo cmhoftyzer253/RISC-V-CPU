@@ -2,13 +2,7 @@ package cpu_utils;
     import cpu_defines::*;
 
     function automatic logic [53:0] napot_mask (input logic [53:0] addr);
-        napot_mask[0] = 1'b1;
-
-        for (int k=1; k<54; k++) begin
-            napot_mask[k] = addr[k-1] && napot_mask[k-1];
-        end
-
-        return napot_mask;
+        return addr ^ (addr + 54'd1);
     endfunction : napot_mask
 
     function automatic logic [6:0] plru_update (input logic [6:0] plru, input logic [2:0] way);

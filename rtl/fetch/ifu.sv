@@ -2,178 +2,150 @@ module ifu
     import cpu_defines::*;
     import cpu_types::*;
 (
-    input logic             clk,
-    input logic             resetn,
+    input logic                 clk,
+    input logic                 resetn,
 
-    input logic             resetn_q_i,
+    input logic                 resetn_q_i,
 
-    input logic [63:0]      pc_i,
-    output logic            ifu_ready_o,
+    input logic [63:0]          pc_i,
+    output logic                ifu_ready_o,
 
-    input logic             stallD_i,
-    output logic [31:0]     instr_o,
-    output logic            instr_valid_o,
+    input logic                 stallD_i,
+    output logic [31:0]         instr_o,
+    output logic                instr_valid_o,
 
-    input logic             ic_invalidate_i,
-    output logic            ic_invalidate_done_o,
+    input logic                 ic_invalidate_i,
+    output logic                ic_invalidate_done_o,
     
-    input logic             flushF_i,
-    output logic [63:0]     pcF_o,
+    input logic                 flushF_i,
+    output logic [63:0]         pcF_o,
 
-    output logic            exc_valid_o,
-    output logic [4:0]      exc_code_o,
+    output logic                exc_valid_o,
+    output logic [4:0]          exc_code_o,
 
-    input logic [1:0]       priv_level_i,
+    input logic [1:0]           priv_level_i,
 
-    input logic [53:0]      pmpaddr0_i,
-    input logic [53:0]      pmpaddr1_i,
-    input logic [53:0]      pmpaddr2_i,
-    input logic [53:0]      pmpaddr3_i,
-    input logic [53:0]      pmpaddr4_i,
-    input logic [53:0]      pmpaddr5_i,
-    input logic [53:0]      pmpaddr6_i,
-    input logic [53:0]      pmpaddr7_i,
-    input logic [53:0]      pmpaddr8_i,
-    input logic [53:0]      pmpaddr9_i,
-    input logic [53:0]      pmpaddr10_i,
-    input logic [53:0]      pmpaddr11_i,
-    input logic [53:0]      pmpaddr12_i,
-    input logic [53:0]      pmpaddr13_i,
-    input logic [53:0]      pmpaddr14_i,
-    input logic [53:0]      pmpaddr15_i,
-    input logic [63:0]      pmpcfg0_i,
-    input logic [63:0]      pmpcfg2_i,
+    input logic [63:0]          pmpcfg0_i,
+    input logic [63:0]          pmpcfg2_i,
+    input logic [15:0][53:0]    pmpaddr_i,
+    input logic [15:0][53:0]    pmpaddr_napot_mask_i,
 
     //AXI interface
     //read address -> bus (AR channel)
-    input logic             arready_i,
-    output logic [63:0]     araddr_o,
-    output logic [7:0]      arlen_o,
-    output logic [2:0]      arsize_o,
-    output logic [1:0]      arburst_o,
-    output logic            arlock_o,
-    output logic [3:0]      arid_o,
-    output logic [3:0]      arcache_o,
-    output logic [2:0]      arprot_o,
-    output logic [3:0]      arqos_o,
-    output logic            arvalid_o,
+    input logic                 arready_i,
+    output logic [63:0]         araddr_o,
+    output logic [7:0]          arlen_o,
+    output logic [2:0]          arsize_o,
+    output logic [1:0]          arburst_o,
+    output logic                arlock_o,
+    output logic [3:0]          arid_o,
+    output logic [3:0]          arcache_o,
+    output logic [2:0]          arprot_o,
+    output logic [3:0]          arqos_o,
+    output logic                arvalid_o,
 
     //read data -> cache (R channel)
-    input logic             rvalid_i,
-    input logic [63:0]      rdata_i,
-    input logic [1:0]       rresp_i,
-    input logic             rlast_i,
-    input logic [3:0]       rid_i,
-    output logic            rready_o
+    input logic                 rvalid_i,
+    input logic [63:0]          rdata_i,
+    input logic [1:0]           rresp_i,
+    input logic                 rlast_i,
+    input logic [3:0]           rid_i,
+    output logic                rready_o
 );
     
-    logic           ifu_ready;
-    logic           uncacheable;
-    logic           stop_fillline;
+    logic                       ifu_ready;
+    logic                       uncacheable;
+    logic                       stop_fillline;
 
-    logic           flush;
-    logic           flush_ff;
-    logic           exc_ff;
+    logic                       flush;
+    logic                       flush_ff;
+    logic                       exc_ff;
 
-    logic           ifu_bus;
+    logic                       ifu_bus;
 
-    logic [31:0]    instr_hold;
+    logic [31:0]                instr_hold;
 
-    logic           pma_cacheable;
-    logic           pma_fault;
-    logic           pmp_fault;
+    logic                       pma_cacheable;
+    logic                       pma_fault;
+    logic                       pmp_fault;
 
-    logic           ic_ready;
-    logic           ic_instr_valid;
-    logic [31:0]    ic_instr;
+    logic                       ic_ready;
+    logic                       ic_instr_valid;
+    logic [31:0]                ic_instr;
 
-    logic [63:0]    pcF;
+    logic [63:0]                pcF;
 
-    logic           ic_exc_valid;
+    logic                       ic_exc_valid;
 
-    logic [63:0]    ic_araddr;
-    logic [7:0]     ic_arlen;
-    logic [2:0]     ic_arsize;
-    logic [1:0]     ic_arburst;
-    logic           ic_arlock;
-    logic [3:0]     ic_arid;
-    logic [3:0]     ic_arcache;
-    logic [2:0]     ic_arprot;
-    logic [3:0]     ic_arqos;
-    logic           ic_arvalid;
-    logic           ic_arready;
+    logic [63:0]                ic_araddr;
+    logic [7:0]                 ic_arlen;
+    logic [2:0]                 ic_arsize;
+    logic [1:0]                 ic_arburst;
+    logic                       ic_arlock;
+    logic [3:0]                 ic_arid;
+    logic [3:0]                 ic_arcache;
+    logic [2:0]                 ic_arprot;
+    logic [3:0]                 ic_arqos;
+    logic                       ic_arvalid;
+    logic                       ic_arready;
 
-    logic           ic_rvalid;
-    logic [63:0]    ic_rdata;
-    logic [1:0]     ic_rresp;
-    logic           ic_rlast;
-    logic [3:0]     ic_rid;
-    logic           ic_rready;
+    logic                       ic_rvalid;
+    logic [63:0]                ic_rdata;
+    logic [1:0]                 ic_rresp;
+    logic                       ic_rlast;
+    logic [3:0]                 ic_rid;
+    logic                       ic_rready;
 
-    ifu_state_t     state;
+    ifu_state_t                 state;
 
     i_pma u_i_pma (
-        .pc_i               (pcF),
-        .pma_cacheable_o    (pma_cacheable),
-        .pma_fault_o        (pma_fault)
+        .pc_i                   (pcF),
+        .pma_cacheable_o        (pma_cacheable),
+        .pma_fault_o            (pma_fault)
     );
 
     i_pmp u_i_pmp (
-        .pc_i               (pcF),
-        .priv_level_i       (priv_level_i),
-        .pmpaddr0_i         (pmpaddr0_i),
-        .pmpaddr1_i         (pmpaddr1_i),
-        .pmpaddr2_i         (pmpaddr2_i),
-        .pmpaddr3_i         (pmpaddr3_i),
-        .pmpaddr4_i         (pmpaddr4_i),
-        .pmpaddr5_i         (pmpaddr5_i),
-        .pmpaddr6_i         (pmpaddr6_i),
-        .pmpaddr7_i         (pmpaddr7_i),
-        .pmpaddr8_i         (pmpaddr8_i),
-        .pmpaddr9_i         (pmpaddr9_i),
-        .pmpaddr10_i        (pmpaddr10_i),
-        .pmpaddr11_i        (pmpaddr11_i),
-        .pmpaddr12_i        (pmpaddr12_i),
-        .pmpaddr13_i        (pmpaddr13_i),
-        .pmpaddr14_i        (pmpaddr14_i),
-        .pmpaddr15_i        (pmpaddr15_i),
-        .pmpcfg0_i          (pmpcfg0_i),
-        .pmpcfg2_i          (pmpcfg2_i),
-        .pmp_fault_o        (pmp_fault)
+        .pc_i                   (pcF),
+        .priv_level_i           (priv_level_i),
+        .pmpcfg0_i              (pmpcfg0_i),
+        .pmpcfg2_i              (pmpcfg2_i),
+        .pmpaddr_i              (pmpaddr_i),
+        .pmpaddr_napot_mask_i   (pmpaddr_napot_mask_i),
+        .pmp_fault_o            (pmp_fault)
     );
 
     i_cache u_i_cache (
-        .clk                (clk),
-        .resetn             (resetn),
-        .resetn_q_i         (resetn_q_i),
-        .ic_ready_o         (ic_ready),
-        .pc_i               (pc_i),
-        .ifu_ready_i        (ifu_ready),
-        .instr_valid_o      (ic_instr_valid),
-        .instr_o            (ic_instr),
-        .pcF_o              (pcF),
-        .arready_i          (ic_arready),
-        .araddr_o           (ic_araddr),
-        .arlen_o            (ic_arlen),
-        .arsize_o           (ic_arsize),
-        .arburst_o          (ic_arburst),
-        .arlock_o           (ic_arlock),
-        .arid_o             (ic_arid),
-        .arcache_o          (ic_arcache),
-        .arprot_o           (ic_arprot),
-        .arqos_o            (ic_arqos),
-        .arvalid_o          (ic_arvalid),
-        .rid_i              (ic_rid),
-        .rdata_i            (ic_rdata),
-        .rresp_i            (ic_rresp),
-        .rlast_i            (ic_rlast),
-        .rvalid_i           (ic_rvalid),
-        .rready_o           (ic_rready),
-        .flush_i            (flushF_i),
-        .stop_fillline_i    (stop_fillline),
-        .invalidate_i       (ic_invalidate_i),
-        .invalidate_done_o  (ic_invalidate_done_o),
-        .exc_valid_o        (ic_exc_valid)
+        .clk                    (clk),
+        .resetn                 (resetn),
+        .resetn_q_i             (resetn_q_i),
+        .ic_ready_o             (ic_ready),
+        .pc_i                   (pc_i),
+        .ifu_ready_i            (ifu_ready),
+        .instr_valid_o          (ic_instr_valid),
+        .instr_o                (ic_instr),
+        .pcF_o                  (pcF),
+        .arready_i              (ic_arready),
+        .araddr_o               (ic_araddr),
+        .arlen_o                (ic_arlen),
+        .arsize_o               (ic_arsize),
+        .arburst_o              (ic_arburst),
+        .arlock_o               (ic_arlock),
+        .arid_o                 (ic_arid),
+        .arcache_o              (ic_arcache),
+        .arprot_o               (ic_arprot),
+        .arqos_o                (ic_arqos),
+        .arvalid_o              (ic_arvalid),
+        .rid_i                  (ic_rid),
+        .rdata_i                (ic_rdata),
+        .rresp_i                (ic_rresp),
+        .rlast_i                (ic_rlast),
+        .rvalid_i               (ic_rvalid),
+        .rready_o               (ic_rready),
+        .flush_i                (flushF_i),
+        .stop_fillline_i        (stop_fillline),
+        .invalidate_i           (ic_invalidate_i),
+        .invalidate_done_o      (ic_invalidate_done_o),
+        .exc_valid_o            (ic_exc_valid)
     );
 
     always_ff @(posedge clk) begin

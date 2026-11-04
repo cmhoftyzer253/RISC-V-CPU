@@ -1,3 +1,6 @@
+/* verilator lint_off UNUSEDSIGNAL */
+/* verilator lint_off UNDRIVEN */
+
 module axi_cdc (
     input  logic            s_axi_aclk,
     input  logic            s_axi_aresetn,

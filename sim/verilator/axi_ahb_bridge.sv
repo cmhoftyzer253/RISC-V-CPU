@@ -1,3 +1,6 @@
+/* verilator lint_off UNUSEDSIGNAL */
+/* verilator lint_off UNDRIVEN */
+
 module axi_ahb_bridge (
     input  logic            s_axi_aclk,
     input  logic            s_axi_aresetn,

@@ -71,6 +71,7 @@ module i_cache
     logic                   way_fill_evict;
     logic [2:0]             nxt_way_fill;
 
+    logic [63:0]            load_data;
     logic [31:0]            instr_sel;
 
     logic [31:0]            instr_hold;
@@ -280,6 +281,10 @@ module i_cache
         for (int w=0; w<8; w++)
             hit_1h[w] = valid[w][indexF] && (tagF == tag_rd[w]);
 
+        load_data = 64'h0;
+        for (int w=0; w<8; w++) 
+            load_data |= {64{hit_1h[w]}} & data_rd[w];
+
         hit_way = 3'd0;
         for (int w=0; w<8; w++)
             if (hit_1h[w]) hit_way = w[2:0];
@@ -288,7 +293,7 @@ module i_cache
         hit                 =   hit_raw && !stop_fillline_i && !invalidate_i && resetn_q_i;
         miss                =   !hit_raw && !stop_fillline_i && !flush_i && !invalidate_i && resetn_q_i;
 
-        instr_sel           =   data_sel ? data_rd[hit_way][63:32] : data_rd[hit_way][31:0];
+        instr_sel           =   data_sel ? load_data[63:32] : load_data[31:0];
     end
 
     //select victim

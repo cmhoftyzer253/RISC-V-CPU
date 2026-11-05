@@ -26,8 +26,6 @@ module lsu
     input logic                 mstatus_sbe_i,
     input logic                 mstatus_ube_i,
 
-    input logic [63:0]          rs2_dataM_i,
-
     input logic                 dc_clean_i,
     output logic                dc_clean_done_o,
 
@@ -104,6 +102,8 @@ module lsu
     logic [63:0]                addrM;
     logic [7:0]                 maskM;
 
+    logic [63:0]                amo_rs2_dataM;
+
     logic                       dc_valid;
     logic                       dc_ls;
     logic [63:0]                dc_addr;
@@ -152,8 +152,8 @@ module lsu
 
     logic [63:0]                amo_res;
     logic                       amo_word_opM;
-    logic                       amo_store;
-    logic                       amo_store_ready;
+    logic                       amoE;
+    logic                       amo_load_ready;
     logic                       amo_load_fault;
     logic                       amo_load;
     logic [63:0]                amo_load_data;
@@ -221,8 +221,8 @@ module lsu
     );
 
     amo_alu u_amo_alu (
-        .lsu_ld_i               (load_data),
-        .rs2_data_i             (rs2_dataM_i),
+        .lsu_ld_i               (amo_load_data),
+        .rs2_data_i             (amo_rs2_dataM),
         .atomic_op_i            (atomic_opM),
         .amo_word_op_i          (amo_word_opM),
         .amo_res_o              (amo_res)
@@ -322,6 +322,8 @@ module lsu
             lsM             <=  2'b0;
             atomic_opM      <=  5'b0;
 
+            amo_rs2_dataM   <=  64'h0;
+
             amo_load        <=  1'b0;
             amo_load_data   <=  64'h0;
             mem_load_data   <=  64'h0;
@@ -346,6 +348,9 @@ module lsu
                         lsM         <=  lsu_ls_i;
 
                         amo_load    <=  1'b0;
+
+                        if (amoE)
+                            amo_rs2_dataM   <=  lsu_data_i;
                     end
                     if (LR_invalidate) begin
                         LR_valid    <=  1'b0;
@@ -359,8 +364,8 @@ module lsu
                         state       <=  LSU_MEM_LOAD_REQ;
                     end else if (uncacheable_store) begin
                         state       <=  LSU_MEM_STORE_REQ;
-                    end else if (amo_store) begin
-                        state       <=  LSU_AMO_STORE;
+                    end else if (amoE) begin
+                        state       <=  LSU_AMO_LOAD;
                     end
                 end
                 LSU_MEM_LOAD_REQ: begin
@@ -394,7 +399,14 @@ module lsu
                     atomic_opM      <=  atomic_op_i;
                     lsM             <=  lsu_ls_i;
 
-                    state           <=  LSU_DC_RUN;
+                    if (amoE) begin
+                        amo_rs2_dataM   <=  lsu_data_i;
+
+                        state           <=  LSU_AMO_LOAD;
+                    end else begin
+                        state           <=  LSU_DC_RUN;
+                    end
+                    
                 end
                 LSU_MEM_STORE_REQ: begin
                     aw_done         <=  aw_done || awready_i;
@@ -421,18 +433,38 @@ module lsu
 
                     exc_ff          <=  1'b0;
 
-                    state           <=  LSU_DC_RUN;
+                    if (amoE) begin
+                        amo_rs2_dataM   <=  lsu_data_i;
+
+                        state           <=  LSU_AMO_LOAD;
+                    end else begin
+                        state           <=  LSU_DC_RUN;
+                    end
+                end
+                LSU_AMO_LOAD: begin
+                    if (LR_invalidate)
+                        LR_valid    <=  1'b0;
+
+                    if (amo_load_fault) begin
+                        amo_load        <=  1'b0;
+
+                        state           <=  LSU_DC_RUN;
+                    end else if (amo_load_ready) begin
+                        amo_load_data   <=  load_data;
+
+                        state           <=  LSU_AMO_STORE;
+                    end
                 end
                 LSU_AMO_STORE: begin
                     if (LR_invalidate)
                         LR_valid    <=  1'b0;
-                    
-                    if (amo_store_ready || amo_load_fault) begin
-                        amo_load_data   <=  load_data; 
-                        amo_load        <=  !amo_load_fault;
+
+                    if (dc_ready) begin
+                        amo_load    <=  1'b1;
 
                         state       <=  LSU_DC_RUN;
                     end
+
                 end
             endcase
         end
@@ -532,6 +564,8 @@ module lsu
 
         dc_ls               =   (lsu_ls_i == LSU_STORE) || ((lsu_ls_i == LSU_ATOMIC) && (atomic_op_i == SC));
 
+        amoE                =   lsu_valid_i && (lsu_ls_i == LSU_ATOMIC) && !((atomic_op_i == SC) || (atomic_op_i == LR)) && dc_ready;
+
         store_raw_data      =   lsu_data_i;
         store_addr_algn     =   lsu_addr_i[2:0];
         store_size          =   lsu_size_i;
@@ -540,8 +574,7 @@ module lsu
 
         uncacheable_load    =   1'b0;
         uncacheable_store   =   1'b0;
-        amo_store           =   1'b0;
-        amo_store_ready     =   1'b0;
+        amo_load_ready      =   1'b0;
         amo_load_fault      =   1'b0;
         store_req_done      =   1'b0;
         LR_set              =   1'b0;
@@ -562,7 +595,6 @@ module lsu
 
                 uncacheable_load    =   validM && !pma_cacheable && !exc && (lsM == LSU_LOAD);
                 uncacheable_store   =   validM && !pma_cacheable && !exc && (lsM == LSU_STORE);
-                amo_store           =   lsu_valid_i && (lsu_ls_i == LSU_ATOMIC) && !((atomic_op_i == SC) || (atomic_op_i == LR)) && dc_ready;
 
                 lrM                 =   validM && !exc && (lsM == LSU_ATOMIC) && (atomic_opM == LR);
 
@@ -573,7 +605,7 @@ module lsu
 
                 dc_advance          =   !uncacheable_load && !uncacheable_store;
 
-                lsu_ready_o         =   dc_ready && !uncacheable_load && !uncacheable_store && !amo_store;
+                lsu_ready_o         =   dc_ready && !uncacheable_load && !uncacheable_store;
             end
             LSU_MEM_LOAD_REQ: begin
                 arvalid_o           =   1'b1;
@@ -624,6 +656,18 @@ module lsu
 
                 dc_advance          =   1'b1;
             end
+            LSU_AMO_LOAD: begin
+                arvalid_o           =   dc_arvalid;
+                rready_o            =   dc_rready;
+                awvalid_o           =   dc_awvalid;
+                wvalid_o            =   dc_wvalid;
+                bready_o            =   dc_bready;
+
+                amo_load_fault      =   exc || dc_exc_valid;
+                amo_load_ready      =   dc_resp_valid && dc_ready;
+
+                LR_invalidate       =   trap_en_i;
+            end
             LSU_AMO_STORE: begin
                 arvalid_o           =   dc_arvalid;
                 rready_o            =   dc_rready;
@@ -632,21 +676,16 @@ module lsu
                 bready_o            =   dc_bready;
 
                 dc_advance          =   1'b1;
-                
+
                 store_raw_data      =   amo_res;
                 store_addr_algn     =   addrM[2:0];
                 store_size          =   sizeM;
 
                 LR_invalidate       =   trap_en_i || (addrM[63:3] == LR_addr[63:3]);
 
-                amo_store_ready     =   dc_resp_valid && dc_ready;
-                amo_load_fault      =   exc || dc_exc_valid;
-
                 dc_ls               =   DC_STORE;
-                dc_valid            =   !amo_load_fault;
+                dc_valid            =   1'b1;
                 dc_addr             =   addrM;
-
-                lsu_ready_o         =   amo_store_ready || amo_load_fault;
             end
         endcase
     end

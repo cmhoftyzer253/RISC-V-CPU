@@ -144,8 +144,6 @@ module core (
     logic [1:0]             csr_opM;
     logic [63:0]            csr_dataM;
 
-    logic [63:0]            rs2_dataM;
-
     logic [63:0]            lsu_ldataM;
     logic [63:0]            addrM;
 
@@ -344,7 +342,6 @@ module core (
         .csr_wr_dataM_o         (csr_wr_dataM),
         .csr_opM_o              (csr_opM),
         .csr_dataM_i            (csr_dataM),
-        .rs2_dataM_o            (rs2_dataM),
         .lsu_ldataM_i           (lsu_ldataM),
         .addrM_i                (addrM),
         .mretM_o                (mretM),
@@ -515,7 +512,6 @@ module core (
         .mstatus_mbe_i          (mstatus_mbe),
         .mstatus_sbe_i          (mstatus_sbe),
         .mstatus_ube_i          (mstatus_ube),
-        .rs2_dataM_i            (rs2_dataM),
         .dc_clean_i             (dc_cleanM),
         .dc_clean_done_o        (dc_clean_doneM),
         .trap_en_i              (trap_en),

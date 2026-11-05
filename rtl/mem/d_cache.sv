@@ -265,7 +265,9 @@ module d_cache
                         PLRU_tree[indexM]  <=  nxt_PLRU_hit;
 
                         if (lsM == DC_STORE)
-                            dirty[hit_way][indexM]          <=  1'b1;
+                            for (int w=0; w<8; w++)
+                                if (hit_1h[w])
+                                    dirty[w][indexM]  <=  1'b1;
                     end
                     if (!miss && dc_advance_i) begin
                         validM      <=  dc_valid_i;
@@ -429,6 +431,10 @@ module d_cache
         for (int w=0; w<8; w++)
             hit_1h[w] = valid[w][indexM] && (tagM == tag_rd[w]);
 
+        load_data           =   64'h0;
+        for (int w=0; w<8; w++)
+            load_data |= {64{hit_1h[w]}} & data_rd[w];
+
         hit_way = 3'd0;
         for (int w=0; w<8; w++)
             if (hit_1h[w]) hit_way = w[2:0];
@@ -436,8 +442,6 @@ module d_cache
         hit_raw             =   |hit_1h;
         hit                 =   hit_raw && validM && !stop_cacheop_i;
         miss                =   !hit_raw && validM && !stop_cacheop_i;
-
-        load_data           =   data_rd[hit_way];
 
         load_data_eff       =   bypass_active ? bypass_data : load_data;
 

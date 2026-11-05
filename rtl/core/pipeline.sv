@@ -92,8 +92,6 @@ module pipeline
     output logic [1:0]      csr_opM_o,
     input logic [63:0]      csr_dataM_i,
 
-    output logic [63:0]     rs2_dataM_o,
-
     input logic [63:0]      lsu_ldataM_i,
 
     input logic [63:0]      addrM_i,
@@ -269,7 +267,6 @@ module pipeline
 
     logic [63:0]            exu_resM;
     logic [63:0]            csr_wr_dataM;
-    logic [63:0]            rs2_dataM;
 
     logic [63:0]            rf_wr_dataM;
 
@@ -591,8 +588,7 @@ module pipeline
             rf_wr_enM       <=  1'b0;
             rf_selM         <=  3'b0;            
             exu_resM        <=  64'h0;
-            csr_wr_dataM    <=  64'h0;
-            rs2_dataM       <=  64'h0;       
+            csr_wr_dataM    <=  64'h0;      
         end else if (!stallM) begin
             validM          <=  bubbleM ? 1'b0 : validE;
             instrM          <=  instrE;
@@ -609,7 +605,6 @@ module pipeline
             rf_selM         <=  rf_selE;
             exu_resM        <=  md_enE ? mdu_resE_i : alu_resE_i;
             csr_wr_dataM    <=  (opa_selE == UIMM) ? immE : rs1_dataE;
-            rs2_dataM       <=  rs2_dataE;
         end
     end
     
@@ -635,8 +630,6 @@ module pipeline
         csr_addrM_o     =   csr_addrM;
         csr_wr_dataM_o  =   csr_wr_dataM;
         csr_opM_o       =   csr_opM;
-        
-        rs2_dataM_o     =   rs2_dataM;
 
         exc_validM_o    =   validM && (exc_validM || exc_validM_i || wfi_timeout);
         exc_codeM_o     =   exc_validM ? exc_codeM : (exc_validM_i ? exc_codeM_i : ILLEGAL_INSTR);

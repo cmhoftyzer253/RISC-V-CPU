@@ -38,7 +38,7 @@ package cpu_types;
         IC_REFILL_DONE
     } ic_state_t;
 
-    typedef enum logic [2:0] {
+    typedef enum logic [3:0] {
         LSU_DC_RUN,
         LSU_MEM_LOAD_REQ,
         LSU_MEM_LOAD,
@@ -46,6 +46,7 @@ package cpu_types;
         LSU_MEM_STORE_REQ,
         LSU_MEM_STORE,
         LSU_MEM_STORE_DONE,
+        LSU_AMO_LOAD,
         LSU_AMO_STORE
     } lsu_state_t;
 

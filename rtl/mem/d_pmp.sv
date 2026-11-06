@@ -79,7 +79,7 @@ module d_pmp
         match       =   match_base | match_uw;
 
         lower_match = 1'b0;
-        for (int i=1; i<16; i++) begin
+        for (int i=0; i<16; i++) begin
             low_match_1h[i]     =   match[i] && !lower_match;
             lower_match         =   lower_match || match[i];
         end

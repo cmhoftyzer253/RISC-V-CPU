@@ -36,7 +36,7 @@ module d_pmp
     logic [15:0]                match;
     logic [15:0]                low_match_1h;
     logic                       lower_match;
-    
+
     logic [15:0]                straddle;
     logic [15:0]                enforce;
     
@@ -90,7 +90,7 @@ module d_pmp
             enforce[i] = (priv_level_eff != M_MODE) || pmpcfg[i][7];
 
 
-        pmp_fault_o = lsu_valid_i && ~!match && (priv_level_eff != M_MODE);
+        pmp_fault_o = lsu_valid_i && ~|match && (priv_level_eff != M_MODE);
         for (int i=0; i<16; i++) begin
             case (lsu_ls_i) 
                 LSU_LOAD: pmp_fault_o       |=  low_match_1h[i] && lsu_valid_i && (straddle[i] || (enforce[i] && !pmpcfg[i][0]));

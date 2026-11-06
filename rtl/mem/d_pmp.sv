@@ -33,13 +33,12 @@ module d_pmp
     logic [15:0]                match_base;
     logic [15:0]                match_uw;
 
-    logic [7:0]                 pmpcfg_base;
-
-    logic [4:0]                 first_match_base;
-    logic [4:0]                 first_match_uw;
-
-    logic                       straddle;
-    logic                       enforce;
+    logic [15:0]                match;
+    logic [15:0]                low_match_1h;
+    logic                       lower_match;
+    
+    logic [15:0]                straddle;
+    logic [15:0]                enforce;
     
     always_comb begin
         priv_level_eff  =   mstatus_mprv_i ? mstatus_mpp_i : priv_level_i;
@@ -77,29 +76,29 @@ module d_pmp
             endcase
         end
 
-        pmpcfg_base         =   8'b0;
-        first_match_base    =   5'd0;
-        first_match_uw      =   5'd0;
-        for (int i=15; i >= 0; i--) begin
-            if (match_base[i]) begin
-                pmpcfg_base         =   pmpcfg[i];
-                first_match_base    =   {1'b1, i[3:0]};
-            end
-            
-            if (match_uw[i]) begin
-                first_match_uw      =   {1'b1, i[3:0]};
-            end
+        match       =   match_base | match_uw;
+
+        lower_match = 1'b0;
+        for (int i=1; i<16; i++) begin
+            low_match_1h[i]     =   match[i] && !lower_match;
+            lower_match         =   lower_match || match[i];
         end
 
-        straddle    =   (first_match_base != first_match_uw);
-        enforce     =   (priv_level_eff != M_MODE) || pmpcfg_base[7];
+        straddle    =   match_base ^ match_uw;
+        
+        for (int i=0; i<16; i++)
+            enforce[i] = (priv_level_eff != M_MODE) || pmpcfg[i][7];
 
-        case (lsu_ls_i)
-            LSU_LOAD: pmp_fault_o       =   lsu_valid_i && (straddle || (enforce && !pmpcfg_base[0]));
-            LSU_STORE: pmp_fault_o      =   lsu_valid_i && (straddle || (enforce && !pmpcfg_base[1]));
-            LSU_ATOMIC: pmp_fault_o     =   lsu_valid_i && (straddle || (enforce && (~&pmpcfg_base[1:0])));
-            default: pmp_fault_o        =   1'b0;
-        endcase
+
+        pmp_fault_o = lsu_valid_i && ~!match && (priv_level_eff != M_MODE);
+        for (int i=0; i<16; i++) begin
+            case (lsu_ls_i) 
+                LSU_LOAD: pmp_fault_o       |=  low_match_1h[i] && lsu_valid_i && (straddle[i] || (enforce[i] && !pmpcfg[i][0]));
+                LSU_STORE: pmp_fault_o      |=  low_match_1h[i] && lsu_valid_i && (straddle[i] || (enforce[i] && !pmpcfg[i][1]));
+                LSU_ATOMIC: pmp_fault_o     |=  low_match_1h[i] && lsu_valid_i && (straddle[i] || (enforce[i] && (~&pmpcfg[i][1:0])));
+                default: pmp_fault_o        |=  1'b0;
+            endcase
+        end
     end
 
 endmodule

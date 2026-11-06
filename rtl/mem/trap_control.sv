@@ -10,6 +10,9 @@ module trap_control
     output logic [63:0]     trap_xepc_o,
     output logic [63:0]     trap_xtval_o,
 
+    output logic            int_delegate_o,
+    output logic [4:0]      int_cause_o,
+
     input logic             mstatus_mie_i,
     input logic             mstatus_sie_i,
     input logic [11:0]      mip_i,
@@ -83,6 +86,9 @@ module trap_control
             int_cause   =   6'd0;
             int_deleg   =   1'b0;
         end
+
+        int_delegate_o  =   int_deleg;
+        int_cause_o     =   int_cause[4:0];
     end
 
     always_comb begin : exceptions

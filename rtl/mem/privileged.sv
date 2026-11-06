@@ -61,6 +61,9 @@ module privileged (
     logic [63:0]                trap_xepc;
     logic [63:0]                trap_xtval;
 
+    logic                       int_delegate;
+    logic [4:0]                 int_cause;
+
     logic [63:0]                trap_pc;
     logic [63:0]                mepc;
     logic [63:0]                sepc;
@@ -81,10 +84,12 @@ module privileged (
         .csr_op_i               (csr_op_i),
         .csr_data_o             (csr_data_o),
         .trap_en_i              (trap_en),
+        .trap_delegate_i        (trap_delegate),
         .trap_cause_i           (trap_cause),
         .trap_xepc_i            (trap_xepc),
         .trap_xtval_i           (trap_xtval),
-        .trap_delegate_i        (trap_delegate),
+        .int_delegate_i         (int_delegate),
+        .int_cause_i            (int_cause),
         .mstatus_mie_o          (mstatus_mie),
         .mstatus_sie_o          (mstatus_sie),
         .mip_o                  (mip),
@@ -126,6 +131,8 @@ module privileged (
         .trap_cause_o           (trap_cause),
         .trap_xepc_o            (trap_xepc),
         .trap_xtval_o           (trap_xtval),
+        .int_delegate_o         (int_delegate),
+        .int_cause_o            (int_cause),
         .mstatus_mie_i          (mstatus_mie),
         .mstatus_sie_i          (mstatus_sie),
         .mip_i                  (mip),

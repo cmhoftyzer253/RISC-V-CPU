@@ -21,6 +21,9 @@ module csr
     input logic [63:0]          trap_xepc_i,
     input logic [63:0]          trap_xtval_i,
 
+    input logic                 int_delegate_i,
+    input logic [4:0]           int_cause_i,
+
     input logic                 mret_i,
     input logic                 sret_i,
 
@@ -69,8 +72,11 @@ module csr
 
     logic [63:0]                csr_wr_data;
 
-    logic                       s_mode_vectored;
-    logic                       m_mode_vectored;
+    logic                       s_mode_int_vectored;
+    logic                       m_mode_int_vectored;
+
+    logic [63:0]                interrupt_pc;
+    logic [63:0]                exception_pc;
 
     logic                       write_mcycle;
     logic                       write_minstret;
@@ -328,12 +334,16 @@ module csr
         pmpaddr_o               =   PMPADDR_REG;
         pmpaddr_napot_mask_o    =   PMPADDR_NAPOT_MASK;
 
-        s_mode_vectored         =   trap_cause_i[5] && (STVEC_REG[1:0] == 2'b01);
-        m_mode_vectored         =   trap_cause_i[5] && (MTVEC_REG[1:0] == 2'b01);
+        s_mode_int_vectored     =   (STVEC_REG[1:0] == 2'b01);
+        m_mode_int_vectored     =   (MTVEC_REG[1:0] == 2'b01);
 
-        trap_pc_o               =   trap_delegate_i ? 
-                                    ({STVEC_REG[63:2], 2'b00} + (s_mode_vectored ? ({59'h0, trap_cause_i[4:0]} << 2) : 64'h0)) :  
-                                    ({MTVEC_REG[63:2], 2'b00} + (m_mode_vectored ? ({59'h0, trap_cause_i[4:0]} << 2) : 64'h0));
+        interrupt_pc            =   int_delegate_i ? 
+                                    ({STVEC_REG[63:2], 2'b00} + (s_mode_int_vectored ? ({57'h0, int_cause_i[4:0], 2'b00}) : 64'h0)) : 
+                                    ({MTVEC_REG[63:2], 2'b00} + (m_mode_int_vectored ? ({57'h0, int_cause_i[4:0], 2'b00}) : 64'h0));
+
+        exception_pc            =   trap_delegate_i ? {STVEC_REG[63:2], 2'b00} : {MTVEC_REG[63:2], 2'b00};
+
+        trap_pc_o               =   trap_cause_i[5] ? interrupt_pc : exception_pc;
 
         mepc_o                  =   MEPC_REG;
         sepc_o                  =   SEPC_REG;

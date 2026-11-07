@@ -347,7 +347,7 @@ module divide
 
                 nxt_q               =   {q_ff[63:0], !nxt_a[64]};   
 
-                div_done            =   !flushE_i && ((rem_op && (count_ff == 7'd65)) || (!rem_op && (count_ff == 7'd64)));
+                div_done            =   (rem_op && (count_ff == 7'd65)) || (!rem_op && (count_ff == 7'd64));
 
                 q_correct           =   correct_qnt ? ~q_ff[63:0] + 64'b1 : q_ff[63:0];
                 a_correct           =   correct_rem ? ~a_ff[63:0] + 64'b1 : a_ff[63:0];

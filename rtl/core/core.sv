@@ -164,6 +164,8 @@ module core (
     logic [63:0]            pcM;
     logic [63:0]            nxt_pcM;
 
+    logic                   block_intM;
+
     logic                   trap_en;
     logic [63:0]            trap_pc;
     logic [63:0]            mepc;
@@ -356,6 +358,7 @@ module core (
         .pcM_o                  (pcM),
         .nxt_pcM_o              (nxt_pcM),
         .exc_xtvalM_o           (exc_xtvalM),
+        .block_intM_o           (block_intM),
         .trap_en_i              (trap_en),
         .trap_pc_i              (trap_pc),
         .mepc_i                 (mepc),
@@ -577,6 +580,7 @@ module core (
         .pcM_i                  (pcM),
         .nxt_pcM_i              (nxt_pcM),
         .exc_xtvalM_i           (exc_xtvalM),
+        .block_intM_i           (block_intM),
         .trap_en_o              (trap_en),
         .trap_pc_o              (trap_pc),
         .mepc_o                 (mepc),

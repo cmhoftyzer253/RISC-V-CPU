@@ -20,6 +20,8 @@ module privileged (
     input logic [63:0]          nxt_pcM_i,
     input logic [63:0]          exc_xtvalM_i,
 
+    input logic                 block_intM_i,
+
     output logic                trap_en_o,
     output logic [63:0]         trap_pc_o,
     output logic [63:0]         mepc_o,
@@ -145,6 +147,7 @@ module privileged (
         .pcM_i                  (pcM_i),
         .nxt_pcM_i              (nxt_pcM_i),
         .exc_xtvalM_i           (exc_xtvalM_i),
+        .block_intM_i           (block_intM_i),
         .wfi_wakeup_o           (wfi_wakeup_o)
     );
 

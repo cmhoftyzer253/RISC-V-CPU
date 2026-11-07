@@ -29,6 +29,8 @@ module trap_control
     input logic [63:0]      nxt_pcM_i,
     input logic [63:0]      exc_xtvalM_i,
 
+    input logic             block_intM_i,
+
     output logic            wfi_wakeup_o
 );
 
@@ -61,7 +63,7 @@ module trap_control
 
         int_en          =   m_int_en | s_int_en;
 
-        interrupt       =   |int_en && validM_i && !exc_validM_i;
+        interrupt       =   |int_en && validM_i && !exc_validM_i && !block_intM_i;
         int_xepc        =   nxt_pcM_i;
 
         if (int_en[11]) begin

@@ -112,6 +112,8 @@ module pipeline
     output logic [63:0]     nxt_pcM_o,
     output logic [63:0]     exc_xtvalM_o,
 
+    output logic            block_intM_o,
+
     input logic             trap_en_i,
     input logic [63:0]      trap_pc_i,
     input logic [63:0]      mepc_i,
@@ -261,6 +263,8 @@ module pipeline
 
     logic                   mctrl_enM;
     logic [1:0]             mctrl_opM;
+
+    logic                   lsu_enM;
 
     logic                   rf_wr_enM;
     logic [2:0]             rf_selM;
@@ -585,6 +589,7 @@ module pipeline
             csr_opM         <=  2'b0;
             mctrl_enM       <=  1'b0;
             mctrl_opM       <=  2'b0;
+            lsu_enM         <=  1'b0;
             rf_wr_enM       <=  1'b0;
             rf_selM         <=  3'b0;            
             exu_resM        <=  64'h0;
@@ -601,6 +606,7 @@ module pipeline
             csr_opM         <=  csr_opE;
             mctrl_enM       <=  mctrl_enE;
             mctrl_opM       <=  mctrl_opE;
+            lsu_enM         <=  lsu_enE;
             rf_wr_enM       <=  rf_wr_enE;
             rf_selM         <=  rf_selE;
             exu_resM        <=  md_enE ? mdu_resE_i : alu_resE_i;
@@ -637,6 +643,8 @@ module pipeline
         pcM_o           =   pcM;
         nxt_pcM_o       =   mretM ? mepc_i : (sretM ? sepc_i : nxt_pcM);
         exc_xtvalM_o    =   exc_validM ? exc_xtvalM : (exc_validM_i ? addrM_i : {32'h0, instrM});
+
+        block_intM_o    =   validM && (lsu_enM || csr_wr_enM || (mctrl_enM && (mctrl_opM != WFI_OP)));
 
         mretM_o         =   mretM;
         sretM_o         =   sretM;

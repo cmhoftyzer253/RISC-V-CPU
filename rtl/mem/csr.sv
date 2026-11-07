@@ -86,7 +86,7 @@ module csr
     logic [7:0]                 pmpcfg_raw;
     logic [63:0]                pmpcfg_wr_legal;
 
-    logic [15:0][53:0]          pmpaddr_wr_data;
+    logic [7:0][53:0]          pmpaddr_wr_data;
     
     logic                       MIP_MEIP;
     logic                       MIP_SEIP;
@@ -98,8 +98,7 @@ module csr
     logic [11:0]                MIP_RD;
 
     logic [63:0]                PMPCFG0_WMASK;
-    logic [63:0]                PMPCFG2_WMASK;
-    logic [15:0][53:0]          PMPADDR_WMASK;
+    logic [7:0][53:0]           PMPADDR_WMASK;
 
     logic [1:0]                 priv_level;
 
@@ -125,10 +124,10 @@ module csr
     logic [63:0]                MCAUSE_REG;
     logic [63:0]                MTVAL_REG;
 
-    logic [15:0][7:0]           PMPCFG_REG;
-    logic [15:0][53:0]          PMPADDR_REG;
+    logic [7:0][7:0]           PMPCFG_REG;
+    logic [7:0][53:0]          PMPADDR_REG;
 
-    logic [15:0][53:0]          PMPADDR_NAPOT_MASK;
+    logic [7:0][53:0]          PMPADDR_NAPOT_MASK;
 
     logic [63:0]                MCYCLE_REG;
     logic [63:0]                MINSTRET_REG;
@@ -219,8 +218,7 @@ module csr
                     MCAUSE_ADDR: MCAUSE_REG                 <=  csr_wr_data & MCAUSE_WMASK;
                     MTVAL_ADDR: MTVAL_REG                   <=  csr_wr_data;
                     MIP_ADDR: MIP_REG                       <=  csr_wr_data[11:0] & MIP_WMASK;
-                    PMPCFG0_ADDR: PMPCFG_REG[7:0]           <=  (pmpcfg_wr_legal & PMPCFG0_WMASK) | (PMPCFG_REG[7:0] & ~PMPCFG0_WMASK);         
-                    PMPCFG2_ADDR: PMPCFG_REG[15:8]          <=  (pmpcfg_wr_legal & PMPCFG2_WMASK) | (PMPCFG_REG[15:8] & ~PMPCFG2_WMASK);        
+                    PMPCFG0_ADDR: PMPCFG_REG[7:0]           <=  (pmpcfg_wr_legal & PMPCFG0_WMASK) | (PMPCFG_REG[7:0] & ~PMPCFG0_WMASK);                
                     PMPADDR0_ADDR: begin
                         PMPADDR_REG[0]                      <=  pmpaddr_wr_data[0];
                         PMPADDR_NAPOT_MASK[0]               <=  napot_mask(pmpaddr_wr_data[0]);
@@ -252,38 +250,6 @@ module csr
                     PMPADDR7_ADDR: begin
                         PMPADDR_REG[7]                      <=  pmpaddr_wr_data[7];
                         PMPADDR_NAPOT_MASK[7]               <=  napot_mask(pmpaddr_wr_data[7]);
-                    end
-                    PMPADDR8_ADDR: begin
-                        PMPADDR_REG[8]                      <=  pmpaddr_wr_data[8];
-                        PMPADDR_NAPOT_MASK[8]               <=  napot_mask(pmpaddr_wr_data[8]);
-                    end
-                    PMPADDR9_ADDR: begin
-                        PMPADDR_REG[9]                      <=  pmpaddr_wr_data[9];
-                        PMPADDR_NAPOT_MASK[9]               <=  napot_mask(pmpaddr_wr_data[9]);
-                    end
-                    PMPADDR10_ADDR: begin
-                        PMPADDR_REG[10]                     <=  pmpaddr_wr_data[10];
-                        PMPADDR_NAPOT_MASK[10]              <=  napot_mask(pmpaddr_wr_data[10]);
-                    end
-                    PMPADDR11_ADDR: begin
-                        PMPADDR_REG[11]                     <=  pmpaddr_wr_data[11];
-                        PMPADDR_NAPOT_MASK[11]              <=  napot_mask(pmpaddr_wr_data[11]);
-                    end
-                    PMPADDR12_ADDR: begin
-                        PMPADDR_REG[12]                     <=  pmpaddr_wr_data[12];
-                        PMPADDR_NAPOT_MASK[12]              <=  napot_mask(pmpaddr_wr_data[12]);
-                    end
-                    PMPADDR13_ADDR: begin
-                        PMPADDR_REG[13]                     <=  pmpaddr_wr_data[13];
-                        PMPADDR_NAPOT_MASK[13]              <=  napot_mask(pmpaddr_wr_data[13]);
-                    end
-                    PMPADDR14_ADDR: begin
-                        PMPADDR_REG[14]                     <=  pmpaddr_wr_data[14];
-                        PMPADDR_NAPOT_MASK[14]              <=  napot_mask(pmpaddr_wr_data[14]);
-                    end
-                    PMPADDR15_ADDR: begin
-                        PMPADDR_REG[15]                     <=  pmpaddr_wr_data[15];
-                        PMPADDR_NAPOT_MASK[15]              <=  napot_mask(pmpaddr_wr_data[15]);
                     end
                     MCYCLE_ADDR: MCYCLE_REG                 <=  csr_wr_data;
                     MINSTRET_ADDR: MINSTRET_REG             <=  csr_wr_data;
@@ -329,10 +295,10 @@ module csr
         mstatus_ube_o           =   MSTATUS_REG[6];
 
         pmpcfg0_o               =   PMPCFG_REG[7:0];
-        pmpcfg2_o               =   PMPCFG_REG[15:8];
+        pmpcfg2_o               =   64'h0;
 
-        pmpaddr_o               =   PMPADDR_REG;
-        pmpaddr_napot_mask_o    =   PMPADDR_NAPOT_MASK;
+        pmpaddr_o               =   {{8{54'h0}}, PMPADDR_REG};
+        pmpaddr_napot_mask_o    =   {{8{54'h0}}, PMPADDR_NAPOT_MASK};
 
         s_mode_int_vectored     =   (STVEC_REG[1:0] == 2'b01);
         m_mode_int_vectored     =   (MTVEC_REG[1:0] == 2'b01);
@@ -353,11 +319,10 @@ module csr
 
         for (int i=0; i<8; i++) begin
             PMPCFG0_WMASK[i*8 +: 8] = pmpcfg_wmask(PMPCFG_REG[i]);
-            PMPCFG2_WMASK[i*8 +: 8] = pmpcfg_wmask(PMPCFG_REG[i+8]);
         end
 
-        for (int i=0; i<16; i++) begin
-            PMPADDR_WMASK[i] = pmpaddr_wmask(PMPCFG_REG[i], (i<15 ? PMPCFG_REG[i+1] : 8'b0));
+        for (int i=0; i<8; i++) begin
+            PMPADDR_WMASK[i] = pmpaddr_wmask(PMPCFG_REG[i], (i<7 ? PMPCFG_REG[i+1] : 8'b0));
         end
 
         case (csr_addr_i)
@@ -386,7 +351,6 @@ module csr
             MTVAL_ADDR: csr_data_o          =   MTVAL_REG;
             MIP_ADDR: csr_data_o            =   {52'h0, MIP_RD};
             PMPCFG0_ADDR: csr_data_o        =   PMPCFG_REG[7:0];
-            PMPCFG2_ADDR: csr_data_o        =   PMPCFG_REG[15:8];
             PMPADDR0_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[0]};
             PMPADDR1_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[1]};
             PMPADDR2_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[2]};
@@ -395,14 +359,6 @@ module csr
             PMPADDR5_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[5]};
             PMPADDR6_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[6]};
             PMPADDR7_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[7]};
-            PMPADDR8_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[8]};
-            PMPADDR9_ADDR: csr_data_o       =   {10'h0, PMPADDR_REG[9]};
-            PMPADDR10_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[10]};
-            PMPADDR11_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[11]};
-            PMPADDR12_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[12]};
-            PMPADDR13_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[13]};
-            PMPADDR14_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[14]};
-            PMPADDR15_ADDR: csr_data_o      =   {10'h0, PMPADDR_REG[15]};
             MCYCLE_ADDR: csr_data_o         =   MCYCLE_REG;
             MINSTRET_ADDR: csr_data_o       =   MINSTRET_REG;
             CYCLE_ADDR: csr_data_o          =   MCYCLE_REG;
@@ -418,7 +374,7 @@ module csr
             default: csr_wr_data    =   64'h0;
         endcase
 
-        for (int i=0; i<16; i++) begin
+        for (int i=0; i<8; i++) begin
             pmpaddr_wr_data[i] = (csr_wr_data[53:0] & PMPADDR_WMASK[i]) | (PMPADDR_REG[i] & ~PMPADDR_WMASK[i]);
         end  
 

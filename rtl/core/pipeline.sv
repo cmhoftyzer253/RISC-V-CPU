@@ -383,7 +383,7 @@ module pipeline
         end
     end
 
-    assign stallE       = stallM || !mdu_readyD_i;
+    assign stallE       =   stallM || !mdu_readyD_i;
     assign stallE_o     =   stallE;
 
     //forwarding logic 

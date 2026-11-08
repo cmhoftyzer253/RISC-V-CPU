@@ -9,7 +9,6 @@ module mdu (
     input logic             word_op_i,
     output logic            mdu_ready_o,
 
-    input logic             stallE_i,
     input logic             flushE_i,
     input logic             stallM_i,
 
@@ -38,7 +37,6 @@ module mdu (
         .mul_func_i         (exu_op_i),
         .word_op_i          (word_op_i),
         .mul_ready_o        (mul_ready),
-        .stallE_i           (stallE_i),
         .flushE_i           (flushE_i),
         .stallM_i           (stallM_i),
         .mul_res_o          (mul_res),
@@ -54,7 +52,6 @@ module mdu (
         .div_func_i         (exu_op_i),
         .word_op_i          (word_op_i),
         .div_ready_o        (div_ready),
-        .stallE_i           (stallE_i),
         .flushE_i           (flushE_i),
         .stallM_i           (stallM_i),
         .div_res_o          (div_res),

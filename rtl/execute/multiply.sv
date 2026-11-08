@@ -162,7 +162,7 @@ module multiply
 
         case (state)
             M_IDLE: begin
-                mul_ready_o     =   1'b1;
+                mul_ready_o     =   !mul_valid_i;
             end
             M_RUN_1: begin
                 if (word_op) begin

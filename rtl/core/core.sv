@@ -107,25 +107,19 @@ module core (
     logic [63:0]            rs1_dataD;
     logic [63:0]            rs2_dataD;
 
-    logic [63:0]            opr_aD;
-    logic [63:0]            opr_bD;
-
-    logic                   mdu_enD;
-    logic [3:0]             mdu_exu_opD;
-    logic                   mdu_word_opD;
-    logic                   mdu_readyD;
-
     logic [63:0]            opr_aE;
     logic [63:0]            opr_bE;
 
     logic                   word_opE;
     logic                   branch_enE;
+    logic                   md_enE;
     logic [3:0]             exu_opE;
     logic [2:0]             branch_opE;
 
     logic [63:0]            alu_resE;
     logic                   branch_takenE;
 
+    logic                   mdu_readyE;
     logic                   mdu_res_validE;
     logic [63:0]            mdu_resE;
 
@@ -198,7 +192,6 @@ module core (
     logic [63:0]            rf_wr_dataW;
 
     logic                   stallD;
-    logic                   stallE;
     logic                   stallM;
 
     logic                   flushF;
@@ -315,20 +308,16 @@ module core (
         .exc_codeD_i            (exc_codeD),
         .rs1_dataD_i            (rs1_dataD),
         .rs2_dataD_i            (rs2_dataD),
-        .opr_aD_o               (opr_aD),
-        .opr_bD_o               (opr_bD),
-        .md_enD_o               (mdu_enD),
-        .exu_opD_o              (mdu_exu_opD),
-        .word_opD_o             (mdu_word_opD),
-        .mdu_readyD_i           (mdu_readyD),
         .opr_aE_o               (opr_aE),
         .opr_bE_o               (opr_bE),
         .word_opE_o             (word_opE),
+        .md_enE_o               (md_enE),
         .branch_enE_o           (branch_enE),
         .exu_opE_o              (exu_opE),
         .branch_opE_o           (branch_opE),
         .alu_resE_i             (alu_resE),
         .branch_takenE_i        (branch_takenE),
+        .mdu_readyE_i           (mdu_readyE),
         .mdu_res_validE_i       (mdu_res_validE),
         .mdu_resE_i             (mdu_resE),
         .lsu_validE_o           (lsu_validE),
@@ -370,7 +359,6 @@ module core (
         .rf_wr_enW_o            (rf_wr_enW),
         .rf_wr_dataW_o          (rf_wr_dataW),
         .stallD_o               (stallD),
-        .stallE_o               (stallE),
         .stallM_o               (stallM),
         .flushF_o               (flushF),
         .flushE_o               (flushE),
@@ -467,13 +455,12 @@ module core (
     mdu u_mdu (
         .clk                    (clk),
         .resetn                 (resetn),
-        .opr_a_i                (opr_aD),
-        .opr_b_i                (opr_bD),
-        .mdu_en_i               (mdu_enD),
-        .exu_op_i               (mdu_exu_opD),
-        .word_op_i              (mdu_word_opD),
-        .mdu_ready_o            (mdu_readyD),
-        .stallE_i               (stallE),
+        .opr_a_i                (opr_aE),
+        .opr_b_i                (opr_bE),
+        .mdu_en_i               (md_enE),
+        .exu_op_i               (exu_opE),
+        .word_op_i              (word_opE),
+        .mdu_ready_o            (mdu_readyE),
         .flushE_i               (flushE),
         .stallM_i               (stallM),
         .mdu_res_valid_o        (mdu_res_validE),

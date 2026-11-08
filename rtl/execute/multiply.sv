@@ -26,10 +26,8 @@ module multiply
     logic [3:0]             mul_func;
     logic                   word_op;
 
-    logic [31:0]            opr_a_high_in;
     logic [31:0]            opr_a_low_in;
     logic [31:0]            opr_a_high;
-    logic [31:0]            opr_a_low;
 
     logic [31:0]            opr_b_high_in;
     logic [31:0]            opr_b_low_in;
@@ -133,14 +131,12 @@ module multiply
         mul_res_valid_o     =   1'b0;
         mul_res_o           =   64'h0;
 
-        opr_a_high_in       =   opr_a_i[63:32];
         opr_a_low_in        =   opr_a_i[31:0];
 
         opr_b_high_in       =   opr_b_i[63:32];
         opr_b_low_in        =   opr_b_i[31:0];
 
         opr_a_high          =   opr_a[63:32];
-        opr_a_low           =   opr_a[31:0];
 
         opr_b_high          =   opr_b[63:32];
         opr_b_low           =   opr_b[31:0];

@@ -55,23 +55,18 @@ module pipeline
     input logic [63:0]      rs1_dataD_i,
     input logic [63:0]      rs2_dataD_i,
 
-    output logic [63:0]     opr_aD_o,
-    output logic [63:0]     opr_bD_o,
-    output logic            md_enD_o,
-    output logic [3:0]      exu_opD_o,
-    output logic            word_opD_o,
-    input logic             mdu_readyD_i,
-
     //E interface
     output logic [63:0]     opr_aE_o,
     output logic [63:0]     opr_bE_o,
     output logic            word_opE_o,
+    output logic            md_enE_o,
     output logic            branch_enE_o,
     output logic [3:0]      exu_opE_o,
     output logic [2:0]      branch_opE_o,
     
     input logic [63:0]      alu_resE_i,
     input logic             branch_takenE_i,
+    input logic             mdu_readyE_i,
     input logic             mdu_res_validE_i,
     input logic [63:0]      mdu_resE_i,    
 
@@ -130,7 +125,6 @@ module pipeline
     output logic [63:0]     rf_wr_dataW_o,
 
     output logic            stallD_o,
-    output logic            stallE_o,
     output logic            stallM_o,
 
     output logic            flushF_o,
@@ -387,8 +381,7 @@ module pipeline
         end
     end
 
-    assign stallE       =   stallM || !mdu_readyD_i;
-    assign stallE_o     =   stallE;
+    assign stallE       =   stallM || !mdu_readyE_i;
 
     //forwarding logic 
     always_comb begin
@@ -434,12 +427,6 @@ module pipeline
         else
             rs2_dataD   =   rs2_dataD_i;
     end
-
-    assign opr_aD_o     =   rs1_dataD;
-    assign opr_bD_o     =   rs2_dataD;
-    assign md_enD_o     =   validD && !exc_validD && !exc_validD_i && !flushD && !rs1_wait && !rs2_wait && md_enD_i;
-    assign exu_opD_o    =   exu_opD_i;
-    assign word_opD_o   =   word_opD_i;
 
     assign instrD_o     =   instrD;
 
@@ -558,6 +545,7 @@ module pipeline
 
         opr_bE_o        =   (opb_selE == RS2) ? rs2_dataE : immE;
         word_opE_o      =   word_opE;
+        md_enE_o        =   validE && !exc_validE && md_enE;
         branch_enE_o    =   validE && !exc_validE && (pc_selE == BRANCH);
         exu_opE_o       =   exu_opE;
         branch_opE_o    =   branch_opE;

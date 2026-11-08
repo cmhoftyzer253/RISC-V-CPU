@@ -276,7 +276,7 @@ module divide
 
         case (state)
             D_INIT: begin
-                div_ready_o         =   !div_valid_i || sc_res;
+                div_ready_o         =   !div_valid_i || sc_en;
                 div_res_valid_o     =   div_valid_i && sc_en;
                 div_res_o           =   sc_res;
             end

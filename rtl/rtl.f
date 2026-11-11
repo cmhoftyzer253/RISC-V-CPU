@@ -4,7 +4,6 @@ rtl/utils/cpu_utils.sv
 
 rtl/utils/fifo.sv
 rtl/utils/gateway_level.sv
-rtl/utils/clk_sync_2ff.sv
 rtl/utils/resetn_sync.sv
 
 rtl/top.sv

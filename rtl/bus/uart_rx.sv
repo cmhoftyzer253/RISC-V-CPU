@@ -28,8 +28,8 @@ module uart_rx
     logic [1:0]             sample_sum;
     logic [7:0]             rx_data;
 
-    logic                   rx_q;
-    logic                   rx_2q;
+    logic                   (* ASYNC_REG = "TRUE" *) rx_q;
+    logic                   (* ASYNC_REG = "TRUE" *) rx_2q;
 
     uart_rx_state_t         state;
 

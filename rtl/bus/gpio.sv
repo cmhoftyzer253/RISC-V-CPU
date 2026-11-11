@@ -29,8 +29,9 @@ module gpio
     output logic            gpio_interrupt_o
 );
 
-    logic [31:0]            gpio_in_q;
-    logic [31:0]            gpio_in_q2;
+    logic [31:0]            (* ASYNC_REG = "TRUE" *) gpio_in_q;
+    logic [31:0]            (* ASYNC_REG = "TRUE" *) gpio_in_q2;
+
     logic [31:0]            gpio_in_q3;
 
     logic [31:0]            INPUT_EN_REG;

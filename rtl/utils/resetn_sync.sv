@@ -6,14 +6,9 @@ module resetn_sync (
     (* ASYNC_REG = "TRUE" *) logic  aresetn_q;
     (* ASYNC_REG = "TRUE" *) logic  aresetn_2q;
 
-    always_ff @(posedge clk or negedge aresetn_i) begin
-        if (!aresetn_i) begin
-            aresetn_q   <=  1'b0;
-            aresetn_2q  <=  1'b0;
-        end else begin
-            aresetn_q   <=  1'b1;
-            aresetn_2q  <=  aresetn_q;
-        end
+    always_ff @(posedge clk) begin
+        aresetn_q   <=  aresetn_i;
+        aresetn_2q  <=  aresetn_q;
     end
 
     assign resetn_o =   aresetn_2q;

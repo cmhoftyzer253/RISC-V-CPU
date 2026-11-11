@@ -4,7 +4,7 @@ module resetn_sync (
     output logic    resetn_o
 );
     (* ASYNC_REG = "TRUE" *) logic  aresetn_q   =   1'b0;
-    (* ASYNC_REG = "TRUE" *) logic  aresetn_2q  =   1'b01;
+    (* ASYNC_REG = "TRUE" *) logic  aresetn_2q  =   1'b0;
 
     always_ff @(posedge clk) begin
         aresetn_q   <=  aresetn_i;

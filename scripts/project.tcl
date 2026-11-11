@@ -28,6 +28,8 @@ foreach ip {clk_gen axi_cdc axi_ahb_bridge ddr_mig_controller} {
 }
 generate_target all [get_ips]
 
-add_files -fileset constrs_1 fpga/nexys_video.xdc
+add_files -fileset constrs_1 {fpga/nexys_video.xdc fpga/timing.xdc fpga/impl_only.xdc}
+set_property USED_IN_SYNTHESIS false [get_files fpga/impl_only.xdc]
+
 set_property top top [current_fileset]
 update_compile_order -fileset sources_1

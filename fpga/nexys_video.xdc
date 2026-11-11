@@ -3,41 +3,6 @@
 ### - uncomment the lines corresponding to used pins
 ### - rename the used ports (in each line, after get_ports) according to the top level signal names in the project
 
-# False paths
-set_false_path -from [get_ports resetn_i]
-set_false_path -to [get_ports ddr3_reset_n]
-
-set_false_path -from [get_ports uart_rx_i]
-set_false_path -to [get_ports uart_tx_o]
-
-#gpio inputs
-set gpio_sync_d [get_pins -filter {REF_PIN_NAME == D} -of_objects [get_cells u_bus/u_gpio/gpio_in_q_reg*]]
-set_false_path -from [get_ports {gpio_io[*]}] -to $gpio_sync_d
-
-#gpio outputs
-set gpio_ctrl_regs [get_cells -hier -filter {\
-    NAME =~ u_bus/u_gpio/OUTPUT_VAL_REG_reg*    || \
-    NAME =~ u_bus/u_gpio/OUT_XOR_REG_reg*       || \
-    NAME =~ u_bus/u_gpio/OUTPUT_EN_REG_reg*     || \
-    NAME =~ u_bus/u_gpio/IOF_EN_REG_reg*}]
-set_false_path -from $gpio_ctrl_regs -to [get_ports {gpio_io[*]}]
-
-set_false_path -to [get_pins -filter {REF_PIN_NAME == D} -of_objects \
-    [get_cells -hier -filter {NAME =~ *u_resetn_sync_*/aresetn_q_reg*}]]
-
-#waive SYNTH, IP warnings
-create_waiver -type METHODOLOGY -id {SYNTH-10} -user Chris \
-    -objects [get_cells -hier -filter {NAME =~ u_core/u_mdu/u_multiply/p*_q*}] \
-    -description "32x32 partial products decomposed into DSP48s; expected"
-create_waiver -type METHODOLOGY -id {LUTAR-1} -user Chris \
-    -objects [get_cells -hier -filter {NAME =~ *u_ddr_mig_controller_mig/u_iodelay_ctrl/*}] \
-    -description "MIG-internal reset combining logic"
-create_waiver -type METHODOLOGY -id {REQP-1959} -user Chris \
-    -objects [get_cells -hier -filter {NAME =~ *u_ddr_mig_controller_mig/*iserdes_dq_.iserdesdq}] \
-    -description "MIG PHY ISERDES reset structure"
-create_waiver -type METHODOLOGY -id {XDCB-5} -user Chris \
-    -description "Inefficient query is in the generated MIG XDC"
-
 ## Clock Signal
 set_property -dict { PACKAGE_PIN R4    IOSTANDARD LVCMOS33 } [get_ports { clk_100M_i }]; #IO_L13P_T2_MRCC_34 Sch=sysclk
 #create_clock -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk]

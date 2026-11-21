@@ -194,6 +194,8 @@ module i_cache
 
             valid           <=  '0;
 
+            PLRU_tree       <=  '{default: '0};
+
             state           <=  IC_RUN;
         end else begin
             case (state) 

@@ -84,15 +84,18 @@ class Cache:
             self.pLRU.append([0]*(self.numways-1))
 
     def splitaddr(self, addr):
+        """
+        produce tag, set index, line entry number from address
+        """
         tag = addr >> (self.setlen + self.offsetlen) & int('1'*self.taglen, 2)
         setnum = (addr >> self.offsetlen) & int('1'*self.setlen, 2)
         offset = addr & int('1'*self.offsetlen, 2)
-        return tag, setnum, offset
-
-    def cacheaccess(self, addr, data=None, write=False, bytemask=0xFF):
-        res = CacheResultTransaction()
-        tag, setnum, offset = self.splitaddr(addr)
         entrynum = offset // self.bytesperentry
+        return tag, setnum, entrynum
+
+    def cacheaccess(self, addr, data=None, write=False, bytemask=0xFF) -> CacheResultTransaction:
+        res = CacheResultTransaction()
+        tag, setnum, entrynum = self.splitaddr(addr)
         bitmask = self.write_bitmask(bytemask)
 
         for waynum in range(self.numways):

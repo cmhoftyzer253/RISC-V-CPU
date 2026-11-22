@@ -197,3 +197,15 @@ class Cache:
             victim += 1
 
         return victim
+
+    def __str__(self):
+        string = ""
+        for i in range(self.numways):
+            string += f"Way {i}:"
+            for line in self.ways[i]:
+                string += f"{line}, "
+            string += "\n\n"
+        return string
+
+    def __repr__(self):
+        return self.__str__()
